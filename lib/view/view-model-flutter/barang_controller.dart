@@ -7,56 +7,64 @@ import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
 
 //add barang
-void addbarang(DateTime insertedDate, bool isExp, String nama_barang, String katakategori, String harga_barang, String jum_barang , BuildContext context ) async {
-      final dataStorage = GetStorage();
-      String id_cabang = dataStorage.read('id_cabang');
-      try {
-        String? expDateString;
-        getdatagudang();
-        String id_gudangs = dataStorage.read('id_gudang');
-        final requestjenis = Uri.parse('http://localhost:3000/barang/getjenisfromkategori/$katakategori');
-        final datajenis = await http.get(requestjenis);
-        final jenis = json.decode(datajenis.body);
-        print("ini jenis nya insert barang:$jenis");
-        if (!isExp) {
-          insertedDate = insertedDate.add(Duration(days: 1));
-          expDateString = insertedDate.toIso8601String();
-        }
-        final Barangdata = {
-          'nama_barang': nama_barang,
-          'jenis_barang': jenis["data"]["nama_jenis"].toString(),
-          'kategori_barang': katakategori,
-          'harga_barang': harga_barang,
-          'Qty': jum_barang,
-          'exp_date': expDateString,
-        };
-        final url = 'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
-        final response = await http.post(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(Barangdata),
-        );
-
-        if (response.statusCode == 200) {
-          showToast(context, 'Berhasil menambah data');
-          
-        } else {
-          showToast(context, "Gagal menambahkan data");
-          print('HTTP Error: ${response.statusCode}');
-        }
-      } catch (error) {
-        showToast(context, "Error: $error");
-        print('Exception during HTTP request: $error');
-      }
-    }
-
-//get barang
-Future<List<Map<String,dynamic>>> getBarang(String idgudang) async {
+void addbarang(
+    DateTime insertedDate,
+    bool isExp,
+    String nama_barang,
+    String katakategori,
+    String harga_barang,
+    String jum_barang,
+    BuildContext context) async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
-  final request = Uri.parse('http://localhost:3000/barang/baranglist/$idgudang/$id_cabang');
+  try {
+    String? expDateString;
+    getdatagudang();
+    String id_gudangs = dataStorage.read('id_gudang');
+    final requestjenis = Uri.parse(
+        'http://localhost:3000/barang/getjenisfromkategori/$katakategori');
+    final datajenis = await http.get(requestjenis);
+    final jenis = json.decode(datajenis.body);
+    print("ini jenis nya insert barang:$jenis");
+    if (!isExp) {
+      insertedDate = insertedDate.add(Duration(days: 1));
+      expDateString = insertedDate.toIso8601String();
+    }
+    final Barangdata = {
+      'nama_barang': nama_barang,
+      'jenis_barang': jenis["data"]["nama_jenis"].toString(),
+      'kategori_barang': katakategori,
+      'harga_barang': harga_barang,
+      'Qty': jum_barang,
+      'exp_date': expDateString,
+    };
+    final url = 'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(Barangdata),
+    );
+
+    if (response.statusCode == 200) {
+      showToast(context, 'Berhasil menambah data');
+    } else {
+      showToast(context, "Gagal menambahkan data");
+      print('HTTP Error: ${response.statusCode}');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    print('Exception during HTTP request: $error');
+  }
+}
+
+//get barang
+Future<List<Map<String, dynamic>>> getBarang(String idgudang) async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  final request =
+      Uri.parse('http://localhost:3000/barang/baranglist/$idgudang/$id_cabang');
   final response = await http.get(request);
-   if (response.statusCode == 200 || response.statusCode == 304) {
+  if (response.statusCode == 200 || response.statusCode == 304) {
     final Map<String, dynamic> jsonData = json.decode(response.body);
     List<dynamic> data = jsonData["data"];
     print("ini data barang dari cabang: $data");
@@ -69,89 +77,93 @@ Future<List<Map<String,dynamic>>> getBarang(String idgudang) async {
 
 //delete barang
 void deletebarang(String id) async {
-      final dataStorage = GetStorage();
-      final id_cabang = dataStorage.read("id_cabang");
-      final id_gudang = dataStorage.read("id_gudang");
-      final url = 'http://localhost:3000/barang/deletebarang/$id_gudang/$id_cabang/$id';
-      final response = await http.delete(Uri.parse(url)); 
+  final dataStorage = GetStorage();
+  final id_cabang = dataStorage.read("id_cabang");
+  final id_gudang = dataStorage.read("id_gudang");
+  final url =
+      'http://localhost:3000/barang/deletebarang/$id_gudang/$id_cabang/$id';
+  final response = await http.delete(Uri.parse(url));
 
-        if (response.statusCode == 200) {
-          print('Data deleted successfully');
-        } else {
-          // Error occurred during data deletion
-          print('Error deleting data. Status code: ${response.statusCode}');
-        }
+  if (response.statusCode == 200) {
+    print('Data deleted successfully');
+  } else {
+    // Error occurred during data deletion
+    print('Error deleting data. Status code: ${response.statusCode}');
+  }
 }
 
 //update barang
-    void UpdateBarang(String id, String nama_barang, String katakategori, String harga_barang, String jumlah_barang) async {
-      final updatedBarangData = {
-        'nama_barang':nama_barang,
-        'kategori_barang':katakategori,
-        'harga_barang':harga_barang,
-        'Qty':jumlah_barang,
-      };
-      final dataStorage = GetStorage();
-      final id_cabang = dataStorage.read("id_cabang");
-      final id_gudang = dataStorage.read("id_gudang");
-      final url = 'http://localhost:3000/barang/updatebarang/$id_gudang/$id_cabang/$id';
-      try {
-        final response = await http.put(
-          Uri.parse(url),
-          headers: <String, String>{
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode(updatedBarangData),
-        );
+void UpdateBarang(String id, String nama_barang, String katakategori,
+    String harga_barang, String jumlah_barang) async {
+  final updatedBarangData = {
+    'nama_barang': nama_barang,
+    'kategori_barang': katakategori,
+    'harga_barang': harga_barang,
+    'Qty': jumlah_barang,
+  };
+  final dataStorage = GetStorage();
+  final id_cabang = dataStorage.read("id_cabang");
+  final id_gudang = dataStorage.read("id_gudang");
+  final url =
+      'http://localhost:3000/barang/updatebarang/$id_gudang/$id_cabang/$id';
+  try {
+    final response = await http.put(
+      Uri.parse(url),
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(updatedBarangData),
+    );
 
-        if (response.statusCode == 200) {
-          // Data updated successfully
-          CustomToast(message: 'Data updated successfully');
-        } else {
-          // Error occurred during data update
-          print('Error updating data. Status code: ${response.statusCode}');
-        }
-      } catch (error) {
-        print('Error: $error');
-      }
+    if (response.statusCode == 200) {
+      // Data updated successfully
+      CustomToast(message: 'Data updated successfully');
+    } else {
+      // Error occurred during data update
+      print('Error updating data. Status code: ${response.statusCode}');
     }
+  } catch (error) {
+    print('Error: $error');
+  }
+}
 
 //kategori
 //add kategori
 //function add
-    void addkategori(String nama_kategori, String selectedvalueJenis,BuildContext context ) async{
-      try {
-        final Kategoridata = {
-          'nama_kategori': nama_kategori,
-          'id_jenis': selectedvalueJenis,
-        };
-        final url = 'http://localhost:3000/barang/tambahkategori';
-        final response = await 
-        http.post(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json',},
-          body: jsonEncode(Kategoridata),
-        );  
-        if (response.statusCode == 200) {
-          showToast(context, 'berhasil tambah data');
-          getKategori();
-        } else if(selectedvalueJenis.isEmpty){
-          showToast(context, "jenis tidak ada");
-          print(response.statusCode);
-        }else{
-          showToast(context, "gagal menambahkan data");
-          print(response.statusCode);
-        }
-      } catch (e) {
-        print(e);
-      }
-      
+void addkategori(String nama_kategori, String selectedvalueJenis,
+    BuildContext context) async {
+  try {
+    final Kategoridata = {
+      'nama_kategori': nama_kategori,
+      'id_jenis': selectedvalueJenis,
+    };
+    final url = 'http://localhost:3000/barang/tambahkategori';
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(Kategoridata),
+    );
+    if (response.statusCode == 200) {
+      showToast(context, 'berhasil tambah data');
+      getKategori();
+    } else if (selectedvalueJenis.isEmpty) {
+      showToast(context, "jenis tidak ada");
+      print(response.statusCode);
+    } else {
+      showToast(context, "gagal menambahkan data");
+      print(response.statusCode);
     }
+  } catch (e) {
+    print(e);
+  }
+}
 
 //get kategori
 Future<List<Map<String, dynamic>>> getKategori() async {
   final url = 'http://localhost:3000/barang/getkategori';
-  final response = await http.get(Uri.parse(url));  
+  final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
     print('berhasil akses data');
     final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -161,6 +173,7 @@ Future<List<Map<String, dynamic>>> getKategori() async {
     throw Exception('Gagal mengambil data dari server');
   }
 }
+
 Future<String> getFirstKategoriId() async {
   final url = 'http://localhost:3000/barang/getfirstkategori';
   final response = await http.get(Uri.parse(url));
@@ -182,7 +195,8 @@ Future<String> getFirstKategoriId() async {
       return '';
     }
   } else {
-    print('API Error: ${response.statusCode} - ${response.body}'); // Log the error response
+    print(
+        'API Error: ${response.statusCode} - ${response.body}'); // Log the error response
     throw Exception('Gagal mengambil data dari server');
   }
 }
@@ -196,7 +210,8 @@ Future<void> fetchDataKategori() async {
   }
 }
 
-Future<Map<String, String>> getNamaKategoriMap(List<Map<String, dynamic>> array)async {
+Future<Map<String, String>> getNamaKategoriMap(
+    List<Map<String, dynamic>> array) async {
   final map = Map<String, String>();
   final objects = await array;
   for (final object in objects) {
@@ -205,37 +220,38 @@ Future<Map<String, String>> getNamaKategoriMap(List<Map<String, dynamic>> array)
   return map;
 }
 
-Future<Map<String, String>> getmapkategori() async{
-      final Kategori = await getKategori();
-      final namaKategoriMap = await getNamaKategoriMap(Kategori);
-      print(namaKategoriMap);
-      return namaKategoriMap;
+Future<Map<String, String>> getmapkategori() async {
+  final Kategori = await getKategori();
+  final namaKategoriMap = await getNamaKategoriMap(Kategori);
+  print(namaKategoriMap);
+  return namaKategoriMap;
 }
 
 //jenis
 
 //add jenis
-void addjenis(String nama_jenis,BuildContext context ) async{
-      final Jenisdata = {
-        'nama_jenis':nama_jenis,
-      };
-      final url = 'http://localhost:3000/barang/tambahjenis';
-      final response = await 
-      http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json',},
-        body: jsonEncode(Jenisdata),
-      );  
-      if (response.statusCode == 200) {
-        showToast(context, 'berhasil tambah data');
-      } else {
-        showToast(context, "gagal menambahkan data");
-      }
-    }
+void addjenis(String nama_jenis, BuildContext context) async {
+  final Jenisdata = {
+    'nama_jenis': nama_jenis,
+  };
+  final url = 'http://localhost:3000/barang/tambahjenis';
+  final response = await http.post(
+    Uri.parse(url),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode(Jenisdata),
+  );
+  if (response.statusCode == 200) {
+    showToast(context, 'berhasil tambah data');
+  } else {
+    showToast(context, "gagal menambahkan data");
+  }
+}
 
 Future<List<Map<String, dynamic>>> getJenis() async {
   final url = 'http://localhost:3000/barang/getjenis';
-  final response = await http.get(Uri.parse(url));  
+  final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
     print('berhasil akses data jenis');
     final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -245,9 +261,10 @@ Future<List<Map<String, dynamic>>> getJenis() async {
     throw Exception('Gagal mengambil data dari server');
   }
 }
+
 Future<String> getFirstJenisId() async {
   final url = 'http://localhost:3000/barang/getfirstjenis';
-  final response = await http.get(Uri.parse(url));  
+  final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
     print('berhasil akses data jenis pertama');
     final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -260,7 +277,8 @@ Future<String> getFirstJenisId() async {
       throw Exception('No data available');
     }
   } else {
-    print('API Error: ${response.statusCode} - ${response.body}'); // Log the error response
+    print(
+        'API Error: ${response.statusCode} - ${response.body}'); // Log the error response
     throw Exception('Gagal mengambil data dari server');
   }
 }
@@ -274,7 +292,8 @@ Future<void> fetchDatajenis() async {
   }
 }
 
-Future<Map<String, String>> getNamaJenisMap(List<Map<String, dynamic>> array)async {
+Future<Map<String, String>> getNamaJenisMap(
+    List<Map<String, dynamic>> array) async {
   final map = Map<String, String>();
   final objects = await array;
   for (final object in objects) {
@@ -282,7 +301,9 @@ Future<Map<String, String>> getNamaJenisMap(List<Map<String, dynamic>> array)asy
   }
   return map;
 }
-Future<Map<String, Map<String, dynamic>>> getMapFromjenis(List<Map<String, dynamic>> list) async {
+
+Future<Map<String, Map<String, dynamic>>> getMapFromjenis(
+    List<Map<String, dynamic>> list) async {
   final map = <String, Map<String, dynamic>>{};
 
   for (final item in list) {
@@ -295,40 +316,38 @@ Future<Map<String, Map<String, dynamic>>> getMapFromjenis(List<Map<String, dynam
   return map;
 }
 
- Future<Map<String, String>> getmapjenis() async{
-      final Jenis = await getJenis();
-      final namaJenismap = await getNamaJenisMap(Jenis);
-      print(namaJenismap);
-      return namaJenismap;
+Future<Map<String, String>> getmapjenis() async {
+  final Jenis = await getJenis();
+  final namaJenismap = await getNamaJenisMap(Jenis);
+  print(namaJenismap);
+  return namaJenismap;
 }
 
+//satuan
+void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
+    BuildContext context) async {
+  try {
+    final satuandata = {
+      'nama_satuan': nama_satuan,
+      'jumlah_satuan': jumlah_satuan,
+    };
+    final dataStorage = GetStorage();
+    final id_cabang = dataStorage.read("id_cabang");
+    final url = 'http://localhost:3000/barang/addsatuan/$id_barang/$id_cabang';
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(satuandata),
+    );
 
-//satuan 
-    void addsatuan(String id_barang, String nama_satuan , String jumlah_satuan, BuildContext context) async {
-      try {
-        final satuandata = {
-          'nama_satuan': nama_satuan,
-          'jumlah_satuan': jumlah_satuan,
-        };
-        final dataStorage = GetStorage();
-        final id_cabang = dataStorage.read("id_cabang");
-        final url = 'http://localhost:3000/barang/addsatuan/$id_barang/$id_cabang';
-        final response = await http.post(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(satuandata),
-        );
-
-        if (response.statusCode == 200) {
-          showToast(context, 'Berhasil menambah data');
-          
-        } else {
-          showToast(context, "Gagal menambahkan data");
-          print('HTTP Error: ${response.statusCode}');
-        }
-      } catch (error) {
-        showToast(context, "Error: $error");
-        print('Exception during HTTP request: $error');
-      }
+    if (response.statusCode == 200) {
+      showToast(context, 'Berhasil menambah data');
+    } else {
+      showToast(context, "Gagal menambahkan data");
+      print('HTTP Error: ${response.statusCode}');
     }
-
+  } catch (error) {
+    showToast(context, "Error: $error");
+    print('Exception during HTTP request: $error');
+  }
+}
