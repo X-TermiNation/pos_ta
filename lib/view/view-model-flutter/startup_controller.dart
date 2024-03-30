@@ -75,7 +75,8 @@ void nambahcabangngudang(String nama_cabang, String alamat_cabang,
           final addgudang = {
             'alamat': alamat_cabang,
           };
-          final url2 = 'http://localhost:3000/gudang/tambahgudang/$idcabang';
+          final url2 =
+              'http://localhost:3000/gudang/tambahgudang/$idcabang/$namacabang';
           final response2 = await http.post(
             Uri.parse(url2),
             headers: {
