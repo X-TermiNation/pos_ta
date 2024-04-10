@@ -118,7 +118,7 @@ void tambahmanager(String email, String pass, String fname, String lname,
       headers: {'Cache-Control': 'no-cache'},
     );
     final Map<String, dynamic> jsonDatacabang = json.decode(response2.body);
-    String idcabang = jsonDatacabang["data"]["_id"].toString();
+    String idcabang = jsonDatacabang["data"][0]["_id"].toString();
     if (response2.statusCode == 200) {
       final useradd = {
         'email': email,
