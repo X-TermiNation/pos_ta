@@ -53,10 +53,10 @@ void nambahcabangngudang(String nama_cabang, String alamat_cabang,
       'alamat': alamat_cabang,
       'no_telp': no_telp,
     };
-    if (nama_cabang != null &&
-        alamat_cabang != null &&
-        alamat_cabang != null &&
-        no_telp != null) {
+    if (nama_cabang.isNotEmpty &&
+        alamat_cabang.isNotEmpty &&
+        alamat_cabang.isNotEmpty &&
+        no_telp.isNotEmpty) {
       final url = 'http://localhost:3000/cabang/tambahcabang';
       final response = await http.post(
         Uri.parse(url),
@@ -70,13 +70,13 @@ void nambahcabangngudang(String nama_cabang, String alamat_cabang,
         final url3 = 'http://localhost:3000/cabang/caricabang/$namacabang';
         final response3 = await http.get(Uri.parse(url3));
         final Map<String, dynamic> jsonData = json.decode(response3.body);
-        final idcabang = jsonData["data"]["_id"].toString();
+        print(jsonData);
+        final idcabang = jsonData["data"][0]["_id"].toString();
         if (jsonData.isNotEmpty) {
           final addgudang = {
             'alamat': alamat_cabang,
           };
-          final url2 =
-              'http://localhost:3000/gudang/tambahgudang/$idcabang/$namacabang';
+          final url2 = 'http://localhost:3000/gudang/tambahgudang/$idcabang';
           final response2 = await http.post(
             Uri.parse(url2),
             headers: {

@@ -8,7 +8,7 @@ import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 
 String emailstr = "";
-bool chkOwner = true;
+bool chkOwner = false;
 
 class loginscreen extends StatefulWidget {
   const loginscreen({super.key});
