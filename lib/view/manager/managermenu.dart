@@ -49,7 +49,7 @@ class _ManagerMenuState extends State<ManagerMenu>
   TextEditingController persentase_diskon = TextEditingController();
   List<Map<String, dynamic>> userlist = [];
   void fetchUser() async {
-    this.userlist = await getItems();
+    this.userlist = await getUsers();
   }
 
   var scaffoldKey = GlobalKey<ScaffoldState>();
@@ -968,7 +968,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                         Text('Daftar Pegawai', style: TextStyle(fontSize: 20)),
                         SizedBox(height: 100),
                         FutureBuilder(
-                            future: getItems(),
+                            future: getUsers(),
                             builder: (context, snapshot) {
                               if (snapshot.hasData) {
                                 final rows = snapshot.data!.map((map) {
@@ -1000,7 +1000,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                               setState(() {
                                                 deleteuser(map['_id'], context);
                                                 fetchUser();
-                                                getItems();
+                                                getUsers();
                                               });
                                               print("userlist:$userlist");
                                             } catch (e) {
@@ -1168,7 +1168,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     tambahpegawai(email.text, pass.text,
                                         fname.text, lname.text, value);
                                     fetchUser();
-                                    getItems();
+                                    getUsers();
                                     setState(() {
                                       showToast(
                                           context, 'Berhasil tambah data');

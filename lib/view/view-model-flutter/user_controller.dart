@@ -17,7 +17,7 @@ Future<void> verify() async {
 }
 
 //get user
-Future<List<Map<String, dynamic>>> getItems() async {
+Future<List<Map<String, dynamic>>> getUsers() async {
   final dataStorage = GetStorage();
   String id_cabangs = dataStorage.read('id_cabang');
   final request = Uri.parse('http://localhost:3000/user/list/$id_cabangs');
@@ -48,7 +48,7 @@ Future<void> getOwner() async {
 //print data user
 Future<void> fetchData() async {
   try {
-    final items = await getItems();
+    final items = await getUsers();
     print("ini data :$items");
   } catch (error) {
     print('Error fetch data: $error');
