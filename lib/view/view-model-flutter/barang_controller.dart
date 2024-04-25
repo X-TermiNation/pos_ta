@@ -70,7 +70,6 @@ Future<List<Map<String, dynamic>>> getBarang(String idgudang) async {
     print("ini data barang dari cabang: $data");
     return data.cast<Map<String, dynamic>>();
   } else {
-    // If the request was not successful, throw an exception or handle it accordingly
     throw Exception('Failed to load data: ${response.statusCode}');
   }
 }
@@ -87,7 +86,6 @@ void deletebarang(String id) async {
   if (response.statusCode == 200) {
     print('Data deleted successfully');
   } else {
-    // Error occurred during data deletion
     print('Error deleting data. Status code: ${response.statusCode}');
   }
 }
