@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
+import 'package:ta_pos/view/tools/custom_toast.dart';
 
 //add barang
 void addbarang(
@@ -70,7 +71,8 @@ Future<List<Map<String, dynamic>>> getBarang(String idgudang) async {
     print("ini data barang dari cabang: $data");
     return data.cast<Map<String, dynamic>>();
   } else {
-    throw Exception('Failed to load data: ${response.statusCode}');
+    CustomToast(message: "Failed to load data: ${response.statusCode}");
+    return [];
   }
 }
 
