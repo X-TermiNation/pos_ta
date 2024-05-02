@@ -53,6 +53,7 @@ class _GudangMenuState extends State<GudangMenu> {
       edit_selectedvalueKategori = await getFirstKategoriId();
       selectedvalueJenis = await getFirstJenisId();
       selectedvalueKategori = await getFirstKategoriId();
+      var barangdata = await getBarang(id_gudangs);
       // if (selectedvalueJenis.isEmpty) {
       //   selectedvalueJenis = "";
       //   if (selectedvalueKategori.isEmpty) {
@@ -152,7 +153,19 @@ class _GudangMenuState extends State<GudangMenu> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text("Daftar Barang"),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                barangdata = Future.delayed(
+                                    Duration(seconds: 1),
+                                    () => getBarang(id_gudangs));
+                              });
+                            },
+                            child: Text(
+                              "Daftar Barang",
+                              // Your text properties here
+                            ),
+                          ),
                           SizedBox(
                             height: 100,
                           ),
@@ -180,6 +193,12 @@ class _GudangMenuState extends State<GudangMenu> {
                                         DataCell(
                                           GestureDetector(
                                             onTap: () {
+                                              setState(() {
+                                                barangdata = Future.delayed(
+                                                    Duration(seconds: 1),
+                                                    () =>
+                                                        getBarang(id_gudangs));
+                                              });
                                               edit_nama_barang.text =
                                                   map['nama_barang'];
                                               edit_harga_barang.text =
