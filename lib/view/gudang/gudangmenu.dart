@@ -33,8 +33,7 @@ class GudangMenu extends StatefulWidget {
 class _GudangMenuState extends State<GudangMenu> {
   //lokasi inisialisasi dalam state
   TextEditingController nama_barang = TextEditingController();
-  TextEditingController harga_barang = TextEditingController();
-  TextEditingController jumlah_barang = TextEditingController();
+  TextEditingController harga_satuan = TextEditingController();
   TextEditingController nama_kategori = TextEditingController();
   TextEditingController nama_jenis = TextEditingController();
   TextEditingController edit_nama_barang = TextEditingController();
@@ -217,11 +216,6 @@ class _GudangMenuState extends State<GudangMenu> {
                                           '${map['jenis_barang']} / ${map['kategori_barang']}',
                                           style: TextStyle(fontSize: 15),
                                         )),
-                                        DataCell(Text(
-                                            map['harga_barang'].toString(),
-                                            style: TextStyle(fontSize: 15))),
-                                        DataCell(Text(map['Qty'].toString(),
-                                            style: TextStyle(fontSize: 15))),
                                         DataCell(
                                           Text(
                                             map['exp_date'] != null
@@ -232,6 +226,14 @@ class _GudangMenuState extends State<GudangMenu> {
                                             style: TextStyle(fontSize: 15),
                                           ),
                                         ),
+                                        DataCell(Text(
+                                          map['insert_date'] != null
+                                              ? map['insert_date']
+                                                  .toString()
+                                                  .substring(0, 10)
+                                              : "-",
+                                          style: TextStyle(fontSize: 15),
+                                        )),
                                         DataCell(
                                           ElevatedButton(
                                             onPressed: () {
@@ -259,15 +261,11 @@ class _GudangMenuState extends State<GudangMenu> {
                                                 style:
                                                     TextStyle(fontSize: 15))),
                                         DataColumn(
-                                            label: Text('Harga',
-                                                style:
-                                                    TextStyle(fontSize: 15))),
-                                        DataColumn(
-                                            label: Text('Jumlah Stok',
-                                                style:
-                                                    TextStyle(fontSize: 15))),
-                                        DataColumn(
                                             label: Text('Exp Date',
+                                                style:
+                                                    TextStyle(fontSize: 15))),
+                                        DataColumn(
+                                            label: Text('Insert Date',
                                                 style:
                                                     TextStyle(fontSize: 15))),
                                         DataColumn(
@@ -486,40 +484,6 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                     ],
                   ),
-                  TextFormField(
-                    controller: harga_barang,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Harga Barang tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Harga Barang',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  TextFormField(
-                    controller: jumlah_barang,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Jumlah barang tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Jumlah Barang',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
                   Text(
                     'Selected Date:',
                     style: TextStyle(fontSize: 20),
@@ -578,21 +542,12 @@ class _GudangMenuState extends State<GudangMenu> {
                           _dateFormat.format(selectedDate);
                       DateTime insertedDate =
                           _dateFormat.parse(formattedDateString);
-                      addbarang(
-                          insertedDate,
-                          isExp,
-                          nama_barang.text,
-                          katakategori,
-                          harga_barang.text,
-                          jumlah_barang.text,
-                          context);
-
+                      addbarang(insertedDate, isExp, nama_barang.text,
+                          katakategori, context);
                       nama_kategori.text = "";
                       setState(() {
                         fetchData();
                         nama_barang.text = "";
-                        harga_barang.text = "";
-                        jumlah_barang.text = "";
                         barangdata = Future.delayed(
                             Duration(seconds: 1), () => getBarang(id_gudangs));
                       });
@@ -807,6 +762,23 @@ class _GudangMenuState extends State<GudangMenu> {
                     ),
                   ),
                   TextFormField(
+                    controller: harga_satuan,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Harga Barang tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'Harga Barang',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
                     controller: jumlah_satuan,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -828,11 +800,16 @@ class _GudangMenuState extends State<GudangMenu> {
                   ),
                   FilledButton(
                     onPressed: () {
-                      addsatuan(satuan_idbarang, nama_satuan.text,
-                          jumlah_satuan.text.toString(), context);
+                      addsatuan(
+                          satuan_idbarang,
+                          nama_satuan.text,
+                          jumlah_satuan.text.toString(),
+                          harga_satuan.text.toString(),
+                          context);
                       setState(() {
                         nama_satuan.text = "";
                         jumlah_satuan.text = "";
+                        harga_satuan.text = "";
                       });
                     },
                     child: Text("Tambah Satuan"),
