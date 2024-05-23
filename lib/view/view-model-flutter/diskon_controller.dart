@@ -62,18 +62,22 @@ Future<void> tambahdiskon(
     List<Map<String, dynamic>> databarang,
     BuildContext context) async {
   try {
+    final dataStorage = GetStorage();
+    String id_cabangs = dataStorage.read('id_cabang');
+    String id_gudang = dataStorage.read('id_gudang');
     for (var i = 0; i < isCheckedList.length; i++) {
       print("ini isinya :${isCheckedList[i]}");
     }
     final diskonadd = {
       'nama_diskon': nama_diskon,
+      'id_cabang_reference': id_cabangs,
       'persentase_diskon': persentase_diskon,
       'start_date': DateStringStart,
       'end_date': DateStringEnd,
     };
 
     if (nama_diskon != "" && persentase_diskon != "") {
-      final url = 'http://localhost:3000/barang/tambahdiskon';
+      final url = 'http://localhost:3000/barang/tambahdiskon/$id_cabangs';
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -96,7 +100,7 @@ Future<void> tambahdiskon(
           final datadiskon = jsonDiskon["data"];
 
           for (var i = 0; i < isCheckedList.length; i++) {
-            print("ini ngulang ${isCheckedList[i]}");
+            // print("ini ngulang ${isCheckedList[i]}");
             if (isCheckedList[i] == true) {
               final diskonadd2 = {
                 'id_reference': databarang[i]['_id'],
@@ -108,7 +112,7 @@ Future<void> tambahdiskon(
                 'exp_date': databarang[i]['exp_date'],
               };
               final url2 =
-                  'http://localhost:3000/barang/tambahdiskonbarang/${datadiskon['_id']}/${databarang[i]['_id']}';
+                  'http://localhost:3000/barang/tambahdiskonbarang/${datadiskon['_id']}/${databarang[i]['_id']}/$id_cabangs/$id_gudang';
               final response2 = await http.post(
                 Uri.parse(url2),
                 headers: {
