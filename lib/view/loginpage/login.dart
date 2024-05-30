@@ -8,7 +8,7 @@ import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 
 String emailstr = "";
-bool chkOwner = false;
+bool? chkOwner;
 
 class loginscreen extends StatefulWidget {
   const loginscreen({super.key});
@@ -41,8 +41,7 @@ class _loginscreen_state extends State<loginscreen> {
               children: [
                 TextButton(
                   onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(
+                    Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                             builder: (context) => daftar_owner()));
@@ -57,11 +56,25 @@ class _loginscreen_state extends State<loginscreen> {
     );
   }
 
-  void showgetstarted() {
-    if (!chkOwner) {
-      WidgetsBinding.instance?.addPostFrameCallback((_) {
-        _showPopup();
-      });
+  bool _showLoading = true; // State variable to control indicator visibility
+
+  void showgetstarted() async {
+    _showLoading = true;
+    setState(() {}); // Rebuild widget to show indicator
+
+    while (chkOwner == null) {
+      await getOwner(); // Call your function to get owner status
+      await Future.delayed(
+          Duration(milliseconds: 1000)); // Short delay between checks
+    }
+
+    _showLoading = false;
+    setState(() {}); // Rebuild widget to hide indicator
+
+    // Now show popup if needed
+    if (chkOwner == false) {
+      await Future.delayed(Duration(milliseconds: 100));
+      await _showPopup();
     }
   }
 
@@ -70,71 +83,78 @@ class _loginscreen_state extends State<loginscreen> {
     print("owner status:$chkOwner");
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text('Login To Access your POS'),
-            const SizedBox(
-              height: 30,
-            ),
-            TextFormField(
-              controller: email,
-              onChanged: (value) {
-                setState(() {
-                  emailstr = value;
-                });
-              },
-              decoration: const InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: 'Enter your Email',
+        child: _showLoading
+            ? CircularProgressIndicator()
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text('Login To Access your POS'),
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  TextFormField(
+                    controller: email,
+                    onChanged: (value) {
+                      setState(() {
+                        emailstr = value;
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'Enter your Email',
+                    ),
+                    validator: (value) {
+                      if (value == null) {
+                        showToast(context, 'Field email tidak boleh kosong!');
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  TextFormField(
+                    controller: pass,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'Enter your Password',
+                    ),
+                    validator: (value) {
+                      if (value == null) {
+                        showToast(
+                            context, 'Field password tidak boleh kosong!');
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      int signcode = 0;
+                      signcode = await loginbtn(emailstr, pass.text);
+                      if (signcode == 1) {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ManagerMenu()));
+                      } else if (signcode == 2) {
+                        edit_selectedvalueKategori = await getFirstKategoriId();
+                        setState(() {});
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => GudangMenu()));
+                      } else {
+                        showToast(context, "Username/Password Salah!");
+                      }
+                    },
+                    child: Text('Login'),
+                  ),
+                ],
               ),
-              validator: (value) {
-                if (value == null) {
-                  showToast(context, 'Field email tidak boleh kosong!');
-                }
-                return null;
-              },
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            TextFormField(
-              controller: pass,
-              obscureText: true,
-              decoration: const InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: 'Enter your Password',
-              ),
-              validator: (value) {
-                if (value == null) {
-                  showToast(context, 'Field password tidak boleh kosong!');
-                }
-                return null;
-              },
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            FilledButton(
-              onPressed: () async {
-                int signcode = 0;
-                signcode = await loginbtn(emailstr, pass.text);
-                if (signcode == 1) {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => ManagerMenu()));
-                } else if (signcode == 2) {
-                  edit_selectedvalueKategori = await getFirstKategoriId();
-                  setState(() {});
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => GudangMenu()));
-                } else {
-                  showToast(context, "Username/Password Salah!");
-                }
-              },
-              child: Text('Login'),
-            ),
-          ],
-        ),
       ),
     );
   }

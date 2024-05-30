@@ -33,7 +33,7 @@ Future<List<Map<String, dynamic>>> getUsers() async {
 //get owner
 Future<void> getOwner() async {
   try {
-    final Uri uri = Uri.parse('http://localhost:3000/user/owner');
+    final Uri uri = await Uri.parse('http://localhost:3000/user/owner');
     final response = await http.get(uri);
     if (response.statusCode == 200 || response.statusCode == 304) {
       chkOwner = true;

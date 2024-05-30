@@ -6,7 +6,10 @@ import 'package:get_storage/get_storage.dart';
 
 //getdiskon
 Future<List<Map<String, dynamic>>> getDiskon() async {
-  final request = Uri.parse('http://localhost:3000/barang/diskonlist');
+  final dataStorage = GetStorage();
+  final id_cabangs = dataStorage.read('id_cabang');
+  final request =
+      Uri.parse('http://localhost:3000/barang/diskonlist/$id_cabangs');
   final response = await http.get(request);
   if (response.body.isEmpty) {
     return [];
@@ -90,8 +93,8 @@ Future<void> tambahdiskon(
           response.statusCode == 304) {
         showToast(context, "Berhasil tambah diskon");
         String nmdiskon = nama_diskon.toString();
-        final request3 =
-            Uri.parse('http://localhost:3000/barang/diskonlist/$nmdiskon');
+        final request3 = Uri.parse(
+            'http://localhost:3000/barang/diskonlist/$id_cabangs/$nmdiskon');
         final response3 = await http.get(request3);
         if (response3.statusCode == 200 ||
             response.statusCode == 204 ||
@@ -141,7 +144,9 @@ Future<void> tambahdiskon(
 
 //hapus diskon
 void deletediskon(String id) async {
-  final url = 'http://localhost:3000/barang/deletediskon/$id';
+  final dataStorage = GetStorage();
+  String id_cabangs = dataStorage.read('id_cabang');
+  final url = 'http://localhost:3000/barang/deletediskon/$id/$id_cabangs';
   final response = await http.delete(Uri.parse(url));
 
   if (response.statusCode == 200) {

@@ -5,7 +5,7 @@ import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
 
 void main() async {
   await GetStorage.init();
-  getOwner().then((value) => runApp(const MyApp()));
+  await getOwner().then((value) => runApp(const MyApp()));
 }
 
 class MyApp extends StatelessWidget {

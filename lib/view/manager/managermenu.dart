@@ -124,6 +124,13 @@ class _ManagerMenuState extends State<ManagerMenu>
 
   void _quitbigcreenmode() {
     setState(() {
+      Positioned(
+          bottom: 0,
+          right: 0,
+          child: IconButton(
+              color: Colors.black,
+              onPressed: _quitbigcreenmode,
+              icon: Icon(Icons.aspect_ratio_sharp)));
       _containerWidth = 740;
       _containerHeight = 320;
       key1 = true;
@@ -194,6 +201,7 @@ class _ManagerMenuState extends State<ManagerMenu>
     setState(() {
       getbarangdiskonlist();
     });
+    print("diskon data Flutter:$diskondata");
 
     print(userlist);
     email.addListener(() {
@@ -644,7 +652,8 @@ class _ManagerMenuState extends State<ManagerMenu>
                                                         ),
                                                         DataCell(
                                                           ElevatedButton(
-                                                            onPressed: () {
+                                                            onPressed:
+                                                                () async {
                                                               deletediskon(
                                                                   map['_id']);
                                                               setState(() {
@@ -1233,7 +1242,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                           child: const Text('Log Out'),
                           onPressed: () {
                             GetStorage().erase();
-                            Navigator.push(
+                            Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => loginscreen()));
