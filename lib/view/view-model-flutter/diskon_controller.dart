@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:mongo_dart/mongo_dart.dart';
 import 'dart:convert';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:get_storage/get_storage.dart';
 
 //getdiskon
+//bermasalah
 Future<List<Map<String, dynamic>>> getDiskon() async {
   final dataStorage = GetStorage();
   final id_cabangs = dataStorage.read('id_cabang');
   final request =
       Uri.parse('http://localhost:3000/barang/diskonlist/$id_cabangs');
   final response = await http.get(request);
-  if (response.body.isEmpty) {
-    return [];
-  }
   final Map<String, dynamic> jsonData = json.decode(response.body);
-  List<dynamic> data = jsonData["data"];
-  return data.cast<Map<String, dynamic>>();
+  if (!jsonData.containsKey("data")) {
+    return [];
+  } else {
+    List<dynamic> data = jsonData["data"];
+    return data.cast<Map<String, dynamic>>();
+  }
 }
 
 //fetch data barang diskon
@@ -93,6 +96,7 @@ Future<void> tambahdiskon(
           response.statusCode == 304) {
         showToast(context, "Berhasil tambah diskon");
         String nmdiskon = nama_diskon.toString();
+        //mencari diskon sesuai nama yang baru di add
         final request3 = Uri.parse(
             'http://localhost:3000/barang/diskonlist/$id_cabangs/$nmdiskon');
         final response3 = await http.get(request3);
@@ -101,21 +105,19 @@ Future<void> tambahdiskon(
             response3.statusCode == 304) {
           final jsonDiskon = json.decode(response3.body);
           final datadiskon = jsonDiskon["data"];
-
           for (var i = 0; i < isCheckedList.length; i++) {
-            // print("ini ngulang ${isCheckedList[i]}");
+            //print("ini ngulang ${isCheckedList[i]}");
             if (isCheckedList[i] == true) {
               final diskonadd2 = {
-                'id_reference': databarang[i]['_id'],
                 'nama_barang': databarang[i]['nama_barang'],
+                'id_reference': databarang[i]['_id'],
+                'insert_date': databarang[i]['insert_date'],
+                'exp_date': databarang[i]['exp_date'],
                 'jenis_barang': databarang[i]['jenis_barang'],
                 'kategori_barang': databarang[i]['kategori_barang'],
-                'harga_barang': databarang[i]['harga_barang'],
-                'Qty': databarang[i]['Qty'],
-                'exp_date': databarang[i]['exp_date'],
               };
               final url2 =
-                  'http://localhost:3000/barang/tambahdiskonbarang/${datadiskon['_id']}/${databarang[i]['_id']}/$id_cabangs/$id_gudang';
+                  'http://localhost:3000/barang/tambahdiskonbarang/${datadiskon[0]['_id']}/${databarang[i]['_id']}/$id_cabangs/$id_gudang';
               final response2 = await http.post(
                 Uri.parse(url2),
                 headers: {
@@ -130,6 +132,8 @@ Future<void> tambahdiskon(
               }
             }
           }
+        } else {
+          showToast(context, "something is wrong here");
         }
       } else {
         CustomToast(message: 'Gagal menambah data ke server');
@@ -156,4 +160,5 @@ void deletediskon(String id) async {
     // Error occurred during data deletion
     print('Error deleting data. Status code: ${response.statusCode}');
   }
+  await getDiskon();
 }

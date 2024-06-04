@@ -15,8 +15,8 @@ import 'package:ta_pos/view/loginpage/login.dart';
 late double _containerWidth;
 late double _containerHeight;
 late double _containerHeightInside;
-var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
 List<Map<String, dynamic>> _dataList = [];
+var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
 
 bool key1 = true;
 bool key2 = true;
@@ -48,6 +48,11 @@ class _ManagerMenuState extends State<ManagerMenu>
   TextEditingController nama_diskon = TextEditingController();
   TextEditingController persentase_diskon = TextEditingController();
   List<Map<String, dynamic>> userlist = [];
+
+  void fetchDiskon() {
+    diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
+  }
+
   void fetchUser() async {
     this.userlist = await getUsers();
   }
@@ -196,6 +201,7 @@ class _ManagerMenuState extends State<ManagerMenu>
     final dataStorage = GetStorage();
     String id_gudangs = dataStorage.read('id_gudang');
     fetchUser();
+    fetchDiskon();
     normalstyle();
     verify();
     setState(() {
@@ -527,12 +533,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                                             false;
                                                       }
                                                       setState(() {
-                                                        diskondata =
-                                                            Future.delayed(
-                                                                Duration(
-                                                                    seconds: 1),
-                                                                () =>
-                                                                    getDiskon());
+                                                        fetchDiskon();
                                                       });
                                                     },
                                                     child:
@@ -607,7 +608,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                               height: 100,
                                             ),
                                             FutureBuilder(
-                                                future: diskondata,
+                                                future: getDiskon(),
                                                 builder: (context, snapshot) {
                                                   if (snapshot.hasData) {
                                                     final rows = snapshot.data!
@@ -657,12 +658,8 @@ class _ManagerMenuState extends State<ManagerMenu>
                                                               deletediskon(
                                                                   map['_id']);
                                                               setState(() {
-                                                                diskondata = Future.delayed(
-                                                                    Duration(
-                                                                        seconds:
-                                                                            1),
-                                                                    () =>
-                                                                        getDiskon());
+                                                                fetchDiskon();
+                                                                getDiskon();
                                                               });
                                                             },
                                                             child:
