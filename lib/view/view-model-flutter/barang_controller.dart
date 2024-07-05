@@ -27,26 +27,46 @@ void addbarang(DateTime insertedDate, bool isExp, String nama_barang,
       expDateString = insertedDate.toIso8601String();
       DateTime creationDate = DateTime.now();
       creationDateString = creationDate.toIso8601String();
-    }
-    final Barangdata = {
-      'nama_barang': nama_barang,
-      'jenis_barang': jenis["data"]["nama_jenis"].toString(),
-      'kategori_barang': katakategori,
-      'insert_date': creationDateString,
-      'exp_date': expDateString,
-    };
-    final url = 'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(Barangdata),
-    );
-
-    if (response.statusCode == 200) {
-      showToast(context, 'Berhasil menambah data');
+      final Barangdata = {
+        'nama_barang': nama_barang,
+        'jenis_barang': jenis["data"]["nama_jenis"].toString(),
+        'kategori_barang': katakategori,
+        'insert_date': creationDateString,
+        'exp_date': expDateString,
+      };
+      final url =
+          'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(Barangdata),
+      );
+      if (response.statusCode == 200) {
+        showToast(context, 'Berhasil menambah data');
+      } else {
+        showToast(context, "Gagal menambahkan data");
+        print('HTTP Error: ${response.statusCode}');
+      }
     } else {
-      showToast(context, "Gagal menambahkan data");
-      print('HTTP Error: ${response.statusCode}');
+      final Barangdata = {
+        'nama_barang': nama_barang,
+        'jenis_barang': jenis["data"]["nama_jenis"].toString(),
+        'kategori_barang': katakategori,
+        'insert_date': creationDateString,
+      };
+      final url =
+          'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(Barangdata),
+      );
+      if (response.statusCode == 200) {
+        showToast(context, 'Berhasil menambah data');
+      } else {
+        showToast(context, "Gagal menambahkan data");
+        print('HTTP Error: ${response.statusCode}');
+      }
     }
   } catch (error) {
     showToast(context, "Error: $error");
@@ -320,12 +340,13 @@ Future<Map<String, String>> getmapjenis() async {
 
 //satuan
 void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
-    String harga_satuan, BuildContext context) async {
+    String harga_satuan, String isi_satuan, BuildContext context) async {
   try {
     final satuandata = {
       'nama_satuan': nama_satuan,
       'jumlah_satuan': jumlah_satuan,
-      'harga_satuan': harga_satuan
+      'harga_satuan': harga_satuan,
+      'isi_satuan': isi_satuan
     };
     final dataStorage = GetStorage();
     final id_cabang = dataStorage.read("id_cabang");

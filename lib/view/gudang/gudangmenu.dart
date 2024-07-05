@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:ta_pos/view/gudang/responsive_header.dart';
 import 'dart:convert';
 import 'dart:async';
@@ -9,12 +10,12 @@ import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
 import 'package:ta_pos/view/loginpage/login.dart';
 
-String selectedvalueJenis = "";
-String selectedvalueKategori = "";
+String? selectedvalueJenis = "";
+String? selectedvalueKategori = "";
 String katakategori = "";
 String Edit_katakategori = "";
 bool _isEditUser = false;
-late String edit_selectedvalueKategori;
+late String? edit_selectedvalueKategori;
 String temp_id_update = "";
 bool isExp = false;
 String satuan_idbarang = "";
@@ -42,6 +43,7 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController edit_nama_kategori = TextEditingController();
   TextEditingController nama_satuan = TextEditingController();
   TextEditingController jumlah_satuan = TextEditingController();
+  TextEditingController isi_satuan = TextEditingController();
   TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _dataList = [];
   String _jsonString = '';
@@ -322,34 +324,55 @@ class _GudangMenuState extends State<GudangMenu> {
                             FutureBuilder<Map<String, String>>(
                               future: getmapkategori(),
                               builder: (context, snapshot) {
-                                if (snapshot.hasData) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return CircularProgressIndicator();
+                                } else if (snapshot.hasError) {
+                                  return Text('Error: ${snapshot.error}');
+                                } else if (snapshot.hasData &&
+                                    snapshot.data != null) {
+                                  var entries = snapshot.data!.entries.toList();
+
+                                  if (entries.isEmpty) {
+                                    return Text('No items available');
+                                  }
+
+                                  var items = entries
+                                      .map((entry) => DropdownMenuItem<String>(
+                                            child: Text(entry.value),
+                                            value: entry.key,
+                                          ))
+                                      .toList();
+
+                                  // Ensure edit_selectedvalueKategori is valid
+                                  if (edit_selectedvalueKategori == null ||
+                                      !snapshot.data!.containsKey(
+                                          edit_selectedvalueKategori)) {
+                                    edit_selectedvalueKategori =
+                                        entries.first.key;
+                                  }
+
                                   return DropdownButton<String>(
                                     value: edit_selectedvalueKategori,
-                                    items: snapshot.data?.entries
-                                        .map((entry) => DropdownMenuItem(
-                                              child: Text(entry.value),
-                                              value: entry.key,
-                                            ))
-                                        .toList(),
+                                    items: items,
                                     onChanged: (value) {
-                                      final selectedEntry =
-                                          snapshot.data?.entries.firstWhere(
-                                              (entry) => entry.key == value);
-                                      if (selectedEntry != null) {
-                                        setState(() {
-                                          edit_selectedvalueKategori =
-                                              value.toString();
-                                          Edit_katakategori =
-                                              selectedEntry.value;
-                                        });
+                                      if (value != null) {
+                                        final selectedEntry =
+                                            snapshot.data?.entries.firstWhere(
+                                          (entry) => entry.key == value,
+                                        );
+                                        if (selectedEntry != null) {
+                                          setState(() {
+                                            edit_selectedvalueKategori = value;
+                                            Edit_katakategori =
+                                                selectedEntry.value;
+                                          });
+                                        }
                                       }
                                     },
                                   );
-                                } else if (snapshot.hasError) {
-                                  setState(() {});
-                                  return Text('Error: ${snapshot.error}');
                                 } else {
-                                  return CircularProgressIndicator();
+                                  return Text('No data available');
                                 }
                               },
                             ),
@@ -454,31 +477,46 @@ class _GudangMenuState extends State<GudangMenu> {
                       FutureBuilder<Map<String, String>>(
                         future: getmapkategori(),
                         builder: (context, snapshot) {
-                          if (snapshot.hasData) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return CircularProgressIndicator();
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else if (snapshot.hasData &&
+                              snapshot.data != null) {
+                            var entries = snapshot.data!.entries.toList();
+
+                            if (entries.isEmpty) {
+                              return Text('No items available');
+                            }
+                            if (selectedvalueKategori == null ||
+                                !entries.any((entry) =>
+                                    entry.key == selectedvalueKategori)) {
+                              selectedvalueKategori = entries.first.key;
+                            }
+
                             return DropdownButton<String>(
                               value: selectedvalueKategori,
-                              items: snapshot.data?.entries
+                              items: entries
                                   .map((entry) => DropdownMenuItem(
                                         child: Text(entry.value),
                                         value: entry.key,
                                       ))
                                   .toList(),
                               onChanged: (value) {
-                                final selectedEntry = snapshot.data?.entries
-                                    .firstWhere((entry) => entry.key == value);
-                                if (selectedEntry != null) {
+                                final selectedEntry = entries.firstWhere(
+                                    (entry) => entry.key == value,
+                                    orElse: () => MapEntry('', ''));
+                                if (selectedEntry.key.isNotEmpty) {
                                   setState(() {
-                                    selectedvalueKategori = value.toString();
+                                    selectedvalueKategori = value;
                                     katakategori = selectedEntry.value;
                                   });
                                 }
                               },
                             );
-                          } else if (snapshot.hasError) {
-                            setState(() {});
-                            return Text('Error: ${snapshot.error}');
                           } else {
-                            return CircularProgressIndicator();
+                            return Text('No data available');
                           }
                         },
                       ),
@@ -601,27 +639,42 @@ class _GudangMenuState extends State<GudangMenu> {
                           FutureBuilder<Map<String, String>>(
                             future: getmapjenis(),
                             builder: (context, snapshot) {
-                              if (snapshot.hasData && snapshot.data != null) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              } else if (snapshot.hasError) {
+                                return Text('Error: ${snapshot.error}');
+                              } else if (snapshot.hasData &&
+                                  snapshot.data != null) {
+                                var entries = snapshot.data!.entries.toList();
+
+                                if (entries.isEmpty) {
+                                  return Text('No items available');
+                                }
+
+                                // Ensure selectedvalueJenis is valid
+                                if (selectedvalueJenis == null ||
+                                    !entries.any((entry) =>
+                                        entry.key == selectedvalueJenis)) {
+                                  selectedvalueJenis = entries.first.key;
+                                }
+
                                 return DropdownButton<String>(
                                   value: selectedvalueJenis,
-                                  items: snapshot.data?.entries
+                                  items: entries
                                       .map((entry) => DropdownMenuItem(
                                             child: Text(entry.value),
                                             value: entry.key,
                                           ))
                                       .toList(),
-                                  onChanged: (value) async {
+                                  onChanged: (value) {
                                     setState(() {
-                                      selectedvalueJenis = value.toString();
-                                      setState(() {});
+                                      selectedvalueJenis = value!;
                                     });
                                   },
                                 );
-                              } else if (snapshot.hasError) {
-                                fetchData();
-                                return Text('Error: ${snapshot.error}');
                               } else {
-                                return CircularProgressIndicator();
+                                return Text('No data available');
                               }
                             },
                           ),
@@ -631,7 +684,7 @@ class _GudangMenuState extends State<GudangMenu> {
                           FilledButton(
                             onPressed: () {
                               addkategori(nama_kategori.text,
-                                  selectedvalueJenis, context);
+                                  selectedvalueJenis.toString(), context);
                               nama_kategori.text = "";
                               setState(() {
                                 fetchData();
@@ -788,7 +841,24 @@ class _GudangMenuState extends State<GudangMenu> {
                     },
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'Jumlah Satuan',
+                      labelText: 'Stok Satuan Barang',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
+                    controller: isi_satuan,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Isi satuan tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'Kuantitas per satuan',
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: <TextInputFormatter>[
@@ -805,6 +875,7 @@ class _GudangMenuState extends State<GudangMenu> {
                           nama_satuan.text,
                           jumlah_satuan.text.toString(),
                           harga_satuan.text.toString(),
+                          isi_satuan.text.toString(),
                           context);
                       setState(() {
                         nama_satuan.text = "";
