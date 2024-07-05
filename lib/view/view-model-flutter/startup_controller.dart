@@ -142,7 +142,7 @@ void tambahmanager(String email, String pass, String fname, String lname,
         if (response.statusCode == 200) {
           showToast(context, 'berhasil tambah data');
           nama_cabangpass = "";
-          getOwner();
+          chkOwner = null;
           Navigator.push(
               context, MaterialPageRoute(builder: (context) => loginscreen()));
         } else {
