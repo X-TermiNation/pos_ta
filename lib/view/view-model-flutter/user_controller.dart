@@ -84,6 +84,29 @@ Future<int> loginbtn(String email, String pass) async {
   }
 }
 
+Future<int> loginOwner(String email, String pass) async {
+  String uriString = "http://localhost:3000/user/loginOwner";
+  Uri uri = Uri.parse(uriString);
+  final response = await http.post(
+    uri,
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    },
+    body: jsonEncode(<String, String>{
+      'email': email,
+      'password': pass,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    int signcode = jsonDecode(response.body)['signcode'];
+    return signcode;
+  } else {
+    CustomToast(message: 'email atau password salah');
+    return 0;
+  }
+}
+
 void tambahOwner(String email, String pass, String fname, String lname) async {
   try {
     final Owneradd = {

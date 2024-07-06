@@ -198,8 +198,6 @@ class _ManagerMenuState extends State<ManagerMenu>
   @override
   void initState() {
     super.initState();
-    final dataStorage = GetStorage();
-    String id_gudangs = dataStorage.read('id_gudang');
     fetchUser();
     fetchDiskon();
     normalstyle();
@@ -209,7 +207,6 @@ class _ManagerMenuState extends State<ManagerMenu>
     });
     print("diskon data Flutter:$diskondata");
 
-    print(userlist);
     email.addListener(() {
       setState(() {
         _isValidEmail = _validateEmail(email.text);

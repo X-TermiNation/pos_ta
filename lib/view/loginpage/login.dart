@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view/gudang/gudangmenu.dart';
+import 'package:ta_pos/view/loginpage/login_owner.dart';
 import 'package:ta_pos/view/manager/managermenu.dart';
 import 'dart:async';
 import 'package:ta_pos/view/startup/daftar_owner.dart';
@@ -56,22 +57,22 @@ class _loginscreen_state extends State<loginscreen> {
     );
   }
 
-  bool _showLoading = true; // State variable to control indicator visibility
+  bool _showLoading = true;
 
   void showgetstarted() async {
     _showLoading = true;
-    setState(() {}); // Rebuild widget to show indicator
+    setState(() {});
 
     while (chkOwner == null) {
-      await getOwner(); // Call your function to get owner status
+      await getOwner();
       await Future.delayed(
           Duration(milliseconds: 1000)); // Short delay between checks
     }
 
     _showLoading = false;
-    setState(() {}); // Rebuild widget to hide indicator
+    setState(() {});
 
-    // Now show popup if needed
+    // show pop up
     if (chkOwner == false) {
       await Future.delayed(Duration(milliseconds: 100));
       await _showPopup();
@@ -152,6 +153,32 @@ class _loginscreen_state extends State<loginscreen> {
                       }
                     },
                     child: Text('Login'),
+                  ),
+                  SizedBox(
+                    height: 100,
+                  ),
+                  Align(
+                    alignment: Alignment.center,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                          top: 100), // Optional: Add padding if needed
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => login_owner()));
+                        },
+                        child: Text(
+                          'Login as Owner',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.purple,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

@@ -538,7 +538,7 @@ class _GudangMenuState extends State<GudangMenu> {
                     children: [
                       Column(
                         children: [
-                          Text('Disable Expiration Date'),
+                          Text('No Expiration Date'),
                           Checkbox(
                             value: noExp,
                             onChanged: (bool? value) {
@@ -883,6 +883,7 @@ class _GudangMenuState extends State<GudangMenu> {
                         nama_satuan.text = "";
                         jumlah_satuan.text = "";
                         harga_satuan.text = "";
+                        isi_satuan.text = "";
                       });
                     },
                     child: Text("Tambah Satuan"),

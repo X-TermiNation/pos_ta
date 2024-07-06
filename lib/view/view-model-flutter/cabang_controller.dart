@@ -4,6 +4,17 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 
+Future<List<Map<String, dynamic>>> getallcabang() async {
+  final url = 'http://localhost:3000/cabang/showAllcabang';
+  final response = await http.get(Uri.parse(url));
+  if (response.body.isEmpty) {
+    return [];
+  }
+  final Map<String, dynamic> jsonData = json.decode(response.body);
+  List<dynamic> data = jsonData["data"];
+  return data.cast<Map<String, dynamic>>();
+}
+
 Future<String> getdatacabang(String email) async {
   final url = 'http://localhost:3000/user/cariUserbyEmail/$email';
   final response = await http.get(Uri.parse(url));
