@@ -17,7 +17,7 @@ String Edit_katakategori = "";
 bool _isEditUser = false;
 late String? edit_selectedvalueKategori;
 String temp_id_update = "";
-bool isExp = false;
+bool noExp = false;
 String satuan_idbarang = "";
 final dataStorage = GetStorage();
 String id_gudangs = dataStorage.read('id_gudang');
@@ -538,12 +538,13 @@ class _GudangMenuState extends State<GudangMenu> {
                     children: [
                       Column(
                         children: [
-                          Text('No Expiration Date?'),
+                          Text('Disable Expiration Date'),
                           Checkbox(
-                            value: isExp,
+                            value: noExp,
                             onChanged: (bool? value) {
                               setState(() {
-                                isExp = value ?? false;
+                                noExp = value ?? false;
+                                print(noExp);
                               });
                             },
                           ),
@@ -580,11 +581,12 @@ class _GudangMenuState extends State<GudangMenu> {
                           _dateFormat.format(selectedDate);
                       DateTime insertedDate =
                           _dateFormat.parse(formattedDateString);
-                      addbarang(insertedDate, isExp, nama_barang.text,
+                      addbarang(insertedDate, noExp, nama_barang.text,
                           katakategori, context);
                       nama_kategori.text = "";
                       setState(() {
                         fetchData();
+                        noExp = false;
                         nama_barang.text = "";
                         barangdata = Future.delayed(
                             Duration(seconds: 1), () => getBarang(id_gudangs));

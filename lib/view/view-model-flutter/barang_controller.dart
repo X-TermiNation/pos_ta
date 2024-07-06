@@ -8,7 +8,7 @@ import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 
 //add barang
-void addbarang(DateTime insertedDate, bool isExp, String nama_barang,
+void addbarang(DateTime insertedDate, bool noExp, String nama_barang,
     String katakategori, BuildContext context) async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
@@ -21,52 +21,32 @@ void addbarang(DateTime insertedDate, bool isExp, String nama_barang,
         'http://localhost:3000/barang/getjenisfromkategori/$katakategori');
     final datajenis = await http.get(requestjenis);
     final jenis = json.decode(datajenis.body);
-    print("ini jenis nya insert barang:$jenis");
-    if (!isExp) {
+    if (!noExp) {
       insertedDate = insertedDate.add(Duration(days: 1));
       expDateString = insertedDate.toIso8601String();
-      DateTime creationDate = DateTime.now();
-      creationDateString = creationDate.toIso8601String();
-      final Barangdata = {
-        'nama_barang': nama_barang,
-        'jenis_barang': jenis["data"]["nama_jenis"].toString(),
-        'kategori_barang': katakategori,
-        'insert_date': creationDateString,
-        'exp_date': expDateString,
-      };
-      final url =
-          'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(Barangdata),
-      );
-      if (response.statusCode == 200) {
-        showToast(context, 'Berhasil menambah data');
-      } else {
-        showToast(context, "Gagal menambahkan data");
-        print('HTTP Error: ${response.statusCode}');
-      }
     } else {
-      final Barangdata = {
-        'nama_barang': nama_barang,
-        'jenis_barang': jenis["data"]["nama_jenis"].toString(),
-        'kategori_barang': katakategori,
-        'insert_date': creationDateString,
-      };
-      final url =
-          'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(Barangdata),
-      );
-      if (response.statusCode == 200) {
-        showToast(context, 'Berhasil menambah data');
-      } else {
-        showToast(context, "Gagal menambahkan data");
-        print('HTTP Error: ${response.statusCode}');
-      }
+      expDateString = '';
+    }
+    DateTime creationDate = DateTime.now();
+    creationDateString = creationDate.toIso8601String();
+    final Barangdata = {
+      'nama_barang': nama_barang,
+      'jenis_barang': jenis["data"]["nama_jenis"].toString(),
+      'kategori_barang': katakategori,
+      'insert_date': creationDateString,
+      'exp_date': expDateString,
+    };
+    final url = 'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(Barangdata),
+    );
+    if (response.statusCode == 200) {
+      showToast(context, 'Berhasil menambah data');
+    } else {
+      showToast(context, "Gagal menambahkan data");
+      print('HTTP Error: ${response.statusCode}');
     }
   } catch (error) {
     showToast(context, "Error: $error");
