@@ -17,6 +17,7 @@ late double _containerHeight;
 late double _containerHeightInside;
 List<Map<String, dynamic>> _dataList = [];
 var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
+late bool logOwner;
 
 bool key1 = true;
 bool key2 = true;
@@ -1216,22 +1217,43 @@ class _ManagerMenuState extends State<ManagerMenu>
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+                      if (logOwner)
+                        FilledButton(
+                            onPressed: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => managecabang()));
+                            },
+                            child: Text('Manage Cabang')),
                       ElevatedButton(
-                          child: const Text('Pindah Kasir'), onPressed: () {}),
+                          child: const Text('Pindah Kasir'),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('Information'),
+                                  content: Text(
+                                      'Silahkan Log In Menggunakan App kasir'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      child: Text('OK'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }),
                       ElevatedButton(
                           child: const Text('Pindah Gudang'),
                           onPressed: () => Navigator.push(
                               context,
                               MaterialPageRoute(
                                   builder: (context) => GudangMenu()))),
-                      FilledButton(
-                          onPressed: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => managecabang()));
-                          },
-                          child: Text('Tambah Cabang')),
                       ElevatedButton(
                           child: const Text('Log Out'),
                           onPressed: () {

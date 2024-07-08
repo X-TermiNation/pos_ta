@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:ta_pos/view/view-model-flutter/models_flutter/user_model.dart';
 import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
+import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
@@ -13,6 +15,21 @@ Future<List<Map<String, dynamic>>> getallcabang() async {
   final Map<String, dynamic> jsonData = json.decode(response.body);
   List<dynamic> data = jsonData["data"];
   return data.cast<Map<String, dynamic>>();
+}
+
+//delete cabang
+void deletecabang(String id, BuildContext context) async {
+  final url = 'http://localhost:3000/cabang/delete/$id';
+  final response = await http.delete(Uri.parse(url));
+  if (response.statusCode == 200) {
+    // Data deleted successfully
+    showToast(context, "Data Berhasil Dihapus!");
+    print('Data deleted successfully');
+  } else {
+    // Error occurred during data deletion
+    CustomToast(message: "Terjadi Kesalahan!");
+    print('Error deleting data. Status code: ${response.statusCode}');
+  }
 }
 
 Future<String> getdatacabang(String email) async {

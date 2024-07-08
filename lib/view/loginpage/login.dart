@@ -137,6 +137,10 @@ class _loginscreen_state extends State<loginscreen> {
                       int signcode = 0;
                       signcode = await loginbtn(emailstr, pass.text);
                       if (signcode == 1) {
+                        setState(() {
+                          logOwner = false;
+                        });
+
                         Navigator.push(
                             context,
                             MaterialPageRoute(

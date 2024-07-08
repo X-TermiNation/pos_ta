@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/manager/managermenu.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
-import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/cabang_controller.dart';
 
 class ownermenu extends StatefulWidget {
@@ -78,6 +77,9 @@ class _owner_menu_state extends State<ownermenu> {
                   dataStorage.write(
                       'id_cabang', datacabang[_selectedCheckboxIndex]['_id']);
                   await getdatagudang();
+                  setState(() {
+                    logOwner = true;
+                  });
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => ManagerMenu()));
                 } else {
