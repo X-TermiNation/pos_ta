@@ -46,6 +46,7 @@ class _managecabangState extends State<managecabang> {
     TextEditingController pass = TextEditingController();
     TextEditingController fname = TextEditingController();
     TextEditingController lname = TextEditingController();
+
     return Scaffold(
         body: Column(
       mainAxisAlignment: MainAxisAlignment.center,

@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
-import 'package:ta_pos/view/tools/custom_toast.dart';
 
 //add barang
 void addbarang(DateTime insertedDate, bool noExp, String nama_barang,

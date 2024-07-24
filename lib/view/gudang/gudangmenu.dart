@@ -590,6 +590,7 @@ class _GudangMenuState extends State<GudangMenu> {
                         nama_barang.text = "";
                         barangdata = Future.delayed(
                             Duration(seconds: 1), () => getBarang(id_gudangs));
+                        fetchDataAndUseInJsonString();
                       });
                     },
                     child: Text('Tambah Barang'),

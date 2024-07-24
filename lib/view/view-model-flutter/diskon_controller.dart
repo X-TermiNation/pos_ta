@@ -110,7 +110,7 @@ Future<void> tambahdiskon(
             if (isCheckedList[i] == true) {
               final diskonadd2 = {
                 'nama_barang': databarang[i]['nama_barang'],
-                'id_reference': databarang[i]['_id'],
+                'id_reference': databarang[i]['_id'].toString(),
                 'insert_date': databarang[i]['insert_date'],
                 'exp_date': databarang[i]['exp_date'],
                 'jenis_barang': databarang[i]['jenis_barang'],
