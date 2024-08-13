@@ -349,3 +349,56 @@ void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
     print('Exception during HTTP request: $error');
   }
 }
+
+void updatejumlahSatuan(String id_barang, String id_satuan, int jumlah_satuan,
+    String action, BuildContext context) async {
+  try {
+    final satuanUpdatedata = {
+      'jumlah_satuan': jumlah_satuan,
+      'action': action,
+    };
+    final dataStorage = GetStorage();
+    final id_cabang = dataStorage.read("id_cabang");
+    String id_gudangs = dataStorage.read('id_gudang');
+    final url =
+        'http://localhost:3000/barang/editjumlahsatuan/$id_barang/$id_cabang/$id_gudangs/$id_satuan';
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(satuanUpdatedata),
+    );
+
+    if (response.statusCode == 200) {
+      showToast(context, 'Berhasil menambah data');
+    } else {
+      showToast(context, "Gagal menambahkan data");
+      print('HTTP Error: ${response.statusCode}');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    print('Exception during HTTP request: $error');
+  }
+}
+
+Future<List<Map<String, dynamic>>> getlowstocksatuan(
+    BuildContext context) async {
+  try {
+    final dataStorage = GetStorage();
+    final id_cabang = dataStorage.read("id_cabang");
+    String id_gudangs = dataStorage.read('id_gudang');
+    final url =
+        'http://localhost:3000/barang/getlowstocksatuan/$id_cabang/$id_gudangs';
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200 || response.statusCode == 304) {
+      print('berhasil akses data jenis');
+      final Map<String, dynamic> jsonData = json.decode(response.body);
+      List<dynamic> data = jsonData["data"];
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Gagal mengambil data dari server');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    return [];
+  }
+}

@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 
-
 void showToast(BuildContext context, String message) {
-    OverlayEntry overlayEntry;
+  OverlayEntry overlayEntry;
 
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).size.height * 0.85, // Atur posisi
-        left: 0,
-        right: 0,
-        child: CustomToast(message: message),
-      ),
-    );
+  overlayEntry = OverlayEntry(
+    builder: (context) => Positioned(
+      top: MediaQuery.of(context).size.height * 0.85, // Atur posisi
+      left: 0,
+      right: 0,
+      child: CustomToast(message: message),
+    ),
+  );
 
-    Overlay.of(context).insert(overlayEntry);
+  Overlay.of(context).insert(overlayEntry);
 
-    Future.delayed(Duration(seconds: 2), () {
-      overlayEntry.remove();
-    });
+  Future.delayed(Duration(seconds: 2), () {
+    overlayEntry.remove();
+  });
 }
 
 class CustomToast extends StatelessWidget {

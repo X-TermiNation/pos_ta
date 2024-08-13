@@ -96,6 +96,7 @@ class _GudangMenuState extends State<GudangMenu> {
     getdatagudang();
     fetchDataAndUseInJsonString();
     fetchDataKategori();
+    getlowstocksatuan(context);
     print("id gudangnya:$id_gudangs");
   }
 
@@ -171,121 +172,127 @@ class _GudangMenuState extends State<GudangMenu> {
                             height: 100,
                           ),
                           FutureBuilder(
-                              future: barangdata,
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return CircularProgressIndicator(); // Show loading indicator while waiting for data
-                                } else if (snapshot.hasError) {
-                                  return Text('Error: ${snapshot.error}');
-                                } else if (!snapshot.hasData ||
-                                    snapshot.data == null) {
+                            future: barangdata,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator(); // Show loading indicator while waiting for data
+                              } else if (snapshot.hasError) {
+                                return Text('Error: ${snapshot.error}');
+                              } else if (!snapshot.hasData ||
+                                  snapshot.data == null) {
+                                return Text('No data available');
+                              } else {
+                                final List<Map<String, dynamic>>? data =
+                                    snapshot.data;
+                                if (data == null) {
                                   return Text('No data available');
-                                } else {
-                                  final List<Map<String, dynamic>>? data =
-                                      snapshot.data;
-                                  if (data == null) {
-                                    return Text('No data available');
-                                  }
-                                  if (snapshot.hasData) {
-                                    final rows = snapshot.data!.map((map) {
-                                      print(map);
-                                      return DataRow(cells: [
-                                        DataCell(
-                                          GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                barangdata = Future.delayed(
-                                                    Duration(seconds: 1),
-                                                    () =>
-                                                        getBarang(id_gudangs));
-                                              });
-                                              edit_nama_barang.text =
-                                                  map['nama_barang'];
-                                              edit_harga_barang.text =
-                                                  map['harga_barang']
-                                                      .toString();
-                                              edit_jumlah_barang.text =
-                                                  map['Qty'].toString();
-                                              _isEditUser = true;
-                                              temp_id_update = map['_id'];
-                                            },
-                                            child: Text(map['nama_barang'],
-                                                style: TextStyle(fontSize: 15)),
-                                          ),
+                                }
+
+                                if (snapshot.hasData) {
+                                  final rows = snapshot.data!.map((map) {
+                                    return DataRow(cells: [
+                                      DataCell(
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              barangdata = Future.delayed(
+                                                  Duration(seconds: 1),
+                                                  () => getBarang(id_gudangs));
+                                            });
+                                            edit_nama_barang.text =
+                                                map['nama_barang'];
+                                            edit_harga_barang.text =
+                                                map['harga_barang'].toString();
+                                            edit_jumlah_barang.text =
+                                                map['Qty'].toString();
+                                            _isEditUser = true;
+                                            temp_id_update = map['_id'];
+                                          },
+                                          child: Text(map['nama_barang'],
+                                              style: TextStyle(fontSize: 15)),
                                         ),
-                                        DataCell(Text(
+                                      ),
+                                      DataCell(Text(
                                           '${map['jenis_barang']} / ${map['kategori_barang']}',
-                                          style: TextStyle(fontSize: 15),
-                                        )),
-                                        DataCell(
-                                          Text(
-                                            map['exp_date'] != null
-                                                ? map['exp_date']
-                                                    .toString()
-                                                    .substring(0, 10)
-                                                : "-",
-                                            style: TextStyle(fontSize: 15),
-                                          ),
-                                        ),
-                                        DataCell(Text(
-                                          map['insert_date'] != null
-                                              ? map['insert_date']
+                                          style: TextStyle(fontSize: 15))),
+                                      DataCell(
+                                        Text(
+                                          map['exp_date'] != null
+                                              ? map['exp_date']
                                                   .toString()
                                                   .substring(0, 10)
                                               : "-",
                                           style: TextStyle(fontSize: 15),
-                                        )),
-                                        DataCell(
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              deletebarang(map['_id']);
-                                              setState(() {
-                                                barangdata = Future.delayed(
-                                                    Duration(seconds: 1),
-                                                    () =>
-                                                        getBarang(id_gudangs));
-                                              });
-                                            },
-                                            child: Text('Delete'),
-                                          ),
                                         ),
-                                      ]);
-                                    }).toList();
-                                    return DataTable(
-                                      columns: const <DataColumn>[
-                                        DataColumn(
-                                            label: Text('Nama Barang',
-                                                style:
-                                                    TextStyle(fontSize: 15))),
-                                        DataColumn(
-                                            label: Text('Jenis/Kategori',
-                                                style:
-                                                    TextStyle(fontSize: 15))),
-                                        DataColumn(
-                                            label: Text('Exp Date',
-                                                style:
-                                                    TextStyle(fontSize: 15))),
-                                        DataColumn(
-                                            label: Text('Insert Date',
-                                                style:
-                                                    TextStyle(fontSize: 15))),
-                                        DataColumn(
-                                            label: Text('Hapus Barang',
-                                                style:
-                                                    TextStyle(fontSize: 15))),
-                                      ],
-                                      rows: rows,
-                                    );
-                                  } else if (snapshot.hasError) {
-                                    // Show an error message.
-                                    return Text('Error: ${snapshot.error}');
-                                  } else {
-                                    // Show a loading indicator.
-                                    return CircularProgressIndicator();
-                                  }
+                                      ),
+                                      DataCell(Text(
+                                        map['insert_date'] != null
+                                            ? map['insert_date']
+                                                .toString()
+                                                .substring(0, 10)
+                                            : "-",
+                                        style: TextStyle(fontSize: 15),
+                                      )),
+                                      DataCell(
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            deletebarang(map['_id']);
+                                            setState(() {
+                                              barangdata = Future.delayed(
+                                                  Duration(seconds: 1),
+                                                  () => getBarang(id_gudangs));
+                                            });
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors
+                                                .purple, // Background color
+                                            textStyle: TextStyle(
+                                                color:
+                                                    Colors.white), // Text color
+                                          ),
+                                          child: Text(
+                                              style: TextStyle(
+                                                  color: Colors.black),
+                                              'Delete'),
+                                        ),
+                                      ),
+                                    ]);
+                                  }).toList();
+
+                                  return DataTable(
+                                    columns: const <DataColumn>[
+                                      DataColumn(
+                                        label: Text('Nama Barang',
+                                            style: TextStyle(fontSize: 15)),
+                                      ),
+                                      DataColumn(
+                                        label: Text('Jenis/Kategori',
+                                            style: TextStyle(fontSize: 15)),
+                                      ),
+                                      DataColumn(
+                                        label: Text('Exp Date',
+                                            style: TextStyle(fontSize: 15)),
+                                      ),
+                                      DataColumn(
+                                        label: Text('Insert Date',
+                                            style: TextStyle(fontSize: 15)),
+                                      ),
+                                      DataColumn(
+                                        label: Text('Hapus Barang',
+                                            style: TextStyle(fontSize: 15)),
+                                      ),
+                                    ],
+                                    rows: rows,
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return Text('Error: ${snapshot.error}');
+                                } else {
+                                  return CircularProgressIndicator();
                                 }
-                              }),
+                              }
+                            },
+                          )
                         ],
                       )),
                   Container(
@@ -893,6 +900,175 @@ class _GudangMenuState extends State<GudangMenu> {
               ),
             ),
           ),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: getlowstocksatuan(context),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('No low stock satuan found'));
+              } else {
+                return Container(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Center(
+                        child: Text(
+                          'Stock Alert',
+                          style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Table(
+                        border: TableBorder.all(),
+                        columnWidths: {
+                          0: FlexColumnWidth(2),
+                          1: FlexColumnWidth(2),
+                          2: FlexColumnWidth(1),
+                          3: FlexColumnWidth(1),
+                          4: FlexColumnWidth(1),
+                        },
+                        children: [
+                          TableRow(
+                            decoration: BoxDecoration(color: Colors.grey[300]),
+                            children: [
+                              TableCell(
+                                child: Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    'Nama Barang',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                              TableCell(
+                                child: Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    'Nama Satuan',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                              TableCell(
+                                child: Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    'Jumlah Stok',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                              TableCell(
+                                child: Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    'Re-Stock',
+                                    style: TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                              TableCell(
+                                child: Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    'Delete',
+                                    style: TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ...snapshot.data!.map((data) {
+                            return TableRow(
+                              children: [
+                                TableCell(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Text(data['nama_barang']),
+                                  ),
+                                ),
+                                TableCell(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Text(data['nama_satuan']),
+                                  ),
+                                ),
+                                TableCell(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child:
+                                        Text(data['jumlah_satuan'].toString()),
+                                  ),
+                                ),
+                                TableCell(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        showQuantityDialog(
+                                            data['id_barang'].toString(),
+                                            data['id_satuan'].toString(),
+                                            context);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.purple,
+                                        textStyle:
+                                            TextStyle(color: Colors.white),
+                                      ),
+                                      child: Text(
+                                        'Re-Stock',
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                TableCell(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        // Implement delete action
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.purple,
+                                        textStyle:
+                                            TextStyle(color: Colors.white),
+                                      ),
+                                      child: Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
           Container(
             color: Colors.blue,
             child: Center(
@@ -900,8 +1076,7 @@ class _GudangMenuState extends State<GudangMenu> {
             ),
           ),
           Container(
-            height: 800,
-            color: Colors.white,
+            height: 750,
             child: Center(
               child: ElevatedButton(
                 onPressed: () {
@@ -913,6 +1088,79 @@ class _GudangMenuState extends State<GudangMenu> {
           )
         ],
       ),
+    );
+  }
+
+  void showQuantityDialog(
+      String id_barang, String id_satuan, BuildContext context) {
+    int quantity = 1;
+
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Prevents closing the dialog by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Update Quantity'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Quantity:'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.remove),
+                        onPressed: () {
+                          setState(() {
+                            if (quantity > 1) {
+                              quantity--;
+                            }
+                          });
+                        },
+                      ),
+                      Text(quantity.toString()),
+                      IconButton(
+                        icon: Icon(Icons.add),
+                        onPressed: () {
+                          setState(() {
+                            quantity++;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          // Handle the confirm action
+                          updatejumlahSatuan(id_barang, id_satuan, quantity,
+                              "tambah", context);
+                          Navigator.of(context).pop();
+                          setState(() {});
+                          // Close the dialog
+                        },
+                        child: Text('Confirm Stock'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Close the dialog
+                        },
+                        child: Text('Cancel'),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
