@@ -350,6 +350,40 @@ void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
   }
 }
 
+//delete satuan
+Future<void> deletesatuan(
+    String id_barang, String id_satuan, BuildContext context) async {
+  try {
+    final dataStorage = GetStorage();
+    final id_cabang = dataStorage.read("id_cabang");
+    String id_gudangs = dataStorage.read('id_gudang');
+    final url =
+        'http://localhost:3000/barang/deletesatuan/$id_barang/$id_cabang/$id_gudangs/$id_satuan';
+
+    final response = await http.delete(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      if (context.mounted) {
+        showToast(context, 'Berhasil menghapus data');
+      }
+    } else {
+      if (context.mounted) {
+        showToast(context, "Gagal menghapus data");
+      }
+      print('HTTP Error: ${response.statusCode}');
+    }
+  } catch (error) {
+    if (context.mounted) {
+      showToast(context, "Error: $error");
+    }
+    print('Exception during HTTP request: $error');
+  }
+}
+
+//update stock satuan
 void updatejumlahSatuan(String id_barang, String id_satuan, int jumlah_satuan,
     String action, BuildContext context) async {
   try {

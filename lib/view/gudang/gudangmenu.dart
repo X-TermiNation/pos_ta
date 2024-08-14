@@ -892,6 +892,7 @@ class _GudangMenuState extends State<GudangMenu> {
                         jumlah_satuan.text = "";
                         harga_satuan.text = "";
                         isi_satuan.text = "";
+                        getlowstocksatuan(context);
                       });
                     },
                     child: Text("Tambah Satuan"),
@@ -1042,7 +1043,12 @@ class _GudangMenuState extends State<GudangMenu> {
                                     padding: EdgeInsets.all(8.0),
                                     child: ElevatedButton(
                                       onPressed: () {
-                                        // Implement delete action
+                                        confirmDeletion(
+                                            context,
+                                            data['id_barang'].toString(),
+                                            data['id_satuan'].toString(),
+                                            data['nama_satuan'],
+                                            data['nama_barang']);
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.purple,
@@ -1159,6 +1165,46 @@ class _GudangMenuState extends State<GudangMenu> {
               );
             },
           ),
+        );
+      },
+    );
+  }
+
+  void confirmDeletion(BuildContext context, String id_barang, String id_satuan,
+      String nama_satuan, String nama_barang) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // User must tap a button to close the dialog
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Konfirmasi hapus'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(
+                    'Apakah anda ingin menghapus satuan "$nama_satuan" pada item "$nama_barang"?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
+              },
+            ),
+            TextButton(
+              child: Text('Delete'),
+              onPressed: () async {
+                await deletesatuan(id_barang, id_satuan, context);
+                setState(() {
+                  getlowstocksatuan(context);
+                }); // Execute the delete operation
+                Navigator.of(context).pop();
+                // Dismiss the dialog
+              },
+            ),
+          ],
         );
       },
     );
