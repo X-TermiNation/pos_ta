@@ -7,8 +7,25 @@ import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
 
 //add barang
-void addbarang(DateTime insertedDate, bool noExp, String nama_barang,
-    String katakategori, BuildContext context) async {
+void addbarang(
+    DateTime insertedDate,
+    bool noExp,
+    String nama_barang,
+    String katakategori,
+    String nama_satuan,
+    String jumlah_satuan,
+    String isi_satuan,
+    String harga_satuan,
+    BuildContext context) async {
+  if (nama_barang.isEmpty ||
+      katakategori.isEmpty ||
+      nama_satuan.isEmpty ||
+      jumlah_satuan.isEmpty ||
+      isi_satuan.isEmpty ||
+      harga_satuan.isEmpty) {
+    showToast(context, 'Pastikan semua field terisi dengan benar');
+    return;
+  }
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   try {
@@ -42,7 +59,22 @@ void addbarang(DateTime insertedDate, bool noExp, String nama_barang,
       body: jsonEncode(Barangdata),
     );
     if (response.statusCode == 200) {
-      showToast(context, 'Berhasil menambah data');
+      final satuandata = {
+        'nama_satuan': nama_satuan,
+        'jumlah_satuan': jumlah_satuan,
+        'harga_satuan': harga_satuan,
+        'isi_satuan': isi_satuan
+      };
+      final Map<String, dynamic> jsonData = json.decode(response.body);
+      if (jsonData.containsKey('data')) {
+        Map<String, dynamic> data = jsonData["data"];
+        String id_barang = data['_id'];
+        addsatuan(id_barang, nama_satuan, jumlah_satuan, harga_satuan,
+            isi_satuan, context);
+        showToast(context, 'Berhasil menambah data');
+      } else {
+        print('Unexpected response format: ${response.body}');
+      }
     } else {
       showToast(context, "Gagal menambahkan data");
       print('HTTP Error: ${response.statusCode}');
@@ -422,6 +454,29 @@ Future<List<Map<String, dynamic>>> getlowstocksatuan(
     String id_gudangs = dataStorage.read('id_gudang');
     final url =
         'http://localhost:3000/barang/getlowstocksatuan/$id_cabang/$id_gudangs';
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200 || response.statusCode == 304) {
+      print('berhasil akses data jenis');
+      final Map<String, dynamic> jsonData = json.decode(response.body);
+      List<dynamic> data = jsonData["data"];
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Gagal mengambil data dari server');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    return [];
+  }
+}
+
+Future<List<Map<String, dynamic>>> getsatuan(
+    String id_barang, BuildContext context) async {
+  try {
+    final dataStorage = GetStorage();
+    final id_cabang = dataStorage.read("id_cabang");
+    String id_gudangs = dataStorage.read('id_gudang');
+    final url =
+        'http://localhost:3000/barang/getsatuan/$id_barang/$id_cabang/$id_gudangs';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200 || response.statusCode == 304) {
       print('berhasil akses data jenis');

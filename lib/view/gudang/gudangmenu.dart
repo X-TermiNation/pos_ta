@@ -16,6 +16,7 @@ String katakategori = "";
 String Edit_katakategori = "";
 bool _isEditUser = false;
 late String? edit_selectedvalueKategori;
+//untuk update barang
 String temp_id_update = "";
 bool noExp = false;
 String satuan_idbarang = "";
@@ -34,18 +35,24 @@ class GudangMenu extends StatefulWidget {
 class _GudangMenuState extends State<GudangMenu> {
   //lokasi inisialisasi dalam state
   TextEditingController nama_barang = TextEditingController();
-  TextEditingController harga_satuan = TextEditingController();
   TextEditingController nama_kategori = TextEditingController();
   TextEditingController nama_jenis = TextEditingController();
   TextEditingController edit_nama_barang = TextEditingController();
-  TextEditingController edit_harga_barang = TextEditingController();
-  TextEditingController edit_jumlah_barang = TextEditingController();
-  TextEditingController edit_nama_kategori = TextEditingController();
+  TextEditingController edit_expdate_barang = TextEditingController();
+  TextEditingController edit_insertdate_barang = TextEditingController();
+  TextEditingController edit_nama_kategorijenis = TextEditingController();
   TextEditingController nama_satuan = TextEditingController();
+  TextEditingController harga_satuan = TextEditingController();
   TextEditingController jumlah_satuan = TextEditingController();
   TextEditingController isi_satuan = TextEditingController();
+  TextEditingController nama_satuan_initial = TextEditingController();
+  TextEditingController harga_satuan_initial = TextEditingController();
+  TextEditingController jumlah_satuan_initial = TextEditingController();
+  TextEditingController isi_satuan_initial = TextEditingController();
   TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _dataList = [];
+  List<Map<String, dynamic>> satuanList = [];
+  Map<String, dynamic>? selectedSatuan;
   String _jsonString = '';
 
   //get kategori dan jenis untuk combo box
@@ -54,7 +61,7 @@ class _GudangMenuState extends State<GudangMenu> {
       edit_selectedvalueKategori = await getFirstKategoriId();
       selectedvalueJenis = await getFirstJenisId();
       selectedvalueKategori = await getFirstKategoriId();
-      var barangdata = await getBarang(id_gudangs);
+      // var barangdata = await getBarang(id_gudangs);
       // if (selectedvalueJenis.isEmpty) {
       //   selectedvalueJenis = "";
       //   if (selectedvalueKategori.isEmpty) {
@@ -67,6 +74,18 @@ class _GudangMenuState extends State<GudangMenu> {
           "data jenis dan kategori pertama:$selectedvalueJenis dan $selectedvalueKategori");
     } catch (error) {
       print('Error fetchdata kategori dan jenis: $error');
+    }
+  }
+
+  void fetchsatuandetail() async {
+    if (temp_id_update.isNotEmpty) {
+      final data = await getsatuan(temp_id_update, context);
+      setState(() {
+        satuanList = data;
+        if (satuanList.isNotEmpty) {
+          selectedSatuan = satuanList[0];
+        }
+      });
     }
   }
 
@@ -142,6 +161,7 @@ class _GudangMenuState extends State<GudangMenu> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  //daftar barang
                   Container(
                       width: 950,
                       height: 650,
@@ -155,6 +175,9 @@ class _GudangMenuState extends State<GudangMenu> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          SizedBox(
+                            height: 10,
+                          ),
                           GestureDetector(
                             onTap: () {
                               setState(() {
@@ -202,12 +225,19 @@ class _GudangMenuState extends State<GudangMenu> {
                                             });
                                             edit_nama_barang.text =
                                                 map['nama_barang'];
-                                            edit_harga_barang.text =
-                                                map['harga_barang'].toString();
-                                            edit_jumlah_barang.text =
-                                                map['Qty'].toString();
+                                            String jenisBarang =
+                                                map['jenis_barang'];
+                                            String kategoriBarang =
+                                                map['kategori_barang'];
+                                            edit_nama_kategorijenis.text =
+                                                "$jenisBarang / $kategoriBarang";
+                                            edit_expdate_barang.text =
+                                                map['exp_date'].toString();
+                                            edit_insertdate_barang.text =
+                                                map['insert_date'].toString();
                                             _isEditUser = true;
                                             temp_id_update = map['_id'];
+                                            fetchsatuandetail();
                                           },
                                           child: Text(map['nama_barang'],
                                               style: TextStyle(fontSize: 15)),
@@ -295,6 +325,7 @@ class _GudangMenuState extends State<GudangMenu> {
                           )
                         ],
                       )),
+                  //detail barang
                   Container(
                     width: 550.0,
                     height: 650.0,
@@ -307,134 +338,141 @@ class _GudangMenuState extends State<GudangMenu> {
                     padding: EdgeInsets.all(16.0),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Update Barang"),
-                        SizedBox(height: 20.0),
-                        TextFormField(
-                          controller: edit_nama_barang,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Name is required';
-                            }
-                            return null;
-                          },
-                          decoration:
-                              InputDecoration(labelText: 'Edit Nama Barang'),
+                        Center(
+                          child: Text("Detail Barang"),
                         ),
+                        SizedBox(height: 20.0),
+                        Text("Nama Barang : ${edit_nama_barang.text}"),
                         SizedBox(height: 16.0),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Kategori Barang:"),
-                            FutureBuilder<Map<String, String>>(
-                              future: getmapkategori(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return CircularProgressIndicator();
-                                } else if (snapshot.hasError) {
-                                  return Text('Error: ${snapshot.error}');
-                                } else if (snapshot.hasData &&
-                                    snapshot.data != null) {
-                                  var entries = snapshot.data!.entries.toList();
+                            Text(
+                                "Jenis/Kategori Barang: ${edit_nama_kategorijenis.text}"),
+                            // FutureBuilder<Map<String, String>>(
+                            //   future: getmapkategori(),
+                            //   builder: (context, snapshot) {
+                            //     if (snapshot.connectionState ==
+                            //         ConnectionState.waiting) {
+                            //       return CircularProgressIndicator();
+                            //     } else if (snapshot.hasError) {
+                            //       return Text('Error: ${snapshot.error}');
+                            //     } else if (snapshot.hasData &&
+                            //         snapshot.data != null) {
+                            //       var entries = snapshot.data!.entries.toList();
 
-                                  if (entries.isEmpty) {
-                                    return Text('No items available');
-                                  }
+                            //       if (entries.isEmpty) {
+                            //         return Text('No items available');
+                            //       }
 
-                                  var items = entries
-                                      .map((entry) => DropdownMenuItem<String>(
-                                            child: Text(entry.value),
-                                            value: entry.key,
-                                          ))
-                                      .toList();
+                            //       var items = entries
+                            //           .map((entry) => DropdownMenuItem<String>(
+                            //                 child: Text(entry.value),
+                            //                 value: entry.key,
+                            //               ))
+                            //           .toList();
 
-                                  // Ensure edit_selectedvalueKategori is valid
-                                  if (edit_selectedvalueKategori == null ||
-                                      !snapshot.data!.containsKey(
-                                          edit_selectedvalueKategori)) {
-                                    edit_selectedvalueKategori =
-                                        entries.first.key;
-                                  }
+                            //       // Ensure edit_selectedvalueKategori is valid
+                            //       if (edit_selectedvalueKategori == null ||
+                            //           !snapshot.data!.containsKey(
+                            //               edit_selectedvalueKategori)) {
+                            //         edit_selectedvalueKategori =
+                            //             entries.first.key;
+                            //       }
 
-                                  return DropdownButton<String>(
-                                    value: edit_selectedvalueKategori,
-                                    items: items,
-                                    onChanged: (value) {
-                                      if (value != null) {
-                                        final selectedEntry =
-                                            snapshot.data?.entries.firstWhere(
-                                          (entry) => entry.key == value,
-                                        );
-                                        if (selectedEntry != null) {
-                                          setState(() {
-                                            edit_selectedvalueKategori = value;
-                                            Edit_katakategori =
-                                                selectedEntry.value;
-                                          });
-                                        }
-                                      }
-                                    },
-                                  );
-                                } else {
-                                  return Text('No data available');
-                                }
-                              },
-                            ),
+                            //       return DropdownButton<String>(
+                            //         value: edit_selectedvalueKategori,
+                            //         items: items,
+                            //         onChanged: (value) {
+                            //           if (value != null) {
+                            //             final selectedEntry =
+                            //                 snapshot.data?.entries.firstWhere(
+                            //               (entry) => entry.key == value,
+                            //             );
+                            //             if (selectedEntry != null) {
+                            //               setState(() {
+                            //                 edit_selectedvalueKategori = value;
+                            //                 Edit_katakategori =
+                            //                     selectedEntry.value;
+                            //               });
+                            //             }
+                            //           }
+                            //         },
+                            //       );
+                            //     } else {
+                            //       return Text('No data available');
+                            //     }
+                            //   },
+                            // ),
                           ],
                         ),
                         SizedBox(height: 16.0),
-                        TextFormField(
-                          controller: edit_harga_barang,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Harga Barang tidak boleh kosong';
-                            }
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: 'Edit Harga Barang',
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: <TextInputFormatter>[
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
+                        Text(
+                          "Expire Date: ${edit_expdate_barang.text != null && edit_expdate_barang.text.length >= 10 ? edit_expdate_barang.text.substring(0, 10) : "-"}",
                         ),
                         SizedBox(height: 16.0),
-                        TextFormField(
-                          controller: edit_jumlah_barang,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Jumlah barang tidak boleh kosong';
-                            }
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: 'Edit Jumlah Barang',
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: <TextInputFormatter>[
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
+                        Text(
+                            "Insert Date : ${edit_insertdate_barang.text.isNotEmpty ? edit_insertdate_barang.text.toString().substring(0, 10) : "-"}"),
+                        // DropdownButton to select satuan
+                        SizedBox(
+                          height: 20,
                         ),
+                        Text("Satuan:"),
+                        DropdownButton<Map<String, dynamic>>(
+                          value: selectedSatuan,
+                          hint: Text('Select Satuan'),
+                          items: satuanList.map((satuan) {
+                            return DropdownMenuItem<Map<String, dynamic>>(
+                              value: satuan,
+                              child: Text(satuan['nama_satuan'] ?? 'No Name'),
+                            );
+                          }).toList(),
+                          onChanged: (selected) {
+                            setState(() {
+                              selectedSatuan = selected;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 16.0),
+                        // Display details of the selected satuan
+                        if (selectedSatuan != null) ...[
+                          Text(
+                              "Nama Satuan: ${selectedSatuan!['nama_satuan']}"),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          Text(
+                              "Jumlah Satuan: ${selectedSatuan!['jumlah_satuan']}"),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          Text(
+                              "Harga Satuan: Rp.${NumberFormat('#,###.00', 'id_ID').format(selectedSatuan!['harga_satuan'] ?? 0.0)}"),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          Text("Isi Satuan: ${selectedSatuan!['isi_satuan']}"),
+                        ],
                         SizedBox(height: 32.0),
+
+                        //belum bekerja
                         ElevatedButton(
                             onPressed: _isEditUser
                                 ? () {
-                                    UpdateBarang(
-                                        temp_id_update,
-                                        edit_nama_barang.text,
-                                        Edit_katakategori,
-                                        edit_harga_barang.text,
-                                        edit_jumlah_barang.text);
+                                    //belum diubah dari mongoose
+                                    // UpdateBarang(
+                                    //     temp_id_update,
+                                    //     edit_nama_barang.text,
+                                    //     Edit_katakategori,
+                                    //     edit_expdate_barang.text,
+                                    //     edit_jumlah_barang.text);
                                     setState(() {
                                       edit_nama_barang.text = "";
-                                      edit_harga_barang.text = "";
-                                      edit_jumlah_barang.text = "";
+                                      edit_expdate_barang.text = "";
+                                      edit_insertdate_barang.text = "";
                                       _isEditUser = false;
                                       temp_id_update = "";
                                       barangdata = Future.delayed(
@@ -459,6 +497,9 @@ class _GudangMenuState extends State<GudangMenu> {
                 children: [
                   SizedBox(
                     width: 10,
+                  ),
+                  Center(
+                    child: Text("Tambah Barang"),
                   ),
                   TextFormField(
                     controller: nama_barang,
@@ -579,6 +620,88 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                     ],
                   ),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.black, // Set the color of the border
+                          width: 1.0, // Set the thickness of the border
+                        ),
+                      ),
+                    ),
+                    child: Container(),
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Center(
+                    child: Text("Satuan Barang"),
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: nama_satuan_initial,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'Nama Satuan',
+                    ),
+                  ),
+                  TextFormField(
+                    controller: harga_satuan_initial,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Harga Barang tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'Harga Barang',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
+                    controller: jumlah_satuan_initial,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'Stok Satuan Barang',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
+                    controller: isi_satuan_initial,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Isi satuan tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'Kuantitas per satuan',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
                   SizedBox(
                     height: 200,
                   ),
@@ -588,13 +711,25 @@ class _GudangMenuState extends State<GudangMenu> {
                           _dateFormat.format(selectedDate);
                       DateTime insertedDate =
                           _dateFormat.parse(formattedDateString);
-                      addbarang(insertedDate, noExp, nama_barang.text,
-                          katakategori, context);
+                      addbarang(
+                          insertedDate,
+                          noExp,
+                          nama_barang.text,
+                          katakategori,
+                          nama_satuan_initial.text,
+                          jumlah_satuan_initial.text,
+                          isi_satuan_initial.text,
+                          harga_satuan_initial.text,
+                          context);
                       nama_kategori.text = "";
                       setState(() {
                         fetchData();
                         noExp = false;
                         nama_barang.text = "";
+                        nama_satuan_initial.text = "";
+                        jumlah_satuan_initial.text = "";
+                        harga_satuan_initial.text = "";
+                        isi_satuan_initial.text = "";
                         barangdata = Future.delayed(
                             Duration(seconds: 1), () => getBarang(id_gudangs));
                         fetchDataAndUseInJsonString();
@@ -616,6 +751,54 @@ class _GudangMenuState extends State<GudangMenu> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Container(
+                      width: 700,
+                      height: 650,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text("Tambah Jenis"),
+                          SizedBox(
+                            height: 100,
+                          ),
+                          TextFormField(
+                            controller: nama_jenis,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Field tidak boleh kosong';
+                              }
+                              return null;
+                            },
+                            decoration: const InputDecoration(
+                              border: UnderlineInputBorder(),
+                              labelText: 'Nama Jenis',
+                            ),
+                          ),
+                          SizedBox(
+                            height: 100,
+                          ),
+                          //search bar untuk barang
+                          SizedBox(
+                            height: 200,
+                          ),
+                          FilledButton(
+                            onPressed: () {
+                              addjenis(nama_jenis.text, context);
+                              nama_jenis.text = "";
+                              setState(() {
+                                fetchData();
+                                getJenis();
+                              });
+                            },
+                            child: Text("Tambah Jenis"),
+                          ),
+                        ],
+                      ),
+                    ),
                     Container(
                       height: 650,
                       width: 700,
@@ -702,54 +885,6 @@ class _GudangMenuState extends State<GudangMenu> {
                               });
                             },
                             child: Text("Tambah Kategori"),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 700,
-                      height: 650,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text("Tambah Jenis"),
-                          SizedBox(
-                            height: 100,
-                          ),
-                          TextFormField(
-                            controller: nama_jenis,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Field tidak boleh kosong';
-                              }
-                              return null;
-                            },
-                            decoration: const InputDecoration(
-                              border: UnderlineInputBorder(),
-                              labelText: 'Nama Jenis',
-                            ),
-                          ),
-                          SizedBox(
-                            height: 100,
-                          ),
-                          //search bar untuk barang
-                          SizedBox(
-                            height: 200,
-                          ),
-                          FilledButton(
-                            onPressed: () {
-                              addjenis(nama_jenis.text, context);
-                              nama_jenis.text = "";
-                              setState(() {
-                                fetchData();
-                                getJenis();
-                              });
-                            },
-                            child: Text("Tambah Jenis"),
                           ),
                         ],
                       ),
