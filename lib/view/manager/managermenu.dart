@@ -6,15 +6,11 @@ import 'package:ta_pos/view/gudang/gudangmenu.dart';
 import 'package:ta_pos/view/cabang/managecabang.dart';
 import 'package:ta_pos/view/manager/CustomTab.dart';
 import 'package:ta_pos/view/manager/content_view.dart';
-import 'custom_tab_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/loginpage/login.dart';
 
-late double _containerWidth;
-late double _containerHeight;
-late double _containerHeightInside;
 List<Map<String, dynamic>> _dataList = [];
 var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
 late bool logOwner;
@@ -24,12 +20,6 @@ bool key2 = true;
 bool key3 = true;
 bool key4 = true;
 bool bigScreen = false;
-
-void normalstyle() {
-  _containerWidth = 740;
-  _containerHeight = 320;
-  _containerHeightInside = 240;
-}
 
 class ManagerMenu extends StatefulWidget {
   const ManagerMenu({super.key});
@@ -65,6 +55,14 @@ class _ManagerMenuState extends State<ManagerMenu>
   late double screenWidth;
   late double topPadding;
   late double bottomPadding;
+  bool isHomeExpanded = false;
+  bool isPegawaiExpanded = false;
+  int _selectedIndex = 0;
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   //check boolean
   bool _isValidEmail = false;
@@ -80,73 +78,6 @@ class _ManagerMenuState extends State<ManagerMenu>
 //diskon check
   List<Map<String, dynamic>> databarang = [];
 
-  void _increasesize1() {
-    setState(() {
-      _containerWidth = 1500;
-      _containerHeight = 800;
-      key1 = true;
-      key2 = false;
-      key3 = false;
-      key4 = false;
-      bigScreen = true;
-    });
-  }
-
-  void _increasesize2() {
-    setState(() {
-      _containerWidth = 1500;
-      _containerHeight = 800;
-      key1 = false;
-      key2 = true;
-      key3 = false;
-      key4 = false;
-      bigScreen = true;
-    });
-  }
-
-  void _increasesize3() {
-    setState(() {
-      _containerWidth = 1500;
-      _containerHeight = 800;
-      key1 = false;
-      key2 = false;
-      key3 = true;
-      key4 = false;
-      bigScreen = true;
-    });
-  }
-
-  void _increasesize4() {
-    setState(() {
-      _containerWidth = 1500;
-      _containerHeight = 800;
-      key1 = false;
-      key2 = false;
-      key3 = false;
-      key4 = true;
-      bigScreen = true;
-    });
-  }
-
-  void _quitbigcreenmode() {
-    setState(() {
-      Positioned(
-          bottom: 0,
-          right: 0,
-          child: IconButton(
-              color: Colors.black,
-              onPressed: _quitbigcreenmode,
-              icon: Icon(Icons.aspect_ratio_sharp)));
-      _containerWidth = 740;
-      _containerHeight = 320;
-      key1 = true;
-      key2 = true;
-      key3 = true;
-      key4 = true;
-      bigScreen = false;
-    });
-  }
-
   bool _validateEmail(String email) {
     RegExp emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return emailRegex.hasMatch(email);
@@ -158,14 +89,32 @@ class _ManagerMenuState extends State<ManagerMenu>
       content: Container(),
     ),
     ContentView(
+      tab: CustomTab(title: 'Daftar Diskon'),
+      content: Container(),
+    ),
+    ContentView(
+      tab: CustomTab(title: 'Edit Diskon'),
+      content: Container(),
+    ),
+    ContentView(
+      tab: CustomTab(title: 'Stock Alert'),
+      content: Container(),
+    ),
+    ContentView(
+      tab: CustomTab(title: 'Analisa Revenue'),
+      content: Container(),
+    ),
+    ContentView(tab: CustomTab(title: 'Analisa Pendapatan'), content: Center()),
+    ContentView(tab: CustomTab(title: 'Grafik Trend'), content: Center()),
+    ContentView(
+        tab: CustomTab(title: 'Laporan'),
+        content: Center(
+          child: Container(color: Colors.green, width: 100, height: 100),
+        )),
+    ContentView(
         tab: CustomTab(title: 'Mutasi Barang'),
         content: Center(
           child: Container(color: Colors.blue, width: 100, height: 100),
-        )),
-    ContentView(
-        tab: CustomTab(title: 'Lihat Laporan'),
-        content: Center(
-          child: Container(color: Colors.green, width: 100, height: 100),
         )),
     ContentView(
         tab: CustomTab(title: 'Atur Pegawai'),
@@ -182,8 +131,6 @@ class _ManagerMenuState extends State<ManagerMenu>
         content: Center(
           child: Container(color: Colors.green, width: 100, height: 100),
         )),
-    ContentView(tab: CustomTab(title: 'Grafik Trend'), content: Center()),
-    ContentView(tab: CustomTab(title: 'Analisa Pendapatan'), content: Center()),
     ContentView(tab: CustomTab(title: 'Pengaturan'), content: Center()),
   ];
   void getbarangdiskonlist() async {
@@ -194,28 +141,6 @@ class _ManagerMenuState extends State<ManagerMenu>
       isCheckedList = List.generate(databarang.length, (index) => false);
     }
     print("baranglist untuk diskon:$databarang");
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    fetchUser();
-    fetchDiskon();
-    normalstyle();
-    verify();
-    setState(() {
-      getbarangdiskonlist();
-    });
-    print("diskon data Flutter:$diskondata");
-
-    email.addListener(() {
-      setState(() {
-        _isValidEmail = _validateEmail(email.text);
-        if (!_isValidEmail) {
-          print('format email salah');
-        }
-      });
-    });
   }
 
   //datepicker value
@@ -253,691 +178,379 @@ class _ManagerMenuState extends State<ManagerMenu>
   }
 
   @override
+  void initState() {
+    super.initState();
+    fetchUser();
+    fetchDiskon();
+    verify();
+    setState(() {
+      getbarangdiskonlist();
+    });
+    print("diskon data Flutter:$diskondata");
+
+    email.addListener(() {
+      setState(() {
+        _isValidEmail = _validateEmail(email.text);
+        if (!_isValidEmail) {
+          print('format email salah');
+        }
+      });
+    });
+  }
+
+  //cek tanggal berlaku diskon
+  DateTime currentDate = DateTime.now();
+  bool isDateInRange(DateTime startDate, DateTime endDate) {
+    return currentDate.isAtSameMomentAs(startDate) ||
+        currentDate.isAtSameMomentAs(endDate) ||
+        (currentDate.isAfter(startDate) && currentDate.isBefore(endDate));
+  }
+
+  String getStatus(DateTime startDate, DateTime endDate) {
+    if (isDateInRange(startDate, endDate)) {
+      return 'Aktif';
+    } else {
+      return 'Tidak Aktif';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    //cek tanggal berlaku diskon
-    DateTime currentDate = DateTime.now();
-    bool isDateInRange(DateTime startDate, DateTime endDate) {
-      return currentDate.isAtSameMomentAs(startDate) ||
-          currentDate.isAtSameMomentAs(endDate) ||
-          (currentDate.isAfter(startDate) && currentDate.isBefore(endDate));
-    }
-
-    String getStatus(DateTime startDate, DateTime endDate) {
-      if (isDateInRange(startDate, endDate)) {
-        return 'Aktif'; // Set your desired status when the current date is within the range
-      } else {
-        return 'Tidak Aktif'; // Set your desired status when the current date is outside the range
-      }
-    }
-
     screenWidth = MediaQuery.of(context).size.width;
     screenHeight = MediaQuery.of(context).size.height;
     topPadding = screenHeight * 0.05;
     bottomPadding = screenHeight * 0.01;
-
     contentView = [
       ContentView(
           tab: CustomTab(title: 'Home'),
           content: Center(
+            child: Container(child: Text("Home Page need Re-Design")),
+          )),
+      ContentView(
+        tab: CustomTab(title: 'Daftar Diskon'),
+        content: Center(
+          child: Expanded(
             child: Container(
-              color: Colors.black,
-              width: 1500,
-              height: 800,
-              child: Stack(
-                fit: StackFit.loose,
+              width: double.infinity,
+              color: Colors.black87,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Visibility(
-                    visible: key1,
-                    child: Positioned(
-                        top: 0,
-                        left: 0,
-                        child: GestureDetector(
-                            onTap: _increasesize1,
-                            child: Container(
-                                child: bigScreen
-                                    ? Container(
-                                        color: Colors.blue,
-                                        width: _containerWidth,
-                                        height: _containerHeight,
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                            Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              children: [
-                                                Text('Atur Diskon'),
-                                                TextFormField(
-                                                    controller: nama_diskon,
-                                                    validator: (value) {
-                                                      if (value == null ||
-                                                          value.isEmpty) {
-                                                        return 'Field tidak boleh kosong';
-                                                      }
-                                                      return null;
-                                                    },
-                                                    decoration:
-                                                        const InputDecoration(
-                                                      border:
-                                                          UnderlineInputBorder(),
-                                                      labelText: 'Nama Diskon',
-                                                    )),
-                                                TextFormField(
-                                                  controller: persentase_diskon,
-                                                  validator: (value) {
-                                                    if (value == null ||
-                                                        value.isEmpty) {
-                                                      return 'Field tidak boleh kosong';
-                                                    }
-                                                    return null;
-                                                  },
-                                                  decoration:
-                                                      const InputDecoration(
-                                                    border:
-                                                        UnderlineInputBorder(),
-                                                    labelText:
-                                                        'Persentase Diskon(%)',
-                                                  ),
-                                                  keyboardType:
-                                                      TextInputType.number,
-                                                  inputFormatters: <TextInputFormatter>[
-                                                    FilteringTextInputFormatter
-                                                        .digitsOnly,
-                                                  ],
-                                                ),
-                                                Text(
-                                                  'Selected Date Start:',
-                                                  style:
-                                                      TextStyle(fontSize: 12),
-                                                ),
-                                                Text(
-                                                  //ini value date nya
-                                                  _dateFormat.format(
-                                                      selectedDateStart),
-                                                  style: TextStyle(
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                                InkWell(
-                                                  onTap: () =>
-                                                      _selectDateStart(context),
-                                                  child: Container(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                            horizontal: 16,
-                                                            vertical: 8),
-                                                    decoration: BoxDecoration(
-                                                      border: Border.all(
-                                                          color: Colors.grey),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8),
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Icon(Icons
-                                                            .calendar_today),
-                                                        SizedBox(width: 8),
-                                                        Text('Start Date'),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                                Text(
-                                                  'Selected Date End:',
-                                                  style:
-                                                      TextStyle(fontSize: 12),
-                                                ),
-                                                Text(
-                                                  //ini value date nya
-                                                  _dateFormat
-                                                      .format(selectedDateEnd),
-                                                  style: TextStyle(
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                                InkWell(
-                                                  onTap: () =>
-                                                      _selectDateEnd(context),
-                                                  child: Container(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                            horizontal: 16,
-                                                            vertical: 8),
-                                                    decoration: BoxDecoration(
-                                                      border: Border.all(
-                                                          color: Colors.grey),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8),
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Icon(Icons
-                                                            .calendar_today),
-                                                        SizedBox(width: 8),
-                                                        Text('End Date'),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                                //lokasi untuk multi checklist barang
-                                                Container(
-                                                  height: 200,
-                                                  child: databarang.length == 0
-                                                      ? CircularProgressIndicator()
-                                                      : ListView.builder(
-                                                          scrollDirection:
-                                                              Axis.vertical,
-                                                          itemCount:
-                                                              databarang.length,
-                                                          itemBuilder:
-                                                              (context, index) {
-                                                            return CheckboxListTile(
-                                                              title: Text(databarang[
-                                                                          index]
-                                                                      [
-                                                                      'nama_barang']
-                                                                  .toString()),
-                                                              value:
-                                                                  isCheckedList[
-                                                                      index],
-                                                              onChanged:
-                                                                  (value) {
-                                                                setState(() {
-                                                                  isCheckedList[
-                                                                          index] =
-                                                                      value!;
-                                                                  print(value);
-                                                                });
-                                                              },
-                                                            );
-                                                          },
-                                                        ),
-                                                ),
-
-                                                FilledButton(
-                                                    onPressed: () async {
-                                                      String
-                                                          formattedDateStringStart =
-                                                          _dateFormat.format(
-                                                              selectedDateStart);
-                                                      DateTime
-                                                          insertedDateStart =
-                                                          _dateFormat.parse(
-                                                              formattedDateStringStart);
-
-                                                      String? DateStringStart;
-
-                                                      insertedDateStart =
-                                                          insertedDateStart.add(
-                                                              Duration(
-                                                                  days: 1));
-                                                      DateStringStart =
-                                                          insertedDateStart
-                                                              .toIso8601String();
-
-                                                      String
-                                                          formattedDateStringEnd =
-                                                          _dateFormat.format(
-                                                              selectedDateEnd);
-                                                      DateTime insertedDateEnd =
-                                                          _dateFormat.parse(
-                                                              formattedDateStringEnd);
-
-                                                      String? DateStringEnd;
-
-                                                      insertedDateEnd =
-                                                          insertedDateEnd.add(
-                                                              Duration(
-                                                                  days: 1));
-                                                      DateStringEnd =
-                                                          insertedDateEnd
-                                                              .toIso8601String();
-                                                      await tambahdiskon(
-                                                          nama_diskon.text,
-                                                          persentase_diskon
-                                                              .text,
-                                                          DateStringStart,
-                                                          DateStringEnd,
-                                                          isCheckedList,
-                                                          databarang,
-                                                          context);
-
-                                                      nama_diskon.text = "";
-                                                      persentase_diskon.text =
-                                                          "";
-                                                      selectedDateStart =
-                                                          DateTime.now();
-                                                      selectedDateEnd =
-                                                          DateTime.now();
-                                                      for (var i = 0;
-                                                          i <
-                                                              isCheckedList
-                                                                  .length;
-                                                          i++) {
-                                                        isCheckedList[i] =
-                                                            false;
-                                                      }
-                                                      setState(() {
-                                                        fetchDiskon();
-                                                      });
-                                                    },
-                                                    child:
-                                                        Text("Tambah Diskon")),
-                                                Container(
-                                                    width: 1400,
-                                                    height: 30,
-                                                    child: Stack(
-                                                      children: [
-                                                        Positioned(
-                                                            bottom: 0,
-                                                            right: 0,
-                                                            child: IconButton(
-                                                                color: Colors
-                                                                    .black,
-                                                                onPressed:
-                                                                    _quitbigcreenmode,
-                                                                icon: Icon(Icons
-                                                                    .aspect_ratio_sharp)))
-                                                      ],
-                                                    )),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    : Container(
-                                        color: Colors.blue,
-                                        width: _containerWidth,
-                                        height: _containerHeight,
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                            Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Text('Edit Diskon'),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      )))),
+                  SizedBox(height: 20),
+                  Text(
+                    'Daftar Diskon',
+                    style: TextStyle(color: Colors.white),
                   ),
-                  Visibility(
-                    visible: key2,
-                    child: Positioned(
-                        bottom: 0,
-                        left: 0,
-                        child: GestureDetector(
-                            onTap: _increasesize2,
-                            child: bigScreen
-                                ? Container(
-                                    color: Colors.yellow,
-                                    width: _containerWidth,
-                                    height: _containerHeight,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text('Daftar Diskon'),
-                                            SizedBox(
-                                              height: 100,
-                                            ),
-                                            FutureBuilder(
-                                                future: getDiskon(),
-                                                builder: (context, snapshot) {
-                                                  if (snapshot.hasData) {
-                                                    final rows = snapshot.data!
-                                                        .map((map) {
-                                                      var persentase =
-                                                          map['persentase_diskon']
-                                                              .toString();
-                                                      return DataRow(cells: [
-                                                        DataCell(Text(
-                                                            map['nama_diskon']
-                                                                .toString(),
-                                                            style: TextStyle(
-                                                                fontSize: 15))),
-                                                        DataCell(Text(
-                                                            "$persentase %",
-                                                            style: TextStyle(
-                                                                fontSize: 15))),
-                                                        DataCell(Text(
-                                                            map['start_date']
-                                                                .toString()
-                                                                .substring(
-                                                                    0, 10),
-                                                            style: TextStyle(
-                                                                fontSize: 15))),
-                                                        DataCell(Text(
-                                                            map['end_date']
-                                                                .toString()
-                                                                .substring(
-                                                                    0, 10),
-                                                            style: TextStyle(
-                                                                fontSize: 15))),
-                                                        DataCell(
-                                                          Text(
-                                                            getStatus(
-                                                                DateTime.parse(map[
-                                                                    'start_date']),
-                                                                DateTime.parse(map[
-                                                                    'end_date'])),
-                                                            style: TextStyle(
-                                                                fontSize: 15),
-                                                          ),
-                                                        ),
-                                                        DataCell(
-                                                          ElevatedButton(
-                                                            onPressed:
-                                                                () async {
-                                                              deletediskon(
-                                                                  map['_id']);
-                                                              setState(() {
-                                                                fetchDiskon();
-                                                                getDiskon();
-                                                              });
-                                                            },
-                                                            child:
-                                                                Text('Delete'),
-                                                          ),
-                                                        ),
-                                                      ]);
-                                                    }).toList();
-                                                    return DataTable(
-                                                      columns: const <DataColumn>[
-                                                        DataColumn(
-                                                            label: Text(
-                                                                'Nama Diskon',
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        15))),
-                                                        DataColumn(
-                                                            label: Text(
-                                                                'Persentase Diskon',
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        15))),
-                                                        DataColumn(
-                                                            label: Text(
-                                                                'Tanggal Mulai',
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        15))),
-                                                        DataColumn(
-                                                            label: Text(
-                                                                'Tanggal Berakhir',
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        15))),
-                                                        DataColumn(
-                                                            label: Text(
-                                                                'Status',
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        15))),
-                                                        DataColumn(
-                                                            label: Text(
-                                                                'Hapus Diskon',
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        15))),
-                                                      ],
-                                                      rows: rows,
-                                                    );
-                                                  } else if (snapshot
-                                                      .hasError) {
-                                                    // Show an error message.
-                                                    return Text(
-                                                        'Error: ${snapshot.error}');
-                                                  } else {
-                                                    // Show a loading indicator.
-                                                    return CircularProgressIndicator();
-                                                  }
-                                                }),
-                                            Container(
-                                                width: 1400,
-                                                height: 30,
-                                                child: Stack(
-                                                  children: [
-                                                    Positioned(
-                                                        bottom: 0,
-                                                        right: 0,
-                                                        child: IconButton(
-                                                            color: Colors.black,
-                                                            onPressed:
-                                                                _quitbigcreenmode,
-                                                            icon: Icon(Icons
-                                                                .aspect_ratio_sharp)))
-                                                  ],
-                                                )),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : Container(
-                                    color: Colors.yellow,
-                                    width: _containerWidth,
-                                    height: _containerHeight,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text('Daftar Diskon'),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [Container()],
-                                        ),
-                                      ],
-                                    ),
-                                  ))),
+                  SizedBox(height: 20),
+                  Expanded(
+                    child: FutureBuilder(
+                      future: getDiskon(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          final rows = snapshot.data!.map((map) {
+                            var persentase =
+                                map['persentase_diskon'].toString();
+                            return DataRow(cells: [
+                              DataCell(Text(
+                                map['nama_diskon'].toString(),
+                                style: TextStyle(fontSize: 15),
+                              )),
+                              DataCell(Text(
+                                "$persentase %",
+                                style: TextStyle(fontSize: 15),
+                              )),
+                              DataCell(Text(
+                                map['start_date'].toString().substring(0, 10),
+                                style: TextStyle(fontSize: 15),
+                              )),
+                              DataCell(Text(
+                                map['end_date'].toString().substring(0, 10),
+                                style: TextStyle(fontSize: 15),
+                              )),
+                              DataCell(Text(
+                                getStatus(
+                                  DateTime.parse(map['start_date']),
+                                  DateTime.parse(map['end_date']),
+                                ),
+                                style: TextStyle(fontSize: 15),
+                              )),
+                              DataCell(
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    deletediskon(map['_id']);
+                                    setState(() {
+                                      fetchDiskon();
+                                      getDiskon();
+                                    });
+                                  },
+                                  child: Text('Delete'),
+                                ),
+                              ),
+                            ]);
+                          }).toList();
+
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: DataTable(
+                              columns: const <DataColumn>[
+                                DataColumn(
+                                  label: Text(
+                                    'Nama Diskon',
+                                    style: TextStyle(fontSize: 15),
+                                  ),
+                                ),
+                                DataColumn(
+                                  label: Text(
+                                    'Persentase Diskon',
+                                    style: TextStyle(fontSize: 15),
+                                  ),
+                                ),
+                                DataColumn(
+                                  label: Text(
+                                    'Tanggal Mulai',
+                                    style: TextStyle(fontSize: 15),
+                                  ),
+                                ),
+                                DataColumn(
+                                  label: Text(
+                                    'Tanggal Berakhir',
+                                    style: TextStyle(fontSize: 15),
+                                  ),
+                                ),
+                                DataColumn(
+                                  label: Text(
+                                    'Status',
+                                    style: TextStyle(fontSize: 15),
+                                  ),
+                                ),
+                                DataColumn(
+                                  label: Text(
+                                    'Hapus Diskon',
+                                    style: TextStyle(fontSize: 15),
+                                  ),
+                                ),
+                              ],
+                              rows: rows,
+                            ),
+                          );
+                        } else if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'Error: ${snapshot.error}',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          );
+                        } else {
+                          return Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                      },
+                    ),
                   ),
-                  Visibility(
-                    visible: key3,
-                    child: Positioned(
-                        top: 0,
-                        right: 0,
-                        child: GestureDetector(
-                            onTap: _increasesize3,
-                            child: bigScreen
-                                ? Container(
-                                    color: Colors.purple,
-                                    width: _containerWidth,
-                                    height: _containerHeight,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text('Stock alert'),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              width: 1400,
-                                              height: 400,
-                                              child: Stack(
-                                                fit: StackFit.loose,
-                                                children: [
-                                                  Positioned(
-                                                      bottom: 0,
-                                                      right: 0,
-                                                      child: IconButton(
-                                                          color: Colors.black,
-                                                          onPressed:
-                                                              _quitbigcreenmode,
-                                                          icon: Icon(Icons
-                                                              .aspect_ratio_sharp)))
-                                                ],
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : Container(
-                                    color: Colors.purple,
-                                    width: _containerWidth,
-                                    height: _containerHeight,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text('Stock alert'),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [Container()],
-                                        ),
-                                      ],
-                                    ),
-                                  ))),
-                  ),
-                  Visibility(
-                    visible: key4,
-                    child: Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                            onTap: _increasesize4,
-                            child: bigScreen
-                                ? Container(
-                                    color: Colors.green,
-                                    width: _containerWidth,
-                                    height: _containerHeight,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text('Analisa Revenue'),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              width: 1400,
-                                              height: 400,
-                                              child: Stack(
-                                                fit: StackFit.loose,
-                                                children: [
-                                                  Positioned(
-                                                      bottom: 0,
-                                                      right: 0,
-                                                      child: IconButton(
-                                                          color: Colors.black,
-                                                          onPressed:
-                                                              _quitbigcreenmode,
-                                                          icon: Icon(Icons
-                                                              .aspect_ratio_sharp)))
-                                                ],
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : Container(
-                                    color: Colors.green,
-                                    width: _containerWidth,
-                                    height: _containerHeight,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text('Analisa Revenue'),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [Container()],
-                                        ),
-                                      ],
-                                    ),
-                                  ))),
-                  )
                 ],
               ),
             ),
-          )),
+          ),
+        ),
+      ),
       ContentView(
-          tab: CustomTab(title: 'Mutasi Barang'),
+        tab: CustomTab(title: 'Atur Diskon'),
+        content: Center(
+          child: Expanded(
+              child: Container(
+            color: Colors.black,
+            width: double.infinity,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text('Atur Diskon'),
+                    TextFormField(
+                        controller: nama_diskon,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Field tidak boleh kosong';
+                          }
+                          return null;
+                        },
+                        decoration: const InputDecoration(
+                          border: UnderlineInputBorder(),
+                          labelText: 'Nama Diskon',
+                        )),
+                    TextFormField(
+                      controller: persentase_diskon,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'Persentase Diskon(%)',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                    ),
+                    Text(
+                      'Selected Date Start:',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    Text(
+                      //ini value date nya
+                      _dateFormat.format(selectedDateStart),
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    InkWell(
+                      onTap: () => _selectDateStart(context),
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.calendar_today),
+                            SizedBox(width: 8),
+                            Text('Start Date'),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Selected Date End:',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    Text(
+                      //ini value date nya
+                      _dateFormat.format(selectedDateEnd),
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    InkWell(
+                      onTap: () => _selectDateEnd(context),
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.calendar_today),
+                            SizedBox(width: 8),
+                            Text('End Date'),
+                          ],
+                        ),
+                      ),
+                    ),
+                    //lokasi untuk multi checklist barang
+                    Container(
+                      height: 200,
+                      child: databarang.length == 0
+                          ? CircularProgressIndicator()
+                          : ListView.builder(
+                              scrollDirection: Axis.vertical,
+                              itemCount: databarang.length,
+                              itemBuilder: (context, index) {
+                                return CheckboxListTile(
+                                  title: Text(databarang[index]['nama_barang']
+                                      .toString()),
+                                  value: isCheckedList[index],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      isCheckedList[index] = value!;
+                                      print(value);
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+
+                    FilledButton(
+                        onPressed: () async {
+                          String formattedDateStringStart =
+                              _dateFormat.format(selectedDateStart);
+                          DateTime insertedDateStart =
+                              _dateFormat.parse(formattedDateStringStart);
+
+                          String? DateStringStart;
+
+                          insertedDateStart =
+                              insertedDateStart.add(Duration(days: 1));
+                          DateStringStart = insertedDateStart.toIso8601String();
+
+                          String formattedDateStringEnd =
+                              _dateFormat.format(selectedDateEnd);
+                          DateTime insertedDateEnd =
+                              _dateFormat.parse(formattedDateStringEnd);
+
+                          String? DateStringEnd;
+
+                          insertedDateEnd =
+                              insertedDateEnd.add(Duration(days: 1));
+                          DateStringEnd = insertedDateEnd.toIso8601String();
+                          await tambahdiskon(
+                              nama_diskon.text,
+                              persentase_diskon.text,
+                              DateStringStart,
+                              DateStringEnd,
+                              isCheckedList,
+                              databarang,
+                              context);
+
+                          nama_diskon.text = "";
+                          persentase_diskon.text = "";
+                          selectedDateStart = DateTime.now();
+                          selectedDateEnd = DateTime.now();
+                          for (var i = 0; i < isCheckedList.length; i++) {
+                            isCheckedList[i] = false;
+                          }
+                          setState(() {
+                            fetchDiskon();
+                          });
+                        },
+                        child: Text("Tambah Diskon")),
+                  ],
+                ),
+              ],
+            ),
+          )),
+        ),
+      ),
+      ContentView(
+          tab: CustomTab(title: 'Stock Alert Barang'),
           content: Center(
             child: Container(color: Colors.blue, width: 100, height: 100),
+          )),
+      ContentView(
+          tab: CustomTab(title: 'Analisa Pendapatan'),
+          content: Center(
+            child: Container(color: Colors.blue, width: 100, height: 100),
+          )),
+      ContentView(
+          tab: CustomTab(title: 'Analisa Penghasilan'),
+          content: Center(
+            child: Container(color: Colors.green, width: 100, height: 100),
+          )),
+      ContentView(
+          tab: CustomTab(title: 'Grafik Trend'),
+          content: Center(
+            child: Container(color: Colors.green, width: 100, height: 100),
           )),
       ContentView(
           tab: CustomTab(title: 'Lihat Laporan'),
@@ -945,12 +558,17 @@ class _ManagerMenuState extends State<ManagerMenu>
             child: Container(color: Colors.green, width: 100, height: 100),
           )),
       ContentView(
+          tab: CustomTab(title: 'Mutasi Barang'),
+          content: Center(
+            child: Container(color: Colors.blue, width: 100, height: 100),
+          )),
+      ContentView(
           tab: CustomTab(title: 'Atur Pegawai'),
           content: Center(
             child: Container(
-              color: Colors.white,
-              width: 1400,
-              height: 800,
+              color: Colors.black,
+              width: double.maxFinite,
+              height: double.maxFinite,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -1109,12 +727,16 @@ class _ManagerMenuState extends State<ManagerMenu>
       ContentView(
           tab: CustomTab(title: 'Tambah Pegawai'),
           content: Container(
-              color: Colors.white,
+              color: Colors.black,
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
+                      Text(
+                        "Tambah Pegawai",
+                        style: TextStyle(color: Colors.white),
+                      ),
                       TextFormField(
                         controller: email,
                         decoration: const InputDecoration(
@@ -1207,9 +829,8 @@ class _ManagerMenuState extends State<ManagerMenu>
           tab: CustomTab(title: 'Pengaturan'),
           content: Center(
             child: Container(
-              color: Colors.white,
-              width: 1400,
-              height: 800,
+              color: Colors.black,
+              width: double.maxFinite,
               alignment: Alignment.center,
               child: ButtonBar(
                 alignment: MainAxisAlignment.center,
@@ -1270,82 +891,309 @@ class _ManagerMenuState extends State<ManagerMenu>
             ),
           )),
     ];
-    return Scaffold(
-      backgroundColor: Colors.black,
-      drawer: drawer(),
-      key: scaffoldKey,
-      body: Padding(
-        padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
-        child: LayoutBuilder(
-          builder: (context, Constraints) {
-            if (Constraints.maxWidth > 715) {
-              return desktopView();
-            } else {
-              return mobileView();
-            }
-          },
+
+    return MaterialApp(
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Colors.black87,
+        primaryColor: Colors.grey[500] ?? Colors.grey,
+        colorScheme: ColorScheme.dark(
+          primary: Colors.blue[400] ?? Colors.grey,
+          secondary: Colors.grey[300] ?? Colors.grey,
         ),
       ),
-    );
-  }
-
-  Widget mobileView() {
-    return Padding(
-      padding:
-          EdgeInsets.only(left: screenWidth * 0.05, right: screenWidth * 0.05),
-      child: Container(
-        width: screenWidth,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        key: scaffoldKey,
+        body: Row(
           children: [
-            IconButton(
-              iconSize: screenWidth * 0.08,
-              icon: Icon(Icons.menu_rounded),
-              onPressed: () => scaffoldKey.currentState?.openDrawer(),
-            )
+            Container(
+                width: 80,
+                color: Colors.blue.shade100,
+                child: Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: GestureDetector(
+                              onTap: () => _onItemTapped(0),
+                              child: Tooltip(
+                                message: "Home",
+                                child: Icon(
+                                  Icons.home,
+                                  size: 40,
+                                  color: Colors.blue,
+                                ),
+                              ))),
+                      Column(
+                        children: [
+                          Tooltip(
+                            message: 'General',
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.menu,
+                                size: 32,
+                                color: Colors.blue,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  if (isPegawaiExpanded) {
+                                    isPegawaiExpanded = false;
+                                  }
+                                  isHomeExpanded = !isHomeExpanded;
+                                });
+                              },
+                            ),
+                          ),
+                          if (isHomeExpanded)
+                            Column(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      top: BorderSide(
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: 'Daftar Diskon',
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.discount_rounded,
+                                      size: 28,
+                                      color: Colors.blue,
+                                    ),
+                                    onPressed: () => _onItemTapped(1),
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: 'Edit Diskon',
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.edit_note_rounded,
+                                      size: 28,
+                                      color: Colors.blue,
+                                    ),
+                                    onPressed: () => _onItemTapped(2),
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: 'Stock Alert',
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.warning_amber_rounded,
+                                      size: 28,
+                                      color: Colors.blue,
+                                    ),
+                                    onPressed: () => _onItemTapped(3),
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: 'Analisa Pendapatan',
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.auto_graph_rounded,
+                                      size: 28,
+                                      color: Colors.blue,
+                                    ),
+                                    onPressed: () => _onItemTapped(4),
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: 'Analisa Penghasilan',
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.attach_money_rounded,
+                                      size: 32,
+                                      color: Colors.blue,
+                                    ),
+                                    onPressed: () => _onItemTapped(5),
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: 'Grafik Trend',
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.grade_sharp,
+                                      size: 32,
+                                      color: Colors.blue,
+                                    ),
+                                    onPressed: () => _onItemTapped(6),
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: 'Laporan',
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.book_outlined,
+                                      size: 32,
+                                      color: Colors.blue,
+                                    ),
+                                    onPressed: () => _onItemTapped(7),
+                                  ),
+                                ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      top: BorderSide(
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Tooltip(
+                        message: 'Mutasi Barang',
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.warehouse_sharp,
+                            size: 32,
+                            color: Colors.blue,
+                          ),
+                          onPressed: () => _onItemTapped(8),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Tooltip(
+                        message: 'Manage Pegawai',
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.person_outline_sharp,
+                            size: 32,
+                            color: Colors.blue,
+                          ),
+                          onPressed: () => setState(() {
+                            if (isHomeExpanded) {
+                              isHomeExpanded = false;
+                            }
+                            isPegawaiExpanded = !isPegawaiExpanded;
+                          }),
+                        ),
+                      ),
+                      if (isPegawaiExpanded)
+                        Column(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Tooltip(
+                              message: 'Daftar Pegawai',
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.discount_rounded,
+                                  size: 28,
+                                  color: Colors.blue,
+                                ),
+                                onPressed: () => _onItemTapped(9),
+                              ),
+                            ),
+                            Tooltip(
+                              message: 'Tambah Pegawai',
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.edit_note_rounded,
+                                  size: 28,
+                                  color: Colors.blue,
+                                ),
+                                onPressed: () => _onItemTapped(10),
+                              ),
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Tooltip(
+                        message: 'Tracking Kurir',
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.delivery_dining_outlined,
+                            size: 32,
+                            color: Colors.blue,
+                          ),
+                          onPressed: () => _onItemTapped(11),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Tooltip(
+                        message: 'WhatsApp Bisnis',
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.wechat_sharp,
+                            size: 32,
+                            color: Colors.blue,
+                          ),
+                          onPressed: () => _onItemTapped(12),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Tooltip(
+                        message: 'Settings',
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.settings_outlined,
+                            size: 32,
+                            color: Colors.blue,
+                          ),
+                          onPressed: () => _onItemTapped(13),
+                        ),
+                      ),
+                      Spacer(),
+                      Tooltip(
+                        message: 'Logout',
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.logout,
+                            size: 32,
+                            color: Colors.blue,
+                          ),
+                          onPressed: () {
+                            GetStorage().erase();
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => loginscreen()));
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+            Expanded(
+              child: contentView[_selectedIndex].content,
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget desktopView() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CustomTabBar(
-          controller: tabController,
-          tabs: contentView.map((e) => e.tab).toList(),
-        ),
-        Container(
-          height: screenHeight * 0.85,
-          child: TabBarView(
-            controller: tabController,
-            children: contentView.map((e) => e.content).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget drawer() {
-    return Drawer(
-      child: ListView(
-        children: [
-              Container(
-                height: screenHeight * 0.1,
-              )
-            ] +
-            contentView
-                .map((e) => Container(
-                      child: ListTile(
-                        title: Text(e.tab.title),
-                        onTap: () {},
-                      ),
-                    ))
-                .toList(),
       ),
     );
   }

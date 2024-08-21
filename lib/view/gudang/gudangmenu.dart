@@ -445,7 +445,7 @@ class _GudangMenuState extends State<GudangMenu> {
                             height: 10,
                           ),
                           Text(
-                              "Jumlah Satuan: ${selectedSatuan!['jumlah_satuan']}"),
+                              "Jumlah Stock Satuan: ${selectedSatuan!['jumlah_satuan']}"),
                           SizedBox(
                             height: 10,
                           ),
@@ -454,7 +454,7 @@ class _GudangMenuState extends State<GudangMenu> {
                           SizedBox(
                             height: 10,
                           ),
-                          Text("Isi Satuan: ${selectedSatuan!['isi_satuan']}"),
+                          Text("Isi Satuan : ${selectedSatuan!['isi_satuan']}"),
                         ],
                         SizedBox(height: 32.0),
 
