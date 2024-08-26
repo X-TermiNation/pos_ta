@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/loginpage/login_owner.dart';
 import 'package:ta_pos/view/view-model-flutter/startup_controller.dart';
-import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/cabang_controller.dart';
 
 bool switchmode = false;
@@ -16,7 +15,17 @@ class managecabang extends StatefulWidget {
 }
 
 class _managecabangState extends State<managecabang> {
+  TextEditingController nama_cabang = new TextEditingController();
+  TextEditingController alamat_cabang = new TextEditingController();
+  TextEditingController no_telp = new TextEditingController();
+  TextEditingController alamat_gudang = new TextEditingController();
+  TextEditingController email = TextEditingController();
+  TextEditingController pass = TextEditingController();
+  TextEditingController fname = TextEditingController();
+  TextEditingController lname = TextEditingController();
   List<Map<String, dynamic>> datacabang = [];
+  int _currentPage = 0;
+  final int _itemsPerPage = 3;
 
   @override
   void initState() {
@@ -38,38 +47,50 @@ class _managecabangState extends State<managecabang> {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    TextEditingController nama_cabang = new TextEditingController();
-    TextEditingController alamat_cabang = new TextEditingController();
-    TextEditingController no_telp = new TextEditingController();
-    TextEditingController alamat_gudang = new TextEditingController();
-    TextEditingController email = TextEditingController();
-    TextEditingController pass = TextEditingController();
-    TextEditingController fname = TextEditingController();
-    TextEditingController lname = TextEditingController();
-
+    final startIndex = _currentPage * _itemsPerPage;
+    final endIndex = (startIndex + _itemsPerPage < datacabang.length)
+        ? startIndex + _itemsPerPage
+        : datacabang.length;
+    final paginatedData = datacabang.sublist(startIndex, endIndex);
     return Scaffold(
-        body: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text("Daftar Cabang"),
-        FutureBuilder(
-            future: getallcabang(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                final rows = snapshot.data!.map((map) {
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header Section
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            child: Text(
+              "Daftar Cabang",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          // Data Table Section
+          Align(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: const <DataColumn>[
+                  DataColumn(label: Text('Nama Cabang')),
+                  DataColumn(label: Text('Alamat')),
+                  DataColumn(label: Text('No Telp')),
+                  DataColumn(label: Text('Hapus Cabang')),
+                ],
+                rows: paginatedData.map<DataRow>((map) {
                   return DataRow(cells: [
-                    DataCell(
-                      Text(map['nama_cabang'], style: TextStyle(fontSize: 15)),
-                    ),
-                    DataCell(
-                        Text(map['alamat'], style: TextStyle(fontSize: 15))),
-                    DataCell(
-                        Text(map['no_telp'], style: TextStyle(fontSize: 15))),
+                    DataCell(Text(map['nama_cabang'])),
+                    DataCell(Text(map['alamat'])),
+                    DataCell(Text(map['no_telp'])),
                     DataCell(
                       Visibility(
                         visible: map['role'] != 'Manager',
                         child: ElevatedButton(
                           onPressed: () {
+                            print("ini data id hapus: ${map['_id']}");
                             try {
                               setState(() {
                                 deletecabang(map['_id'], context);
@@ -81,213 +102,232 @@ class _managecabangState extends State<managecabang> {
                             }
                           },
                           child: Text('Delete'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ]);
-                }).toList();
+                }).toList(),
+              ),
+            ),
+          ),
 
-                return DataTable(
-                  columns: const <DataColumn>[
-                    DataColumn(
-                        label: Text('Nama Cabang',
-                            style: TextStyle(fontSize: 15))),
-                    DataColumn(
-                        label: Text('Alamat', style: TextStyle(fontSize: 15))),
-                    DataColumn(
-                        label: Text('No Telp', style: TextStyle(fontSize: 15))),
-                    DataColumn(
-                        label: Text('Hapus Cabang',
-                            style: TextStyle(fontSize: 15))),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  onPressed: _currentPage > 0
+                      ? () {
+                          setState(() {
+                            _currentPage--;
+                          });
+                        }
+                      : null,
+                ),
+                Text('Page ${_currentPage + 1}'),
+                IconButton(
+                  icon: Icon(Icons.arrow_forward),
+                  onPressed:
+                      (_currentPage + 1) * _itemsPerPage < datacabang.length
+                          ? () {
+                              setState(() {
+                                _currentPage++;
+                              });
+                            }
+                          : null,
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 16.0),
+          // Conditional Content
+          switchmode
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: 20, bottom: 10),
+                      child: Text("Buat Akun Manager",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                    ..._buildManagerForm(),
                   ],
-                  rows: rows,
-                );
-              } else if (snapshot.hasError) {
-                // Show an error message.
-                return Text('Error: ${snapshot.error}');
-              } else {
-                // Show a loading indicator.
-                return CircularProgressIndicator();
-              }
-            }),
-        switchmode
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: 20, bottom: 10),
+                      child: Text("Tambah Cabang Baru",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                    ..._buildBranchForm(),
+                    SizedBox(height: 30),
+                    Padding(
                       padding: EdgeInsets.only(left: 20),
                       child: Text(
-                        "Buat Akun Manager",
-                      )),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  TextFormField(
-                    controller: email,
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.only(left: 25),
-                      border: UnderlineInputBorder(),
-                      labelText: 'Enter Email',
+                          "Pastikan data benar karena saat menekan tombol, data akan langsung tersimpan!",
+                          style: TextStyle(color: Colors.red)),
                     ),
-                  ),
-                  SizedBox(height: 16.0),
-                  TextFormField(
-                    controller: pass,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.only(left: 25),
-                      border: UnderlineInputBorder(),
-                      labelText: 'Enter Password',
-                    ),
-                  ),
-                  SizedBox(height: 16.0),
-                  TextFormField(
-                    controller: fname,
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.only(left: 25),
-                      border: UnderlineInputBorder(),
-                      labelText: 'Enter First Name',
-                    ),
-                  ),
-                  SizedBox(height: 16.0),
-                  TextFormField(
-                    controller: lname,
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.only(left: 25),
-                      border: UnderlineInputBorder(),
-                      labelText: 'Enter Last Name',
-                    ),
-                  ),
-                  SizedBox(height: 16.0),
-                  Padding(
-                    padding: EdgeInsets.only(left: 20),
-                    child: FilledButton(
-                      onPressed: () {
-                        tambahmanager_Owner(email.text, pass.text, fname.text,
-                            lname.text, context);
-                        final dataStorage = GetStorage();
-                        setState(() {
-                          email.text = "";
-                          pass.text = "";
-                          fname.text = "";
-                          lname.text = "";
-                          if (dataStorage.read('switchmode')) {
-                            switchmode = dataStorage.read('switchmode');
-                          }
-                        });
-                      },
-                      child: Text("Selesai"),
-                    ),
-                  )
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Tambah Cabang Baru"),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  TextFormField(
-                    controller: nama_cabang,
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.only(left: 25),
-                      border: UnderlineInputBorder(),
-                      labelText: 'Enter Nama Cabang',
-                    ),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  TextFormField(
-                    controller: alamat_cabang,
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.only(left: 25),
-                      border: UnderlineInputBorder(),
-                      labelText: 'Enter alamat Cabang',
-                    ),
-                  ),
-                  TextFormField(
-                    controller: no_telp,
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.only(left: 25),
-                      border: UnderlineInputBorder(),
-                      labelText: 'Enter Nomor Telepon Cabang',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  SizedBox(
-                    height: 50,
-                  ),
-                  Text("Input Informasi Gudang"),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  TextFormField(
-                    controller: alamat_gudang,
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.only(left: 25),
-                      border: UnderlineInputBorder(),
-                      labelText: 'Enter Alamat Gudang',
-                    ),
-                  ),
-                  SizedBox(
-                    height: 30,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: 20),
-                    child: FilledButton(
-                        onPressed: () {
-                          nambahcabangngudang_Owner(
-                              nama_cabang.text,
-                              alamat_cabang.text,
-                              no_telp.text,
-                              alamat_gudang.text,
-                              context);
-                          final dataStorage = GetStorage();
-                          setState(() {
-                            alamat_cabang.text = "";
-                            no_telp.text = "";
-                            alamat_gudang.text = "";
-                            nama_cabang.text = "";
-                            if (dataStorage.read('switchmode')) {
-                              switchmode = dataStorage.read('switchmode');
-                            }
-                          });
-                        },
-                        child: Text("Submit")),
-                  ),
-                  Text(
-                      "Pastikan data benar karena saat menekan tombol, data akan langsung tersimpan!",
-                      style: TextStyle(color: Colors.red)),
-                  SizedBox(
-                    height: 30,
-                  ),
-                  Align(
+                    SizedBox(height: 10),
+                    Align(
                       alignment: Alignment.bottomRight,
                       child: Padding(
                         padding: EdgeInsets.only(right: 20),
                         child: FilledButton(
-                            onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => login_owner()));
-                            },
-                            child: Icon(
-                              Icons.logout_rounded,
-                              color: Colors.black,
-                              size: 25,
-                            )),
-                      ))
-                ],
-              ),
-      ],
-    ));
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => login_owner()));
+                          },
+                          child: Icon(Icons.logout_rounded,
+                              color: Colors.black, size: 25),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: CircleBorder(),
+                            padding: EdgeInsets.all(10),
+                          ),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildManagerForm() {
+    return [
+      _buildTextField(controller: email, label: 'Enter Email'),
+      _buildTextField(
+          controller: pass, label: 'Enter Password', obscureText: true),
+      _buildTextField(controller: fname, label: 'Enter First Name'),
+      _buildTextField(controller: lname, label: 'Enter Last Name'),
+      SizedBox(height: 10.0),
+      Padding(
+        padding: EdgeInsets.only(left: 20),
+        child: FilledButton(
+          onPressed: () {
+            tambahmanager_Owner(
+                email.text, pass.text, fname.text, lname.text, context);
+            final dataStorage = GetStorage();
+            setState(() {
+              email.text = "";
+              pass.text = "";
+              fname.text = "";
+              lname.text = "";
+              dataStorage.write('switchmode', false);
+              switchmode = dataStorage.read('switchmode');
+            });
+          },
+          child: Text("Selesai"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue[400],
+            padding: EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _buildBranchForm() {
+    return [
+      _buildTextField(controller: nama_cabang, label: 'Enter Nama Cabang'),
+      _buildTextField(controller: alamat_cabang, label: 'Enter Alamat Cabang'),
+      _buildTextField(
+        controller: no_telp,
+        label: 'Enter Nomor Telepon Cabang',
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      ),
+      SizedBox(height: 30),
+      Padding(
+        padding: EdgeInsets.only(left: 20),
+        child: Text("Input Informasi Gudang",
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold)),
+      ),
+      SizedBox(height: 10),
+      _buildTextField(controller: alamat_gudang, label: 'Enter Alamat Gudang'),
+      SizedBox(height: 10),
+      Padding(
+        padding: EdgeInsets.only(left: 20),
+        child: FilledButton(
+          onPressed: () {
+            nambahcabangngudang_Owner(nama_cabang.text, alamat_cabang.text,
+                no_telp.text, alamat_gudang.text, context);
+            final dataStorage = GetStorage();
+            setState(() {
+              nama_cabang.text = "";
+              alamat_cabang.text = "";
+              no_telp.text = "";
+              alamat_gudang.text = "";
+              dataStorage.write('switchmode', true);
+              switchmode = dataStorage.read('switchmode');
+            });
+          },
+          child: Text("Submit"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue[400],
+            padding: EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        style: TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.grey[300]),
+          filled: true,
+          fillColor: Colors.grey[800],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      ),
+    );
   }
 }
