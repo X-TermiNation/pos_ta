@@ -50,6 +50,8 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController jumlah_satuan_initial = TextEditingController();
   TextEditingController isi_satuan_initial = TextEditingController();
   TextEditingController _searchController = TextEditingController();
+  TextEditingController _searchControllerBarangList = TextEditingController();
+  String searchQuery = '';
   List<Map<String, dynamic>> _dataList = [];
   List<Map<String, dynamic>> satuanList = [];
   Map<String, dynamic>? selectedSatuan;
@@ -71,7 +73,7 @@ class _GudangMenuState extends State<GudangMenu> {
       // }
 
       print(
-          "data jenis dan kategori pertama:$selectedvalueJenis dan $selectedvalueKategori");
+          "data jenis dan kategori pertama: $selectedvalueJenis dan $selectedvalueKategori");
     } catch (error) {
       print('Error fetchdata kategori dan jenis: $error');
     }
@@ -151,69 +153,101 @@ class _GudangMenuState extends State<GudangMenu> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ResponsiveHeader(
+      body: ResponsiveSideMenu(
         containers: [
-          Container(
-            width: 1500,
-            height: 750,
-            child: Center(
+          Center(
+            child: Container(
+              width: 1500,
+              height: 750,
+              padding: EdgeInsets.all(16.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  //daftar barang
-                  Container(
-                      width: 950,
-                      height: 650,
+                  // Daftar Barang Section
+                  Expanded(
+                    flex: 2,
+                    child: Container(
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.black,
-                          width: 0.1,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            height: 10,
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(12.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey,
+                            blurRadius: 10,
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                barangdata = Future.delayed(
-                                    Duration(seconds: 1),
-                                    () => getBarang(id_gudangs));
-                              });
-                            },
-                            child: Text(
-                              "Daftar Barang",
-                              // Your text properties here
+                        ],
+                      ),
+                      padding: EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Daftar Barang",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
-                          SizedBox(
-                            height: 100,
+                          SizedBox(height: 16),
+                          TextField(
+                            controller: _searchControllerBarangList,
+                            decoration: InputDecoration(
+                              hintText: 'Search Barang',
+                              prefixIcon: Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide.none,
+                              ),
+                              fillColor: Colors.blue,
+                              filled: true,
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                searchQuery = value.toLowerCase();
+                              });
+                            },
                           ),
-                          FutureBuilder(
-                            future: barangdata,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return CircularProgressIndicator(); // Show loading indicator while waiting for data
-                              } else if (snapshot.hasError) {
-                                return Text('Error: ${snapshot.error}');
-                              } else if (!snapshot.hasData ||
-                                  snapshot.data == null) {
-                                return Text('No data available');
-                              } else {
-                                final List<Map<String, dynamic>>? data =
-                                    snapshot.data;
-                                if (data == null) {
-                                  return Text('No data available');
-                                }
+                          SizedBox(height: 16),
+                          Expanded(
+                            child: FutureBuilder(
+                              future: barangdata,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Center(
+                                      child: CircularProgressIndicator());
+                                } else if (snapshot.hasError) {
+                                  return Center(
+                                    child: Text('Error: ${snapshot.error}'),
+                                  );
+                                } else if (!snapshot.hasData ||
+                                    snapshot.data == null) {
+                                  return Center(
+                                    child: Text('No data available'),
+                                  );
+                                } else {
+                                  final List<Map<String, dynamic>>? data =
+                                      snapshot.data;
+                                  if (data == null) {
+                                    return Center(
+                                      child: Text('No data available'),
+                                    );
+                                  }
 
-                                if (snapshot.hasData) {
-                                  final rows = snapshot.data!.map((map) {
+                                  // Filter the data based on the search query
+                                  final filteredData = data.where((map) {
+                                    final namaBarang =
+                                        map['nama_barang']?.toLowerCase() ?? '';
+                                    return namaBarang.contains(searchQuery);
+                                  }).toList();
+
+                                  if (filteredData.isEmpty) {
+                                    return Center(
+                                      child: Text('No items match your search'),
+                                    );
+                                  }
+
+                                  final rows = filteredData.map((map) {
                                     return DataRow(cells: [
                                       DataCell(
                                         GestureDetector(
@@ -239,30 +273,31 @@ class _GudangMenuState extends State<GudangMenu> {
                                             temp_id_update = map['_id'];
                                             fetchsatuandetail();
                                           },
-                                          child: Text(map['nama_barang'],
-                                              style: TextStyle(fontSize: 15)),
+                                          child: Text(
+                                            map['nama_barang'],
+                                            style: TextStyle(fontSize: 16),
+                                          ),
                                         ),
                                       ),
                                       DataCell(Text(
-                                          '${map['jenis_barang']} / ${map['kategori_barang']}',
-                                          style: TextStyle(fontSize: 15))),
-                                      DataCell(
-                                        Text(
-                                          map['exp_date'] != null
-                                              ? map['exp_date']
-                                                  .toString()
-                                                  .substring(0, 10)
-                                              : "-",
-                                          style: TextStyle(fontSize: 15),
-                                        ),
-                                      ),
+                                        '${map['jenis_barang']} / ${map['kategori_barang']}',
+                                        style: TextStyle(fontSize: 16),
+                                      )),
+                                      DataCell(Text(
+                                        map['exp_date'] != null
+                                            ? map['exp_date']
+                                                .toString()
+                                                .substring(0, 10)
+                                            : "-",
+                                        style: TextStyle(fontSize: 16),
+                                      )),
                                       DataCell(Text(
                                         map['insert_date'] != null
                                             ? map['insert_date']
                                                 .toString()
                                                 .substring(0, 10)
                                             : "-",
-                                        style: TextStyle(fontSize: 15),
+                                        style: TextStyle(fontSize: 16),
                                       )),
                                       DataCell(
                                         ElevatedButton(
@@ -275,191 +310,149 @@ class _GudangMenuState extends State<GudangMenu> {
                                             });
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors
-                                                .purple, // Background color
-                                            textStyle: TextStyle(
-                                                color:
-                                                    Colors.white), // Text color
+                                            backgroundColor: Colors.redAccent,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
+                                            ),
                                           ),
-                                          child: Text(
+                                          child: Text('Delete',
                                               style: TextStyle(
-                                                  color: Colors.black),
-                                              'Delete'),
+                                                  color: Colors.white)),
                                         ),
                                       ),
                                     ]);
                                   }).toList();
 
-                                  return DataTable(
-                                    columns: const <DataColumn>[
-                                      DataColumn(
-                                        label: Text('Nama Barang',
-                                            style: TextStyle(fontSize: 15)),
-                                      ),
-                                      DataColumn(
-                                        label: Text('Jenis/Kategori',
-                                            style: TextStyle(fontSize: 15)),
-                                      ),
-                                      DataColumn(
-                                        label: Text('Exp Date',
-                                            style: TextStyle(fontSize: 15)),
-                                      ),
-                                      DataColumn(
-                                        label: Text('Insert Date',
-                                            style: TextStyle(fontSize: 15)),
-                                      ),
-                                      DataColumn(
-                                        label: Text('Hapus Barang',
-                                            style: TextStyle(fontSize: 15)),
-                                      ),
-                                    ],
-                                    rows: rows,
+                                  return SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: DataTable(
+                                      columns: const <DataColumn>[
+                                        DataColumn(
+                                          label: Text('Nama Barang',
+                                              style: TextStyle(fontSize: 16)),
+                                        ),
+                                        DataColumn(
+                                          label: Text('Jenis/Kategori',
+                                              style: TextStyle(fontSize: 16)),
+                                        ),
+                                        DataColumn(
+                                          label: Text('Exp Date',
+                                              style: TextStyle(fontSize: 16)),
+                                        ),
+                                        DataColumn(
+                                          label: Text('Insert Date',
+                                              style: TextStyle(fontSize: 16)),
+                                        ),
+                                        DataColumn(
+                                          label: Text('Hapus Barang',
+                                              style: TextStyle(fontSize: 16)),
+                                        ),
+                                      ],
+                                      rows: rows,
+                                    ),
                                   );
-                                } else if (snapshot.hasError) {
-                                  return Text('Error: ${snapshot.error}');
-                                } else {
-                                  return CircularProgressIndicator();
                                 }
-                              }
-                            },
-                          )
+                              },
+                            ),
+                          ),
                         ],
-                      )),
-                  //detail barang
-                  Container(
-                    width: 550.0,
-                    height: 650.0,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 0.1,
                       ),
                     ),
-                    padding: EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Text("Detail Barang"),
-                        ),
-                        SizedBox(height: 20.0),
-                        Text("Nama Barang : ${edit_nama_barang.text}"),
-                        SizedBox(height: 16.0),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                "Jenis/Kategori Barang: ${edit_nama_kategorijenis.text}"),
-                            // FutureBuilder<Map<String, String>>(
-                            //   future: getmapkategori(),
-                            //   builder: (context, snapshot) {
-                            //     if (snapshot.connectionState ==
-                            //         ConnectionState.waiting) {
-                            //       return CircularProgressIndicator();
-                            //     } else if (snapshot.hasError) {
-                            //       return Text('Error: ${snapshot.error}');
-                            //     } else if (snapshot.hasData &&
-                            //         snapshot.data != null) {
-                            //       var entries = snapshot.data!.entries.toList();
-
-                            //       if (entries.isEmpty) {
-                            //         return Text('No items available');
-                            //       }
-
-                            //       var items = entries
-                            //           .map((entry) => DropdownMenuItem<String>(
-                            //                 child: Text(entry.value),
-                            //                 value: entry.key,
-                            //               ))
-                            //           .toList();
-
-                            //       // Ensure edit_selectedvalueKategori is valid
-                            //       if (edit_selectedvalueKategori == null ||
-                            //           !snapshot.data!.containsKey(
-                            //               edit_selectedvalueKategori)) {
-                            //         edit_selectedvalueKategori =
-                            //             entries.first.key;
-                            //       }
-
-                            //       return DropdownButton<String>(
-                            //         value: edit_selectedvalueKategori,
-                            //         items: items,
-                            //         onChanged: (value) {
-                            //           if (value != null) {
-                            //             final selectedEntry =
-                            //                 snapshot.data?.entries.firstWhere(
-                            //               (entry) => entry.key == value,
-                            //             );
-                            //             if (selectedEntry != null) {
-                            //               setState(() {
-                            //                 edit_selectedvalueKategori = value;
-                            //                 Edit_katakategori =
-                            //                     selectedEntry.value;
-                            //               });
-                            //             }
-                            //           }
-                            //         },
-                            //       );
-                            //     } else {
-                            //       return Text('No data available');
-                            //     }
-                            //   },
-                            // ),
-                          ],
-                        ),
-                        SizedBox(height: 16.0),
-                        Text(
-                          "Expire Date: ${edit_expdate_barang.text != null && edit_expdate_barang.text.length >= 10 ? edit_expdate_barang.text.substring(0, 10) : "-"}",
-                        ),
-                        SizedBox(height: 16.0),
-                        Text(
-                            "Insert Date : ${edit_insertdate_barang.text.isNotEmpty ? edit_insertdate_barang.text.toString().substring(0, 10) : "-"}"),
-                        // DropdownButton to select satuan
-                        SizedBox(
-                          height: 20,
-                        ),
-                        Text("Satuan:"),
-                        DropdownButton<Map<String, dynamic>>(
-                          value: selectedSatuan,
-                          hint: Text('Select Satuan'),
-                          items: satuanList.map((satuan) {
-                            return DropdownMenuItem<Map<String, dynamic>>(
-                              value: satuan,
-                              child: Text(satuan['nama_satuan'] ?? 'No Name'),
-                            );
-                          }).toList(),
-                          onChanged: (selected) {
-                            setState(() {
-                              selectedSatuan = selected;
-                            });
-                          },
-                        ),
-                        SizedBox(height: 16.0),
-                        // Display details of the selected satuan
-                        if (selectedSatuan != null) ...[
-                          Text(
-                              "Nama Satuan: ${selectedSatuan!['nama_satuan']}"),
-                          SizedBox(
-                            height: 10,
+                  ),
+                  SizedBox(width: 16.0),
+                  // Detail Barang Section
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(12.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey,
+                            blurRadius: 10,
                           ),
-                          Text(
-                              "Jumlah Stock Satuan: ${selectedSatuan!['jumlah_satuan']}"),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                              "Harga Satuan: Rp.${NumberFormat('#,###.00', 'id_ID').format(selectedSatuan!['harga_satuan'] ?? 0.0)}"),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Text("Isi Satuan : ${selectedSatuan!['isi_satuan']}"),
                         ],
-                        SizedBox(height: 32.0),
-
-                        //belum bekerja
-                        ElevatedButton(
+                      ),
+                      padding: EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Text(
+                              "Detail Barang",
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 20.0),
+                          Text(
+                            "Nama Barang : ${edit_nama_barang.text}",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          SizedBox(height: 16.0),
+                          Text(
+                            "Jenis/Kategori Barang: ${edit_nama_kategorijenis.text}",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          SizedBox(height: 16.0),
+                          Text(
+                            "Expire Date: ${edit_expdate_barang.text != null && edit_expdate_barang.text.length >= 10 ? edit_expdate_barang.text.substring(0, 10) : "-"}",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          SizedBox(height: 16.0),
+                          Text(
+                            "Insert Date : ${edit_insertdate_barang.text.isNotEmpty ? edit_insertdate_barang.text.toString().substring(0, 10) : "-"}",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          SizedBox(height: 20.0),
+                          Text(
+                            "Satuan:",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          DropdownButton<Map<String, dynamic>>(
+                            value: selectedSatuan,
+                            hint: Text('Select Satuan'),
+                            items: satuanList.map((satuan) {
+                              return DropdownMenuItem<Map<String, dynamic>>(
+                                value: satuan,
+                                child: Text(satuan['nama_satuan'] ?? 'No Name'),
+                              );
+                            }).toList(),
+                            onChanged: (selected) {
+                              setState(() {
+                                selectedSatuan = selected;
+                              });
+                            },
+                          ),
+                          SizedBox(height: 16.0),
+                          if (selectedSatuan != null) ...[
+                            Text(
+                              "Nama Satuan: ${selectedSatuan!['nama_satuan']}",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              "Jumlah Stock Satuan: ${selectedSatuan!['jumlah_satuan']}",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              "Harga Satuan: Rp.${NumberFormat('#,###.00', 'id_ID').format(selectedSatuan!['harga_satuan'] ?? 0.0)}",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              "Isi Satuan : ${selectedSatuan!['isi_satuan']}",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ],
+                          Spacer(),
+                          ElevatedButton(
                             onPressed: _isEditUser
                                 ? () {
                                     //belum diubah dari mongoose
@@ -481,8 +474,19 @@ class _GudangMenuState extends State<GudangMenu> {
                                     });
                                   }
                                 : null,
-                            child: Text('Update Barang')),
-                      ],
+                            child: Text(
+                              'Update Barang',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -490,254 +494,277 @@ class _GudangMenuState extends State<GudangMenu> {
             ),
           ),
           Container(
+            padding: EdgeInsets.all(16.0),
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 10,
-                  ),
-                  Center(
-                    child: Text("Tambah Barang"),
-                  ),
-                  TextFormField(
-                    controller: nama_barang,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Name is required';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Nama Barang',
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Text(
+                        "Tambah Barang",
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Kategori Barang:"),
-                      SizedBox(
-                        width: 20,
+                    SizedBox(height: 20),
+                    TextFormField(
+                      controller: nama_barang,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Name is required';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Nama Barang',
+                        prefixIcon: Icon(Icons.label),
                       ),
-                      FutureBuilder<Map<String, String>>(
-                        future: getmapkategori(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return CircularProgressIndicator();
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else if (snapshot.hasData &&
-                              snapshot.data != null) {
-                            var entries = snapshot.data!.entries.toList();
-
-                            if (entries.isEmpty) {
-                              return Text('No items available');
-                            }
-                            if (selectedvalueKategori == null ||
-                                !entries.any((entry) =>
-                                    entry.key == selectedvalueKategori)) {
-                              selectedvalueKategori = entries.first.key;
-                            }
-
-                            return DropdownButton<String>(
-                              value: selectedvalueKategori,
-                              items: entries
-                                  .map((entry) => DropdownMenuItem(
-                                        child: Text(entry.value),
-                                        value: entry.key,
-                                      ))
-                                  .toList(),
-                              onChanged: (value) {
-                                final selectedEntry = entries.firstWhere(
-                                    (entry) => entry.key == value,
-                                    orElse: () => MapEntry('', ''));
-                                if (selectedEntry.key.isNotEmpty) {
-                                  setState(() {
-                                    selectedvalueKategori = value;
-                                    katakategori = selectedEntry.value;
-                                  });
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text("Kategori Barang:"),
+                        SizedBox(width: 20),
+                        Expanded(
+                          child: FutureBuilder<Map<String, String>>(
+                            future: getmapkategori(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              } else if (snapshot.hasError) {
+                                return Text('Error: ${snapshot.error}');
+                              } else if (snapshot.hasData &&
+                                  snapshot.data != null) {
+                                var entries = snapshot.data!.entries.toList();
+                                if (entries.isEmpty) {
+                                  return Text('No items available');
                                 }
-                              },
-                            );
-                          } else {
-                            return Text('No data available');
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  Text(
-                    'Selected Date:',
-                    style: TextStyle(fontSize: 20),
-                  ),
-                  Text(
-                    //ini value date nya
-                    _dateFormat.format(selectedDate),
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 20),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Column(
-                        children: [
-                          Text('No Expiration Date'),
-                          Checkbox(
-                            value: noExp,
-                            onChanged: (bool? value) {
-                              setState(() {
-                                noExp = value ?? false;
-                                print(noExp);
-                              });
+                                if (selectedvalueKategori == null ||
+                                    !entries.any((entry) =>
+                                        entry.key == selectedvalueKategori)) {
+                                  selectedvalueKategori = entries.first.key;
+                                }
+                                return DropdownButton<String>(
+                                  value: selectedvalueKategori,
+                                  isExpanded: true,
+                                  items: entries
+                                      .map((entry) => DropdownMenuItem(
+                                            child: Text(entry.value),
+                                            value: entry.key,
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    final selectedEntry = entries.firstWhere(
+                                        (entry) => entry.key == value,
+                                        orElse: () => MapEntry('', ''));
+                                    if (selectedEntry.key.isNotEmpty) {
+                                      setState(() {
+                                        selectedvalueKategori = value;
+                                        katakategori = selectedEntry.value;
+                                      });
+                                    }
+                                  },
+                                );
+                              } else {
+                                return Text('No data available');
+                              }
                             },
                           ),
-                          SizedBox(height: 10),
-                        ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    Divider(),
+                    SizedBox(height: 8),
+                    Text(
+                      'Selected Date:',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      _dateFormat.format(selectedDate),
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('No Expiration Date'),
+                            Checkbox(
+                              value: noExp,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  noExp = value ?? false;
+                                  print(noExp);
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        SizedBox(width: 20),
+                        InkWell(
+                          onTap: () => _selectDate(context),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blueAccent),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.calendar_today,
+                                    color: Colors.blueAccent),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Select Date',
+                                  style: TextStyle(color: Colors.blueAccent),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    Divider(),
+                    SizedBox(height: 16),
+                    Center(
+                      child: Text(
+                        "Satuan Barang",
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                      InkWell(
-                        onTap: () => _selectDate(context),
-                        child: Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: nama_satuan_initial,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Nama Satuan',
+                        prefixIcon: Icon(Icons.category),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: harga_satuan_initial,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Harga Barang tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Harga Barang',
+                        prefixIcon: Icon(Icons.attach_money),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: jumlah_satuan_initial,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Stok Satuan Barang',
+                        prefixIcon: Icon(Icons.storage),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: isi_satuan_initial,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Isi satuan tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Kuantitas per satuan',
+                        prefixIcon: Icon(Icons.format_list_numbered),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                    ),
+                    SizedBox(height: 30),
+                    Center(
+                      child: FilledButton(
+                        onPressed: () async {
+                          String formattedDateString =
+                              _dateFormat.format(selectedDate);
+                          DateTime insertedDate =
+                              _dateFormat.parse(formattedDateString);
+                          addbarang(
+                              insertedDate,
+                              noExp,
+                              nama_barang.text,
+                              katakategori,
+                              nama_satuan_initial.text,
+                              jumlah_satuan_initial.text,
+                              isi_satuan_initial.text,
+                              harga_satuan_initial.text,
+                              context);
+                          nama_kategori.text = "";
+                          setState(() {
+                            fetchData();
+                            noExp = false;
+                            nama_barang.text = "";
+                            nama_satuan_initial.text = "";
+                            jumlah_satuan_initial.text = "";
+                            harga_satuan_initial.text = "";
+                            isi_satuan_initial.text = "";
+                            barangdata = Future.delayed(Duration(seconds: 1),
+                                () => getBarang(id_gudangs));
+                            fetchDataAndUseInJsonString();
+                          });
+                        },
+                        style: FilledButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 30, vertical: 16),
+                          backgroundColor: Colors.blueAccent,
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.calendar_today),
-                              SizedBox(width: 8),
-                              Text('Select Date'),
-                            ],
-                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.black, // Set the color of the border
-                          width: 1.0, // Set the thickness of the border
+                        child: Text(
+                          'Tambah Barang',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ),
                     ),
-                    child: Container(),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Center(
-                    child: Text("Satuan Barang"),
-                  ),
-                  SizedBox(height: 10),
-                  TextFormField(
-                    controller: nama_satuan_initial,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Nama Satuan',
-                    ),
-                  ),
-                  TextFormField(
-                    controller: harga_satuan_initial,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Harga Barang tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Harga Barang',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  TextFormField(
-                    controller: jumlah_satuan_initial,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Stok Satuan Barang',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  TextFormField(
-                    controller: isi_satuan_initial,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Isi satuan tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Kuantitas per satuan',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  SizedBox(
-                    height: 200,
-                  ),
-                  FilledButton(
-                    onPressed: () async {
-                      String formattedDateString =
-                          _dateFormat.format(selectedDate);
-                      DateTime insertedDate =
-                          _dateFormat.parse(formattedDateString);
-                      addbarang(
-                          insertedDate,
-                          noExp,
-                          nama_barang.text,
-                          katakategori,
-                          nama_satuan_initial.text,
-                          jumlah_satuan_initial.text,
-                          isi_satuan_initial.text,
-                          harga_satuan_initial.text,
-                          context);
-                      nama_kategori.text = "";
-                      setState(() {
-                        fetchData();
-                        noExp = false;
-                        nama_barang.text = "";
-                        nama_satuan_initial.text = "";
-                        jumlah_satuan_initial.text = "";
-                        harga_satuan_initial.text = "";
-                        isi_satuan_initial.text = "";
-                        barangdata = Future.delayed(
-                            Duration(seconds: 1), () => getBarang(id_gudangs));
-                        fetchDataAndUseInJsonString();
-                      });
-                    },
-                    child: Text('Tambah Barang'),
-                  )
-                ],
+                  ],
+                ),
               ),
             ),
           ),

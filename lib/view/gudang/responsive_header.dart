@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
-class ResponsiveHeader extends StatefulWidget {
+class ResponsiveSideMenu extends StatefulWidget {
   final List<Widget> containers;
   final int initialIndex;
 
-  const ResponsiveHeader({
+  const ResponsiveSideMenu({
     Key? key,
     required this.containers,
     this.initialIndex = 0,
   }) : super(key: key);
 
   @override
-  State<ResponsiveHeader> createState() => _ResponsiveHeaderState();
+  State<ResponsiveSideMenu> createState() => _ResponsiveSideMenuState();
 }
 
-class _ResponsiveHeaderState extends State<ResponsiveHeader> {
+class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
   int _currentIndex = 0;
 
   @override
@@ -23,69 +23,79 @@ class _ResponsiveHeaderState extends State<ResponsiveHeader> {
     _currentIndex = widget.initialIndex;
   }
 
-  String header = "";
-  int temp = 0;
-  void _onHeaderItemTapped(int index) {
+  void _onMenuItemTapped(int index) {
     setState(() {
       _currentIndex = index;
     });
   }
 
-  String generatetext(int index) {
-    if (index == 0) {
-      header = "Daftar Barang";
-    } else if (index == 1) {
-      header = "Tambah Barang";
-    } else if (index == 2) {
-      header = "Tambah Kategori dan Jenis Barang";
-    } else if (index == 3) {
-      header = "Tambah Satuan Barang";
-    } else if (index == 4) {
-      header = "Stock Alert";
-    } else if (index == 5) {
-      header = "Mutasi Barang";
-    } else {
-      header = "Lainnya";
+  IconData generateIcon(int index) {
+    switch (index) {
+      case 0:
+        return Icons.list_alt; // Daftar Barang
+      case 1:
+        return Icons.add_box; // Tambah Barang
+      case 2:
+        return Icons.category; // Tambah Kategori dan Jenis Barang
+      case 3:
+        return Icons.format_list_numbered; // Tambah Satuan Barang
+      case 4:
+        return Icons.warning; // Stock Alert
+      case 5:
+        return Icons.swap_horiz; // Mutasi Barang
+      default:
+        return Icons.more_horiz; // Lainnya
     }
-    return header;
+  }
+
+  String generateTooltip(int index) {
+    switch (index) {
+      case 0:
+        return "Daftar Barang";
+      case 1:
+        return "Tambah Barang";
+      case 2:
+        return "Tambah Kategori dan Jenis Barang";
+      case 3:
+        return "Tambah Satuan Barang";
+      case 4:
+        return "Stock Alert";
+      case 5:
+        return "Mutasi Barang";
+      default:
+        return "Lainnya";
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       children: [
         Container(
+          width: 80,
           decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.black,
-              width: 1.0,
-            ),
+            color: Colors.blueGrey[900],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               for (int i = 0; i < widget.containers.length; i++)
                 GestureDetector(
-                  onTap: () => _onHeaderItemTapped(i),
+                  onTap: () => _onMenuItemTapped(i),
                   child: Container(
+                    width: 80,
                     decoration: BoxDecoration(
-                      border: Border.all(
-                        color: i == _currentIndex
-                            ? Colors.black
-                            : Colors.grey, // Border color based on selection
-                        width: 2.0, // Width of the border
-                      ),
-                      borderRadius: BorderRadius.circular(
-                          8.0), // Optional: Rounded corners
+                      color: i == _currentIndex
+                          ? Colors.blueAccent
+                          : Colors.transparent,
                     ),
-                    padding: EdgeInsets.all(
-                        8.0), // Optional: Padding inside the border
-                    child: Text(
-                      generatetext(i),
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: i == _currentIndex ? Colors.black : Colors.grey,
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Tooltip(
+                      message: generateTooltip(i),
+                      child: Icon(
+                        generateIcon(i),
+                        color: i == _currentIndex ? Colors.white : Colors.grey,
+                        size: 30,
                       ),
                     ),
                   ),
@@ -93,7 +103,9 @@ class _ResponsiveHeaderState extends State<ResponsiveHeader> {
             ],
           ),
         ),
-        widget.containers[_currentIndex],
+        Expanded(
+          child: widget.containers[_currentIndex],
+        ),
       ],
     );
   }

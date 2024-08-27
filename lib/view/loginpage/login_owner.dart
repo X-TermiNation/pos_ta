@@ -26,89 +26,118 @@ class _login_owner_state extends State<login_owner> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text('Login Owner'),
-            const SizedBox(
-              height: 30,
-            ),
-            TextFormField(
-              controller: email,
-              onChanged: (value) {
-                setState(() {
-                  emailowner = value;
-                });
-              },
-              decoration: const InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: 'Enter your Email',
-              ),
-              validator: (value) {
-                if (value == null) {
-                  showToast(context, 'Field email tidak boleh kosong!');
-                }
-                return null;
-              },
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            TextFormField(
-              controller: pass,
-              obscureText: true,
-              decoration: const InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: 'Enter your Password',
-              ),
-              validator: (value) {
-                if (value == null) {
-                  showToast(context, 'Field password tidak boleh kosong!');
-                }
-                return null;
-              },
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            FilledButton(
-              onPressed: () async {
-                int signcode = 0;
-                signcode = await loginOwner(emailowner, pass.text);
-                if (signcode == 1) {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => ownermenu()));
-                } else {
-                  showToast(context, "Username/Password Salah!");
-                }
-              },
-              child: Text('Login'),
-            ),
-            SizedBox(
-              height: 100,
-            ),
-            Align(
-              alignment: Alignment.center,
-              child: Padding(
-                padding: const EdgeInsets.only(
-                    top: 100), // Optional: Add padding if needed
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => loginscreen()));
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  'Login Owner',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[800],
+                  ),
+                ),
+                const SizedBox(height: 40),
+                TextFormField(
+                  controller: email,
+                  onChanged: (value) {
+                    setState(() {
+                      emailowner = value;
+                    });
                   },
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: TextStyle(color: Colors.grey[700]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      showToast(context, 'Field email tidak boleh kosong!');
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: pass,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    labelStyle: TextStyle(color: Colors.grey[700]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      showToast(context, 'Field password tidak boleh kosong!');
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: () async {
+                    int signcode = 0;
+                    signcode = await loginOwner(emailowner, pass.text);
+                    if (signcode == 1) {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => ownermenu()));
+                    } else {
+                      showToast(context, "Username/Password Salah!");
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    backgroundColor: Colors.blue[700],
+                  ),
                   child: Text(
-                    'Login as Employee',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.purple,
-                      decoration: TextDecoration.underline,
+                    'Login',
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 100),
+                Align(
+                  alignment: Alignment.center,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => loginscreen()));
+                    },
+                    child: Text(
+                      'Login as Employee',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
