@@ -18,7 +18,7 @@ void main() async {
   WindowOptions windowOptions = WindowOptions(
     size: Size(screenSize.width, screenSize.height),
     titleBarStyle: TitleBarStyle.normal,
-    minimumSize: Size(800, 600),
+    minimumSize: Size(1000, 800),
   );
 
   windowManager.waitUntilReadyToShow(windowOptions, () async {

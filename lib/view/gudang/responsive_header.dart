@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:ta_pos/view/loginpage/login.dart';
 
 class ResponsiveSideMenu extends StatefulWidget {
   final List<Widget> containers;
@@ -16,6 +18,7 @@ class ResponsiveSideMenu extends StatefulWidget {
 
 class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
   int _currentIndex = 0;
+  bool log_out = false;
 
   @override
   void initState() {
@@ -24,9 +27,14 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
   }
 
   void _onMenuItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    if (index == 5) {
+      log_out = true;
+      showConfirmationDialog(context);
+    } else {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
   }
 
   IconData generateIcon(int index) {
@@ -36,15 +44,13 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
       case 1:
         return Icons.add_box; // Tambah Barang
       case 2:
-        return Icons.category; // Tambah Kategori dan Jenis Barang
+        return Icons.category; // Tambah Satuan Barang
       case 3:
-        return Icons.format_list_numbered; // Tambah Satuan Barang
-      case 4:
         return Icons.warning; // Stock Alert
-      case 5:
+      case 4:
         return Icons.swap_horiz; // Mutasi Barang
       default:
-        return Icons.more_horiz; // Lainnya
+        return Icons.logout_outlined; // Lainnya
     }
   }
 
@@ -55,16 +61,45 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
       case 1:
         return "Tambah Barang";
       case 2:
-        return "Tambah Kategori dan Jenis Barang";
-      case 3:
         return "Tambah Satuan Barang";
-      case 4:
+      case 3:
         return "Stock Alert";
-      case 5:
+      case 4:
         return "Mutasi Barang";
       default:
-        return "Lainnya";
+        return "Log Out";
     }
+  }
+
+  void showConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Log Out'),
+          content: Text('Anda Ingin Log Out?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                GetStorage().erase();
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => loginscreen()));
+                // Close the dialog
+              },
+              child: Text('Ya'),
+            ),
+            TextButton(
+              onPressed: () {
+                log_out = false;
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Tidak'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -104,8 +139,9 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
           ),
         ),
         Expanded(
-          child: widget.containers[_currentIndex],
-        ),
+            child: log_out
+                ? widget.containers[0]
+                : widget.containers[_currentIndex]),
       ],
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:ta_pos/view/gudang/responsive_header.dart';
 import 'dart:convert';
 import 'dart:async';
@@ -8,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
-import 'package:ta_pos/view/loginpage/login.dart';
 
 String? selectedvalueJenis = "";
 String? selectedvalueKategori = "";
@@ -107,6 +105,253 @@ class _GudangMenuState extends State<GudangMenu> {
     } catch (e) {
       print('Error: $e');
     }
+  }
+
+  //kategori and jenis add widget
+  void showTambahJenisKategoriDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Prevent closing by touching outside the pop-up
+      builder: (BuildContext context) {
+        int step = 1;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              contentPadding: EdgeInsets.all(16),
+              content: Container(
+                height: 550,
+                width: 700,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: step == 1
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Tambah Jenis",
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.close),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 40),
+                          TextFormField(
+                            controller: nama_jenis,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Field tidak boleh kosong';
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              labelText: 'Nama Jenis',
+                              labelStyle: TextStyle(fontSize: 16),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                          Spacer(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 30, vertical: 16),
+                                  backgroundColor: Colors.grey,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  // Skip to the kategori step
+                                  setState(() {
+                                    step = 2;
+                                  });
+                                },
+                                child: Text(
+                                  "Skip",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 30, vertical: 16),
+                                  backgroundColor: Colors.blueAccent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  addjenis(nama_jenis.text, context);
+                                  nama_jenis.clear();
+                                  setState(() {
+                                    fetchData();
+                                    getJenis();
+                                    step = 2; // Move to kategori step
+                                  });
+                                },
+                                child: Text(
+                                  "Tambah Jenis",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Tambah Kategori",
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.close),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 40),
+                          TextFormField(
+                            controller: nama_kategori,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Field tidak boleh kosong';
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              labelText: 'Nama Kategori',
+                              labelStyle: TextStyle(fontSize: 16),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 40),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Pilih Jenis:",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          FutureBuilder<Map<String, String>>(
+                            future: getmapjenis(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              } else if (snapshot.hasError) {
+                                return Text('Error: ${snapshot.error}');
+                              } else if (snapshot.hasData &&
+                                  snapshot.data != null) {
+                                var entries = snapshot.data!.entries.toList();
+
+                                if (entries.isEmpty) {
+                                  return Text('No items available');
+                                }
+
+                                // Ensure selectedvalueJenis is valid
+                                if (selectedvalueJenis == null ||
+                                    !entries.any((entry) =>
+                                        entry.key == selectedvalueJenis)) {
+                                  selectedvalueJenis = entries.first.key;
+                                }
+
+                                return DropdownButton<String>(
+                                  value: selectedvalueJenis,
+                                  isExpanded: true,
+                                  items: entries
+                                      .map((entry) => DropdownMenuItem(
+                                            child: Text(entry.value),
+                                            value: entry.key,
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedvalueJenis = value!;
+                                    });
+                                  },
+                                );
+                              } else {
+                                return Text('No data available');
+                              }
+                            },
+                          ),
+                          Spacer(),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 30, vertical: 16),
+                              backgroundColor: Colors.blueAccent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              addkategori(nama_kategori.text,
+                                  selectedvalueJenis.toString(), context);
+                              nama_kategori.clear();
+                              setState(() {
+                                fetchData();
+                                getKategori();
+                                Navigator.of(context).pop();
+                              });
+                            },
+                            child: Text(
+                              "Tambah Kategori",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -577,6 +822,27 @@ class _GudangMenuState extends State<GudangMenu> {
                         ),
                       ],
                     ),
+                    Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: EdgeInsets.only(right: 20),
+                          child: ElevatedButton(
+                              style: FilledButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 30, vertical: 16),
+                                backgroundColor: Colors.blueAccent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () {
+                                showTambahJenisKategoriDialog(context);
+                              },
+                              child: Text(
+                                "Tambah Kategori Dan Jenis",
+                                style: TextStyle(color: Colors.white),
+                              )),
+                        )),
                     SizedBox(height: 16),
                     Divider(),
                     SizedBox(height: 8),
@@ -769,181 +1035,71 @@ class _GudangMenuState extends State<GudangMenu> {
             ),
           ),
           Container(
-            child: Center(
-                child: Column(
-              children: [
-                SizedBox(
-                  width: 100,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 700,
-                      height: 650,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text("Tambah Jenis"),
-                          SizedBox(
-                            height: 100,
-                          ),
-                          TextFormField(
-                            controller: nama_jenis,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Field tidak boleh kosong';
-                              }
-                              return null;
-                            },
-                            decoration: const InputDecoration(
-                              border: UnderlineInputBorder(),
-                              labelText: 'Nama Jenis',
-                            ),
-                          ),
-                          SizedBox(
-                            height: 100,
-                          ),
-                          //search bar untuk barang
-                          SizedBox(
-                            height: 200,
-                          ),
-                          FilledButton(
-                            onPressed: () {
-                              addjenis(nama_jenis.text, context);
-                              nama_jenis.text = "";
-                              setState(() {
-                                fetchData();
-                                getJenis();
-                              });
-                            },
-                            child: Text("Tambah Jenis"),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      height: 650,
-                      width: 700,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text("Tambah Kategori"),
-                          SizedBox(
-                            height: 100,
-                          ),
-                          TextFormField(
-                            controller: nama_kategori,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Field tidak boleh kosong';
-                              }
-                              return null;
-                            },
-                            decoration: const InputDecoration(
-                              border: UnderlineInputBorder(),
-                              labelText: 'Nama Kategori',
-                            ),
-                          ),
-                          SizedBox(
-                            height: 100,
-                          ),
-                          FutureBuilder<Map<String, String>>(
-                            future: getmapjenis(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return CircularProgressIndicator();
-                              } else if (snapshot.hasError) {
-                                return Text('Error: ${snapshot.error}');
-                              } else if (snapshot.hasData &&
-                                  snapshot.data != null) {
-                                var entries = snapshot.data!.entries.toList();
-
-                                if (entries.isEmpty) {
-                                  return Text('No items available');
-                                }
-
-                                // Ensure selectedvalueJenis is valid
-                                if (selectedvalueJenis == null ||
-                                    !entries.any((entry) =>
-                                        entry.key == selectedvalueJenis)) {
-                                  selectedvalueJenis = entries.first.key;
-                                }
-
-                                return DropdownButton<String>(
-                                  value: selectedvalueJenis,
-                                  items: entries
-                                      .map((entry) => DropdownMenuItem(
-                                            child: Text(entry.value),
-                                            value: entry.key,
-                                          ))
-                                      .toList(),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedvalueJenis = value!;
-                                    });
-                                  },
-                                );
-                              } else {
-                                return Text('No data available');
-                              }
-                            },
-                          ),
-                          SizedBox(
-                            height: 200,
-                          ),
-                          FilledButton(
-                            onPressed: () {
-                              addkategori(nama_kategori.text,
-                                  selectedvalueJenis.toString(), context);
-                              nama_kategori.text = "";
-                              setState(() {
-                                fetchData();
-                                getKategori();
-                              });
-                            },
-                            child: Text("Tambah Kategori"),
-                          ),
-                        ],
-                      ),
-                    )
-                  ],
+            width: 1400,
+            height: 850,
+            padding: EdgeInsets.all(16), // Add padding around the container
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(
+                  12), // Rounded corners for a modern look
+              color: Colors.black, // Background color
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.3),
+                  spreadRadius: 5,
+                  blurRadius: 7,
+                  offset: Offset(0, 3), // Adds a slight shadow effect
                 ),
               ],
-            )),
-          ),
-          Container(
-            width: 1400,
-            height: 650,
+            ),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  //disini isi search bar untuk barang yang ada di gudang
+                  // Search bar for searching items in the warehouse
                   Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        "Cari Barang di Gudang",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
                       TextField(
                         controller: _searchController,
                         onChanged: _updateSearchResults,
                         decoration: InputDecoration(
                           hintText: 'Cari nama barang...',
+                          prefixIcon: Icon(Icons.search), // Add a search icon
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor:
+                              Colors.blue, // Light background for text field
                         ),
                       ),
+                      SizedBox(height: 12), // Space between search and list
                       SingleChildScrollView(
                         child: Container(
-                          height: 100,
+                          height: 300,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.black,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.3),
+                                spreadRadius: 5,
+                                blurRadius: 7,
+                                offset:
+                                    Offset(0, 3), // Adds a slight shadow effect
+                              ),
+                            ],
+                            // Slightly different background
+                          ),
                           child: ListView.builder(
                             itemCount: _searchResults.length,
                             itemBuilder: (context, index) {
@@ -954,8 +1110,12 @@ class _GudangMenuState extends State<GudangMenu> {
                                           .substring(0, 10)
                                       : "-";
                               return ListTile(
-                                title:
-                                    Text(_searchResults[index]['nama_barang']),
+                                title: Text(
+                                  _searchResults[index]['nama_barang'],
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                                 subtitle: Text('Expire Date: $expDate'),
                                 onTap: () {
                                   _searchController.text = _searchResults[index]
@@ -966,6 +1126,10 @@ class _GudangMenuState extends State<GudangMenu> {
                                         _searchResults[index]['_id'].toString();
                                   });
                                 },
+                                tileColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               );
                             },
                           ),
@@ -973,73 +1137,30 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                     ],
                   ),
-                  TextFormField(
+                  SizedBox(height: 20), // Add some space between sections
+                  _buildTextFormField(
                     controller: nama_satuan,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Nama Satuan',
-                    ),
+                    labelText: 'Nama Satuan',
                   ),
-                  TextFormField(
+                  SizedBox(height: 12),
+                  _buildTextFormField(
                     controller: harga_satuan,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Harga Barang tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Harga Barang',
-                    ),
+                    labelText: 'Harga Barang',
                     keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
                   ),
-                  TextFormField(
+                  SizedBox(height: 12),
+                  _buildTextFormField(
                     controller: jumlah_satuan,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Stok Satuan Barang',
-                    ),
+                    labelText: 'Stok Satuan Barang',
                     keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
                   ),
-                  TextFormField(
+                  SizedBox(height: 12),
+                  _buildTextFormField(
                     controller: isi_satuan,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Isi satuan tidak boleh kosong';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Kuantitas per satuan',
-                    ),
+                    labelText: 'Kuantitas per Satuan',
                     keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
                   ),
-                  SizedBox(
-                    height: 200,
-                  ),
+                  Spacer(),
                   FilledButton(
                     onPressed: () {
                       addsatuan(
@@ -1057,7 +1178,22 @@ class _GudangMenuState extends State<GudangMenu> {
                         getlowstocksatuan(context);
                       });
                     },
-                    child: Text("Tambah Satuan"),
+                    style: ElevatedButton.styleFrom(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 40),
+                      backgroundColor: Colors.blueAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      "Tambah Satuan",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1098,7 +1234,7 @@ class _GudangMenuState extends State<GudangMenu> {
                         },
                         children: [
                           TableRow(
-                            decoration: BoxDecoration(color: Colors.grey[300]),
+                            decoration: BoxDecoration(color: Colors.blue[300]),
                             children: [
                               TableCell(
                                 child: Padding(
@@ -1135,9 +1271,8 @@ class _GudangMenuState extends State<GudangMenu> {
                                   padding: EdgeInsets.all(8.0),
                                   child: Text(
                                     'Re-Stock',
-                                    style: TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold),
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ),
@@ -1146,9 +1281,8 @@ class _GudangMenuState extends State<GudangMenu> {
                                   padding: EdgeInsets.all(8.0),
                                   child: Text(
                                     'Delete',
-                                    style: TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold),
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ),
@@ -1243,17 +1377,7 @@ class _GudangMenuState extends State<GudangMenu> {
               child: Text('Mutasi Barang'),
             ),
           ),
-          Container(
-            height: 750,
-            child: Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  showConfirmationDialog(context);
-                },
-                child: Text('Log Out'),
-              ),
-            ),
-          )
+          Container()
         ],
       ),
     );
@@ -1372,33 +1496,34 @@ class _GudangMenuState extends State<GudangMenu> {
     );
   }
 
-  void showConfirmationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Log Out'),
-          content: Text('Anda Ingin Log Out?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                GetStorage().erase();
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => loginscreen()));
-                // Close the dialog
-              },
-              child: Text('Ya'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('Tidak'),
-            ),
-          ],
-        );
+  //tambah satuan text widget
+  Widget _buildTextFormField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextFormField(
+      controller: controller,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Field tidak boleh kosong';
+        }
+        return null;
       },
+      decoration: InputDecoration(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        labelText: labelText,
+        labelStyle: TextStyle(fontSize: 16),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      keyboardType: keyboardType,
+      inputFormatters: keyboardType == TextInputType.number
+          ? <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ]
+          : null,
     );
   }
 }

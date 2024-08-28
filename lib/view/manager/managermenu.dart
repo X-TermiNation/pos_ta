@@ -1206,9 +1206,8 @@ class _ManagerMenuState extends State<ManagerMenu>
               builder: (context, constraints) {
                 return Container(
                   width: 80,
-                  height: constraints
-                      .maxHeight, // Ensure the sidebar fits the screen height
-                  color: Colors.blue.shade100,
+                  height: constraints.maxHeight,
+                  color: Colors.grey[600],
                   child: Column(
                     children: [
                       Expanded(
