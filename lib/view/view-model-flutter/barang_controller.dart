@@ -119,26 +119,36 @@ void deletebarang(String id) async {
 }
 
 //update barang
-void UpdateBarang(String id, String nama_barang, String katakategori,
-    String harga_barang, String jumlah_barang) async {
-  final updatedBarangData = {
-    'nama_barang': nama_barang,
-    'kategori_barang': katakategori,
-    'harga_barang': harga_barang,
-    'Qty': jumlah_barang,
-  };
+void UpdateBarang(String id,
+    {String? nama_barang,
+    String? jenis_barang,
+    String? kategori_barang,
+    String? insert_date,
+    String? exp_date}) async {
+  final Map<String, dynamic> updatedBarangData = {};
+  updatedBarangData['_id'] = id;
+  if (nama_barang != null) updatedBarangData['nama_barang'] = nama_barang;
+  if (jenis_barang != null) updatedBarangData['jenis_barang'] = jenis_barang;
+  if (kategori_barang != null)
+    updatedBarangData['kategori_barang'] = kategori_barang;
+  if (insert_date != null) updatedBarangData['insert_date'] = insert_date;
+  if (exp_date != null) updatedBarangData['exp_date'] = exp_date;
+
   final dataStorage = GetStorage();
   final id_cabang = dataStorage.read("id_cabang");
   final id_gudang = dataStorage.read("id_gudang");
-  final url =
-      'http://localhost:3000/barang/updatebarang/$id_gudang/$id_cabang/$id';
+  final url = 'http://localhost:3000/barang/updatebarang/$id_gudang/$id_cabang';
+
   try {
     final response = await http.put(
       Uri.parse(url),
       headers: <String, String>{
         'Content-Type': 'application/json',
       },
-      body: jsonEncode(updatedBarangData),
+      body: jsonEncode({
+        '_id': id,
+        ...updatedBarangData,
+      }),
     );
 
     if (response.statusCode == 200) {

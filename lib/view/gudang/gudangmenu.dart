@@ -700,23 +700,7 @@ class _GudangMenuState extends State<GudangMenu> {
                           ElevatedButton(
                             onPressed: _isEditUser
                                 ? () {
-                                    //belum diubah dari mongoose
-                                    // UpdateBarang(
-                                    //     temp_id_update,
-                                    //     edit_nama_barang.text,
-                                    //     Edit_katakategori,
-                                    //     edit_expdate_barang.text,
-                                    //     edit_jumlah_barang.text);
-                                    setState(() {
-                                      edit_nama_barang.text = "";
-                                      edit_expdate_barang.text = "";
-                                      edit_insertdate_barang.text = "";
-                                      _isEditUser = false;
-                                      temp_id_update = "";
-                                      barangdata = Future.delayed(
-                                          Duration(seconds: 1),
-                                          () => getBarang(id_gudangs));
-                                    });
+                                    _showUpdateBarangDialog();
                                   }
                                 : null,
                             child: Text(
@@ -1383,6 +1367,29 @@ class _GudangMenuState extends State<GudangMenu> {
     );
   }
 
+  //get update barang pop up widget
+  void _showUpdateBarangDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return UpdateBarangDialog(
+          barangId: temp_id_update, // Pass the ID of the barang to be updated
+          onUpdated: () {
+            setState(() {
+              edit_nama_barang.text = "";
+              edit_expdate_barang.text = "";
+              edit_insertdate_barang.text = "";
+              _isEditUser = false;
+              temp_id_update = "";
+              barangdata = Future.delayed(
+                  Duration(seconds: 1), () => getBarang(id_gudangs));
+            });
+          },
+        );
+      },
+    );
+  }
+
   void showQuantityDialog(
       String id_barang, String id_satuan, BuildContext context) {
     int quantity = 1;
@@ -1524,6 +1531,215 @@ class _GudangMenuState extends State<GudangMenu> {
               FilteringTextInputFormatter.digitsOnly,
             ]
           : null,
+    );
+  }
+}
+
+//update pop up
+class UpdateBarangDialog extends StatefulWidget {
+  final String barangId;
+  final Function onUpdated;
+
+  UpdateBarangDialog({required this.barangId, required this.onUpdated});
+
+  @override
+  _UpdateBarangDialogState createState() => _UpdateBarangDialogState();
+}
+
+class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
+  final TextEditingController namaBarangController = TextEditingController();
+  final TextEditingController jenisBarangController = TextEditingController();
+  final TextEditingController kategoriBarangController =
+      TextEditingController();
+  bool isInsertDateEnabled = false;
+  bool isExpDateEnabled = false;
+  DateTime? selectedInsertDate;
+  DateTime? selectedExpDate;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      title: Text('Update Barang',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+      content: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTextField(
+                  controller: namaBarangController, label: 'Nama Barang'),
+              SizedBox(height: 12),
+              _buildTextField(
+                  controller: jenisBarangController, label: 'Jenis Barang'),
+              SizedBox(height: 12),
+              _buildTextField(
+                  controller: kategoriBarangController,
+                  label: 'Kategori Barang'),
+              SizedBox(height: 16),
+              _buildDateCheckbox(
+                label: 'Update Insert Date',
+                isChecked: isInsertDateEnabled,
+                onChanged: (value) {
+                  setState(() {
+                    isInsertDateEnabled = value ?? false;
+                  });
+                },
+                onDateSelected: (date) {
+                  setState(() {
+                    selectedInsertDate = date;
+                  });
+                },
+                selectedDate: selectedInsertDate,
+              ),
+              SizedBox(height: 12),
+              _buildDateCheckbox(
+                label: 'Update Expiration Date',
+                isChecked: isExpDateEnabled,
+                onChanged: (value) {
+                  setState(() {
+                    isExpDateEnabled = value ?? false;
+                  });
+                },
+                onDateSelected: (date) {
+                  setState(() {
+                    selectedExpDate = date;
+                  });
+                },
+                selectedDate: selectedExpDate,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text('Cancel',
+              style: TextStyle(fontSize: 16, color: Colors.blue)),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final String? namaBarang = namaBarangController.text.isNotEmpty
+                ? namaBarangController.text
+                : null;
+            final String? jenisBarang = jenisBarangController.text.isNotEmpty
+                ? jenisBarangController.text
+                : null;
+            final String? kategoriBarang =
+                kategoriBarangController.text.isNotEmpty
+                    ? kategoriBarangController.text
+                    : null;
+            final String? insertDate =
+                isInsertDateEnabled && selectedInsertDate != null
+                    ? selectedInsertDate!.toLocal().toString().split(' ')[0]
+                    : null;
+            final String? expDate = isExpDateEnabled && selectedExpDate != null
+                ? selectedExpDate!.toLocal().toString().split(' ')[0]
+                : null;
+
+            // Call UpdateBarang function
+            UpdateBarang(
+              widget.barangId,
+              nama_barang: namaBarang,
+              jenis_barang: jenisBarang,
+              kategori_barang: kategoriBarang,
+              insert_date: insertDate,
+              exp_date: expDate,
+            );
+
+            // Trigger the state update in the parent widget
+            widget.onUpdated();
+
+            Navigator.of(context).pop(); // Close the dialog after updating
+          },
+          child: Text('Update',
+              style: TextStyle(fontSize: 16, color: Colors.white)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _selectDateUpdate(
+      BuildContext context, Function(DateTime) onDateSelected) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (pickedDate != null && pickedDate != DateTime.now()) {
+      onDateSelected(pickedDate);
+    }
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+    );
+  }
+
+  Widget _buildDateCheckbox({
+    required String label,
+    required bool isChecked,
+    required void Function(bool?) onChanged,
+    required void Function(DateTime) onDateSelected,
+    DateTime? selectedDate,
+  }) {
+    return Row(
+      children: [
+        Checkbox(
+          value: isChecked,
+          onChanged: onChanged,
+        ),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              if (isChecked) {
+                _selectDateUpdate(context, onDateSelected);
+              }
+            },
+            child: AbsorbPointer(
+              absorbing: !isChecked,
+              child: TextField(
+                enabled: false,
+                decoration: InputDecoration(
+                  labelText: label,
+                  hintText: selectedDate != null
+                      ? '${selectedDate.toLocal()}'.split(' ')[0]
+                      : 'Select Date',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
