@@ -42,13 +42,52 @@ class _ManagerMenuState extends State<ManagerMenu>
   TextEditingController nama_diskon = TextEditingController();
   TextEditingController persentase_diskon = TextEditingController();
   List<Map<String, dynamic>> userlist = [];
+  //search bar diskon filter
+  TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _filteredDiskon = [];
+  List<Map<String, dynamic>> _diskonData = [];
   //search bar insert diskon
   String searchQuery = '';
   //selected Pegawai di daftar pegawai
   Map<String, dynamic>? selectedEmployee;
+  //checkbox atur diskon
+  List<bool> isCheckedList = [];
+  List<Map<String, dynamic>> databarang = [];
+  bool selectAll = false;
 
   void fetchDiskon() {
     diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
+    diskondata.then((data) {
+      setState(() {
+        _diskonData = data;
+        _filteredDiskon = data;
+      });
+    });
+  }
+
+  //search bar table in diskon list
+  void onSearch(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _filteredDiskon = _diskonData; // Reset to original data
+      });
+    } else {
+      setState(() {
+        _filteredDiskon = _diskonData.where((map) {
+          return map['nama_diskon']
+                  .toString()
+                  .toLowerCase()
+                  .contains(query.toLowerCase()) ||
+              map['persentase_diskon'].toString().contains(query) ||
+              map['start_date'].toString().substring(0, 10).contains(query) ||
+              map['end_date'].toString().substring(0, 10).contains(query) ||
+              getStatus(DateTime.parse(map['start_date']),
+                      DateTime.parse(map['end_date']))
+                  .toLowerCase()
+                  .contains(query.toLowerCase());
+        }).toList();
+      });
+    }
   }
 
   void fetchUser() async {
@@ -195,11 +234,6 @@ class _ManagerMenuState extends State<ManagerMenu>
   String value2 = 'Kasir';
   final roles = ['Kasir', 'Admin Gudang', 'Kurir'];
 
-//untuk diskon barang
-  List<bool> isCheckedList = [];
-//diskon check
-  List<Map<String, dynamic>> databarang = [];
-
   bool _validateEmail(String email) {
     RegExp emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return emailRegex.hasMatch(email);
@@ -342,13 +376,19 @@ class _ManagerMenuState extends State<ManagerMenu>
 
   @override
   Widget build(BuildContext context) {
-    //search bar insert diskon
     List<Map<String, dynamic>> filteredBarang = databarang
         .where((barang) => barang['nama_barang']
             .toString()
             .toLowerCase()
             .contains(searchQuery))
         .toList();
+    void toggleSelectAll(bool value) {
+      setState(() {
+        selectAll = value;
+        isCheckedList = List.filled(filteredBarang.length, value);
+      });
+    }
+    //search bar insert diskon
 
     contentView = [
       ContentView(
@@ -394,176 +434,181 @@ class _ManagerMenuState extends State<ManagerMenu>
       ContentView(
         tab: CustomTab(title: 'Daftar Diskon'),
         content: Center(
-          child: Expanded(
-            child: Container(
-              width: double.infinity,
-              color: Colors.black87,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(height: 20),
-                  Text(
-                    'Daftar Diskon',
-                    style: TextStyle(color: Colors.white),
+          child: Container(
+            width: double.infinity,
+            color: Theme.of(context).colorScheme.background,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: 20),
+                Text(
+                  'Daftar Diskon',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onBackground,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
-                  SizedBox(height: 20),
-                  Expanded(
-                    child: FutureBuilder(
-                      future: getDiskon(),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          final rows = snapshot.data!.map<DataRow>((map) {
-                            var percentage =
-                                map['persentase_diskon'].toString();
-                            return DataRow(
-                              cells: [
-                                DataCell(
-                                  Text(
-                                    map['nama_diskon'].toString(),
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.blueGrey[200],
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    "$percentage %",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.blueGrey[200],
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    map['start_date']
-                                        .toString()
-                                        .substring(0, 10),
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.blueGrey[200],
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    map['end_date'].toString().substring(0, 10),
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.blueGrey[200],
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    getStatus(
-                                      DateTime.parse(map['start_date']),
-                                      DateTime.parse(map['end_date']),
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.blueGrey[200],
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 8),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    onPressed: () async {
-                                      deletediskon(map['_id']);
-                                      setState(() {
-                                        fetchDiskon();
-                                        getDiskon();
-                                      });
-                                    },
-                                    child: Text('Delete',
-                                        style: TextStyle(
-                                            fontSize: 14, color: Colors.white)),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList();
-
-                          return SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
+                ),
+                SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: onSearch,
+                    decoration: InputDecoration(
+                      labelText: 'Search Diskon',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Expanded(
+                  child: _filteredDiskon.isEmpty
+                      ? Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width,
                             child: DataTable(
                               headingRowColor: MaterialStateColor.resolveWith(
-                                (states) => Colors.blueGrey[800]!,
+                                (states) =>
+                                    Theme.of(context).colorScheme.primary,
                               ),
                               columnSpacing: 20,
                               dataRowColor: MaterialStateColor.resolveWith(
-                                (states) => Colors.blueGrey[700]!,
+                                (states) =>
+                                    Theme.of(context).colorScheme.surface,
                               ),
                               dataTextStyle: TextStyle(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 16,
                               ),
                               headingTextStyle: TextStyle(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                               columns: const <DataColumn>[
                                 DataColumn(
-                                  label: Text(
-                                    'Nama Diskon',
-                                  ),
+                                  label: Text('Nama Diskon'),
                                 ),
                                 DataColumn(
-                                  label: Text(
-                                    'Persentase Diskon',
-                                  ),
+                                  label: Text('Persentase Diskon'),
                                 ),
                                 DataColumn(
-                                  label: Text(
-                                    'Tanggal Mulai',
-                                  ),
+                                  label: Text('Tanggal Mulai'),
                                 ),
                                 DataColumn(
-                                  label: Text(
-                                    'Tanggal Berakhir',
-                                  ),
+                                  label: Text('Tanggal Berakhir'),
                                 ),
                                 DataColumn(
-                                  label: Text(
-                                    'Status',
-                                  ),
+                                  label: Text('Status'),
                                 ),
                                 DataColumn(
-                                  label: Text(
-                                    'Hapus Diskon',
-                                  ),
+                                  label: Text('Hapus Diskon'),
                                 ),
                               ],
-                              rows: rows,
+                              rows: _filteredDiskon.map<DataRow>((map) {
+                                var percentage =
+                                    map['persentase_diskon'].toString();
+                                return DataRow(
+                                  cells: [
+                                    DataCell(
+                                      Text(
+                                        map['nama_diskon'].toString(),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        "$percentage %",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        map['start_date']
+                                            .toString()
+                                            .substring(0, 10),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        map['end_date']
+                                            .toString()
+                                            .substring(0, 10),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        getStatus(
+                                          DateTime.parse(map['start_date']),
+                                          DateTime.parse(map['end_date']),
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 8),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        onPressed: () async {
+                                          deletediskon(map['_id']);
+                                          fetchDiskon();
+                                        },
+                                        child: Text('Delete',
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.white)),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
                             ),
-                          );
-                        } else if (snapshot.hasError) {
-                          return Center(
-                            child: Text(
-                              'Error: ${snapshot.error}',
-                              style: TextStyle(color: Colors.red, fontSize: 16),
-                            ),
-                          );
-                        } else {
-                          return Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
+                          ),
+                        ),
+                ),
+              ],
             ),
           ),
         ),
@@ -686,6 +731,58 @@ class _ManagerMenuState extends State<ManagerMenu>
                   ),
                 ),
                 SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selectAll = !selectAll; // Toggle the active state
+                      toggleSelectAll(selectAll); // Update the selection logic
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: selectAll
+                          ? Colors.blueAccent
+                          : Colors.grey, // Change color based on active state
+                      border: Border.all(
+                          color: Colors.grey,
+                          width: 1.0), // Border color and width
+                      borderRadius: BorderRadius.circular(8), // Rounded corners
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26, // Shadow color
+                          blurRadius: 6, // Shadow blur radius
+                          offset: Offset(0, 2), // Shadow offset
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Select All',
+                            style: TextStyle(
+                              fontSize: 16.0,
+                              color: selectAll
+                                  ? Colors.white
+                                  : Colors
+                                      .black, // Change text color based on active state
+                            ),
+                          ),
+                          Icon(
+                            selectAll
+                                ? Icons.check_box
+                                : Icons
+                                    .check_box_outline_blank, // Change icon based on active state
+                            color: selectAll ? Colors.white : Colors.black,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
                 Container(
                   height: 200,
                   decoration: BoxDecoration(
@@ -704,6 +801,12 @@ class _ManagerMenuState extends State<ManagerMenu>
                               onChanged: (value) {
                                 setState(() {
                                   isCheckedList[index] = value!;
+                                  if (value == false) {
+                                    selectAll = false;
+                                  } else if (isCheckedList
+                                      .every((checked) => checked)) {
+                                    selectAll = true;
+                                  }
                                 });
                               },
                             );
@@ -751,9 +854,12 @@ class _ManagerMenuState extends State<ManagerMenu>
                         fetchDiskon();
                       });
                     },
-                    icon: Icon(Icons.add),
-                    label: Text("Tambah Diskon"),
+                    label: Text(
+                      "Tambah Diskon",
+                      style: TextStyle(color: Colors.white),
+                    ),
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
                       padding:
                           EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
