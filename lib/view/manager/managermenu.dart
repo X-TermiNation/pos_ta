@@ -41,27 +41,41 @@ class _ManagerMenuState extends State<ManagerMenu>
   TextEditingController edit_lname = TextEditingController();
   TextEditingController nama_diskon = TextEditingController();
   TextEditingController persentase_diskon = TextEditingController();
-  List<Map<String, dynamic>> userlist = [];
-  //search bar diskon filter
+  //search bar and pagination diskon list
   TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredDiskon = [];
   List<Map<String, dynamic>> _diskonData = [];
+  int _rowsPerPagediskon = 10;
+  int _currentPagediskon = 0;
   //search bar insert diskon
-  String searchQuery = '';
-  //selected Pegawai di daftar pegawai
-  Map<String, dynamic>? selectedEmployee;
+  String searchQueryDiskon = '';
   //checkbox atur diskon
   List<bool> isCheckedList = [];
   List<Map<String, dynamic>> databarang = [];
   bool selectAll = false;
-
+  //func list diskon
   void fetchDiskon() {
     diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
     diskondata.then((data) {
       setState(() {
         _diskonData = data;
-        _filteredDiskon = data;
+        _currentPagediskon = 0; // Reset to the first page
+        _updatePaginationDiskon(); // Update the data displayed based on the current page
       });
+    });
+  }
+
+  void _updatePaginationDiskon() {
+    setState(() {
+      // Calculate the starting index and the ending index for the current page
+      int start = _currentPagediskon * _rowsPerPagediskon;
+      int end = start + _rowsPerPagediskon;
+
+      // Slice the data to show only the current page's data
+      _filteredDiskon = _diskonData.sublist(
+        start,
+        end.clamp(0, _diskonData.length),
+      );
     });
   }
 
@@ -90,8 +104,75 @@ class _ManagerMenuState extends State<ManagerMenu>
     }
   }
 
+  //pegawai component
+  TextEditingController _searchControllerPegawai = TextEditingController();
+  List<Map<String, dynamic>> userlist = [];
+  List<Map<String, dynamic>> _dataPegawai = [];
+  List<Map<String, dynamic>> _filteredDataPegawai = [];
+  String searchQueryPegawai = "";
+  int _rowsPerPagepegawai = 5;
+  int _currentPagepegawai = 1;
+  void _updatePaginationPegawai() {
+    setState(() {
+      // Ensure that there is data to paginate
+      if (_dataPegawai.isEmpty) {
+        _filteredDataPegawai = [];
+        return;
+      }
+
+      // Calculate the start and end indices for slicing the data
+      int start = _currentPagepegawai * _rowsPerPagepegawai;
+      int end = start + _rowsPerPagepegawai;
+
+      // Slice the data to show only the current page's data
+      _filteredDataPegawai = _dataPegawai.sublist(
+        start,
+        end.clamp(0, _dataPegawai.length),
+      );
+    });
+  }
+
+  void _filterDataPegawai(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _filteredDataPegawai = _dataPegawai; // Reset to original data
+      });
+    } else {
+      setState(() {
+        _filteredDataPegawai = _dataPegawai.where((map) {
+          return map['email']
+                  .toString()
+                  .toLowerCase()
+                  .contains(query.toLowerCase()) ||
+              map['fname']
+                  .toString()
+                  .toLowerCase()
+                  .contains(query.toLowerCase()) ||
+              map['lname']
+                  .toString()
+                  .toLowerCase()
+                  .contains(query.toLowerCase()) ||
+              map['role']
+                  .toString()
+                  .toLowerCase()
+                  .contains(query.toLowerCase());
+        }).toList();
+      });
+    }
+    _updatePaginationPegawai();
+  }
+
+  //selected Pegawai di daftar pegawai
+  Map<String, dynamic>? selectedEmployee;
+
   void fetchUser() async {
     this.userlist = await getUsers();
+
+    setState(() {
+      _dataPegawai = userlist;
+      _currentPagepegawai = 0; // Reset to the first page
+      _updatePaginationPegawai(); // Update the data displayed based on the current page
+    });
   }
 
   //delete stock alert
@@ -341,7 +422,12 @@ class _ManagerMenuState extends State<ManagerMenu>
       getbarangdiskonlist();
     });
     print("diskon data Flutter:$diskondata");
-
+    _searchControllerPegawai.addListener(() {
+      setState(() {
+        searchQueryPegawai = _searchControllerPegawai.text;
+        _filterDataPegawai(searchQueryPegawai);
+      });
+    });
     email.addListener(() {
       setState(() {
         _isValidEmail = _validateEmail(email.text);
@@ -370,7 +456,7 @@ class _ManagerMenuState extends State<ManagerMenu>
 
   void filterSearchResults(String query) {
     setState(() {
-      searchQuery = query.toLowerCase();
+      searchQueryDiskon = query.toLowerCase();
     });
   }
 
@@ -380,7 +466,7 @@ class _ManagerMenuState extends State<ManagerMenu>
         .where((barang) => barang['nama_barang']
             .toString()
             .toLowerCase()
-            .contains(searchQuery))
+            .contains(searchQueryDiskon))
         .toList();
     void toggleSelectAll(bool value) {
       setState(() {
@@ -388,7 +474,6 @@ class _ManagerMenuState extends State<ManagerMenu>
         isCheckedList = List.filled(filteredBarang.length, value);
       });
     }
-    //search bar insert diskon
 
     contentView = [
       ContentView(
@@ -470,144 +555,154 @@ class _ManagerMenuState extends State<ManagerMenu>
                       ? Center(
                           child: CircularProgressIndicator(),
                         )
-                      : SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
-                            width: MediaQuery.of(context).size.width,
-                            child: DataTable(
-                              headingRowColor: MaterialStateColor.resolveWith(
-                                (states) =>
-                                    Theme.of(context).colorScheme.primary,
-                              ),
-                              columnSpacing: 20,
-                              dataRowColor: MaterialStateColor.resolveWith(
-                                (states) =>
-                                    Theme.of(context).colorScheme.surface,
-                              ),
-                              dataTextStyle: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 16,
-                              ),
-                              headingTextStyle: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              columns: const <DataColumn>[
-                                DataColumn(
-                                  label: Text('Nama Diskon'),
+                      : Padding(
+                          padding: EdgeInsets.only(left: 20, right: 20),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SizedBox(
+                              width: MediaQuery.of(context).size.width,
+                              child: DataTable(
+                                headingRowColor: MaterialStateColor.resolveWith(
+                                  (states) =>
+                                      Theme.of(context).colorScheme.primary,
                                 ),
-                                DataColumn(
-                                  label: Text('Persentase Diskon'),
+                                columnSpacing: 20,
+                                dataRowColor: MaterialStateColor.resolveWith(
+                                  (states) =>
+                                      Theme.of(context).colorScheme.surface,
                                 ),
-                                DataColumn(
-                                  label: Text('Tanggal Mulai'),
+                                dataTextStyle: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                  fontSize: 16,
                                 ),
-                                DataColumn(
-                                  label: Text('Tanggal Berakhir'),
+                                headingTextStyle: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                DataColumn(
-                                  label: Text('Status'),
-                                ),
-                                DataColumn(
-                                  label: Text('Hapus Diskon'),
-                                ),
-                              ],
-                              rows: _filteredDiskon.map<DataRow>((map) {
-                                var percentage =
-                                    map['persentase_diskon'].toString();
-                                return DataRow(
-                                  cells: [
-                                    DataCell(
-                                      Text(
-                                        map['nama_diskon'].toString(),
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        "$percentage %",
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        map['start_date']
+                                columns: const <DataColumn>[
+                                  DataColumn(label: Text('Nama Diskon')),
+                                  DataColumn(label: Text('Persentase Diskon')),
+                                  DataColumn(label: Text('Tanggal Mulai')),
+                                  DataColumn(label: Text('Tanggal Berakhir')),
+                                  DataColumn(label: Text('Hapus Diskon')),
+                                ],
+                                rows: _filteredDiskon.map<DataRow>((map) {
+                                  var percentage =
+                                      map['persentase_diskon'].toString();
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(
+                                          Text(map['nama_diskon'].toString())),
+                                      DataCell(Text("$percentage %")),
+                                      DataCell(
+                                        Text(map['start_date']
                                             .toString()
-                                            .substring(0, 10),
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
+                                            .substring(0, 10)),
                                       ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        map['end_date']
+                                      DataCell(
+                                        Text(map['end_date']
                                             .toString()
-                                            .substring(0, 10),
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
+                                            .substring(0, 10)),
                                       ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        getStatus(
-                                          DateTime.parse(map['start_date']),
-                                          DateTime.parse(map['end_date']),
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 8),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                      DataCell(
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 8),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
                                           ),
-                                        ),
-                                        onPressed: () async {
-                                          deletediskon(map['_id']);
-                                          fetchDiskon();
-                                        },
-                                        child: Text('Delete',
+                                          onPressed: () async {
+                                            deletediskon(map['_id']);
+                                            fetchDiskon();
+                                          },
+                                          child: Text(
+                                            'Delete',
                                             style: TextStyle(
                                                 fontSize: 14,
-                                                color: Colors.white)),
+                                                color: Colors.white),
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
                             ),
                           ),
                         ),
                 ),
+                Padding(
+                  padding: EdgeInsets.only(bottom: 20),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceVariant, // For contrast with the table
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: _currentPagediskon > 0
+                              ? () {
+                                  setState(() {
+                                    _currentPagediskon--;
+                                    _updatePaginationDiskon();
+                                  });
+                                }
+                              : null,
+                          icon: Icon(Icons.arrow_back_ios, size: 16),
+                          label: Text("Previous"),
+                        ),
+                        Text(
+                          "Page ${_currentPagediskon + 1} of ${(_diskonData.length / _rowsPerPagediskon).ceil()}",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed:
+                              (_currentPagediskon + 1) * _rowsPerPagediskon <
+                                      _diskonData.length
+                                  ? () {
+                                      setState(() {
+                                        _currentPagediskon++;
+                                        _updatePaginationDiskon();
+                                      });
+                                    }
+                                  : null,
+                          icon: Icon(Icons.arrow_forward_ios, size: 16),
+                          label: Text("Next"),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               ],
             ),
           ),
@@ -734,24 +829,20 @@ class _ManagerMenuState extends State<ManagerMenu>
                 GestureDetector(
                   onTap: () {
                     setState(() {
-                      selectAll = !selectAll; // Toggle the active state
-                      toggleSelectAll(selectAll); // Update the selection logic
+                      selectAll = !selectAll;
+                      toggleSelectAll(selectAll);
                     });
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: selectAll
-                          ? Colors.blueAccent
-                          : Colors.grey, // Change color based on active state
-                      border: Border.all(
-                          color: Colors.grey,
-                          width: 1.0), // Border color and width
-                      borderRadius: BorderRadius.circular(8), // Rounded corners
+                      color: selectAll ? Colors.blueAccent : Colors.grey,
+                      border: Border.all(color: Colors.grey, width: 1.0),
+                      borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black26, // Shadow color
-                          blurRadius: 6, // Shadow blur radius
-                          offset: Offset(0, 2), // Shadow offset
+                          color: Colors.black26,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
                         ),
                       ],
                     ),
@@ -1077,42 +1168,72 @@ class _ManagerMenuState extends State<ManagerMenu>
           )),
       ContentView(
           tab: CustomTab(title: 'Atur Pegawai'),
-          content: Center(
-            child: Container(
-              color: Colors.black,
-              width: double.maxFinite,
-              height: double.maxFinite,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 800,
-                    height: 800,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 0.1,
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  height: MediaQuery.of(context).size.height * 0.9,
+                  width: MediaQuery.of(context).size.width * 0.95,
+                  child: Column(
+                    children: [
+                      SizedBox(height: 20),
+                      Text(
+                        'Daftar Pegawai',
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(height: 50),
-                        Text(
-                          'Daftar Pegawai',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white,
+                      SizedBox(height: 30),
+                      // Search Bar
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: TextField(
+                          controller: _searchControllerPegawai,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.search),
+                            hintText: 'Search Pegawai',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
                           ),
                         ),
-                        SizedBox(height: 100),
-                        FutureBuilder(
+                      ),
+                      SizedBox(height: 20),
+                      // Expanded to take up available space
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: FutureBuilder(
                             future: getUsers(),
                             builder: (context, snapshot) {
                               if (snapshot.hasData) {
-                                final rows = snapshot.data!.map((map) {
+                                // Filter data based on search term
+                                List<Map<String, dynamic>> filteredDataPegawai =
+                                    snapshot.data!.where((map) {
+                                  final email =
+                                      map['email'].toString().toLowerCase();
+                                  final fname =
+                                      map['fname'].toString().toLowerCase();
+                                  final lname =
+                                      map['lname'].toString().toLowerCase();
+                                  final role =
+                                      map['role'].toString().toLowerCase();
+
+                                  final queryLower =
+                                      searchQueryPegawai.toLowerCase();
+
+                                  return email.contains(queryLower) ||
+                                      fname.contains(queryLower) ||
+                                      lname.contains(queryLower) ||
+                                      role.contains(queryLower);
+                                }).toList();
+
+                                final rows = filteredDataPegawai
+                                    .skip(_currentPagepegawai *
+                                        _rowsPerPagepegawai)
+                                    .take(_rowsPerPagepegawai)
+                                    .map((map) {
                                   return DataRow(cells: [
                                     DataCell(
                                       GestureDetector(
@@ -1166,193 +1287,256 @@ class _ManagerMenuState extends State<ManagerMenu>
                                               print("Failed to delete: $e");
                                             }
                                           },
-                                          child: Text('Delete'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 8),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Delete',
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.white),
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ]);
                                 }).toList();
-
-                                return DataTable(
-                                  columns: const <DataColumn>[
-                                    DataColumn(
-                                        label: Text(
-                                      'Email',
-                                      style: TextStyle(
-                                          fontSize: 15, color: Colors.white),
-                                    )),
-                                    DataColumn(
-                                        label: Text(
-                                      'First Name',
-                                      style: TextStyle(
-                                          fontSize: 15, color: Colors.white),
-                                    )),
-                                    DataColumn(
-                                        label: Text(
-                                      'Last Name',
-                                      style: TextStyle(
-                                          fontSize: 15, color: Colors.white),
-                                    )),
-                                    DataColumn(
-                                        label: Text(
-                                      'Role',
-                                      style: TextStyle(
-                                          fontSize: 15, color: Colors.white),
-                                    )),
-                                    DataColumn(
-                                        label: Text(
-                                      'Hapus Pegawai',
-                                      style: TextStyle(
-                                          fontSize: 15, color: Colors.white),
-                                    )),
+                                return ListView(
+                                  children: [
+                                    DataTable(
+                                      headingRowColor:
+                                          MaterialStateColor.resolveWith(
+                                        (states) => Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                      ),
+                                      columnSpacing: 20,
+                                      dataRowColor:
+                                          MaterialStateColor.resolveWith(
+                                        (states) => Theme.of(context)
+                                            .colorScheme
+                                            .surface,
+                                      ),
+                                      dataTextStyle: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                        fontSize: 16,
+                                      ),
+                                      headingTextStyle: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      columns: const <DataColumn>[
+                                        DataColumn(
+                                          label: Text('Email'),
+                                        ),
+                                        DataColumn(
+                                          label: Text('First Name'),
+                                        ),
+                                        DataColumn(
+                                          label: Text('Last Name'),
+                                        ),
+                                        DataColumn(
+                                          label: Text('Role'),
+                                        ),
+                                        DataColumn(
+                                          label: Text('Hapus Pegawai'),
+                                        ),
+                                      ],
+                                      rows: rows,
+                                    ),
                                   ],
-                                  rows: rows,
                                 );
                               } else if (snapshot.hasError) {
-                                return Text('Error: ${snapshot.error}',
-                                    style: TextStyle(color: Colors.white));
+                                return Text(
+                                  'Error: ${snapshot.error}',
+                                  style: TextStyle(color: Colors.white),
+                                );
                               } else {
-                                return CircularProgressIndicator();
+                                return Center(
+                                    child: CircularProgressIndicator());
                               }
-                            }),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 2.0,
-                    height: 800.0,
-                    color: Colors.grey, // Border divider color
-                  ),
-                  Container(
-                    width: 600.0,
-                    height: 800.0,
-                    padding: EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          "Detail Pegawai",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            },
                           ),
-                          textAlign: TextAlign.center, // Center the title
                         ),
-                        SizedBox(height: 30.0),
-                        selectedEmployee != null
-                            ? Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceAround,
-                                    children: [
-                                      Text(
-                                        "First Name:",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18, // Increase text size
-                                        ),
-                                      ),
-                                      Text(
-                                        " ${selectedEmployee!['fname']}",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18, // Increase text size
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 12.0),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceAround,
-                                    children: [
-                                      Text(
-                                        "Last Name:",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18, // Increase text size
-                                        ),
-                                      ),
-                                      Text(
-                                        "${selectedEmployee!['lname']}",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18, // Increase text size
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 12.0),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Text(
-                                        "Role:",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18, // Increase text size
-                                        ),
-                                      ),
-                                      Text(
-                                        "${selectedEmployee!['role']}",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18, // Increase text size
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 30.0),
-                                  Center(
-                                    child: ElevatedButton(
-                                      onPressed: _isEditUser
-                                          ? () {
-                                              UpdateUser(
-                                                  edit_fname.text,
-                                                  edit_lname.text,
-                                                  value2,
-                                                  temp_id_update,
-                                                  context);
-                                              setState(() {
-                                                edit_fname.text = "";
-                                                edit_lname.text = "";
-                                                _isEditUser = false;
-                                                temp_id_update = "";
-                                                fetchUser();
-                                              });
-                                            }
-                                          : null,
-                                      style: ElevatedButton.styleFrom(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 50, vertical: 20),
-                                      ),
-                                      child: Text(
-                                        'Update Pegawai',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(left: 20),
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: _currentPagepegawai > 0
+                                  ? () {
+                                      setState(() {
+                                        _currentPagepegawai--;
+                                      });
+                                    }
+                                  : null,
+                              icon: Icon(Icons.arrow_back_ios, size: 16),
+                              label: Text("Previous"),
+                            ),
+                          ),
+                          Text(
+                            "Page ${_currentPagepegawai + 1} of ${(_filteredDataPegawai.length / _rowsPerPagepegawai).ceil()}",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(right: 20),
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: (_currentPagepegawai + 1) *
+                                          _rowsPerPagepegawai <
+                                      _filteredDataPegawai.length
+                                  ? () {
+                                      setState(() {
+                                        _currentPagepegawai++;
+                                      });
+                                    }
+                                  : null,
+                              icon: Icon(Icons.arrow_forward_ios, size: 16),
+                              label: Text("Next"),
+                            ),
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20),
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.95,
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        "Detail Pegawai",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 30.0),
+                      selectedEmployee != null
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    Text(
+                                      "First Name:",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              )
-                            : Text(
-                                "Select a Pegawai to see details",
+                                    Text(
+                                      " ${selectedEmployee!['fname']}",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 12.0),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    Text(
+                                      "Last Name:",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    Text(
+                                      "${selectedEmployee!['lname']}",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 12.0),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Text(
+                                      "Role:",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    Text(
+                                      "${selectedEmployee!['role']}",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            )
+                          : Center(
+                              child: Text(
+                                "No employee selected.",
                                 style: TextStyle(
-                                    color: Colors.white, fontSize: 16),
-                                textAlign: TextAlign.center,
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
                               ),
-                      ],
-                    ),
+                            ),
+                      SizedBox(
+                        height: 30,
+                      )
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           )),
       ContentView(
