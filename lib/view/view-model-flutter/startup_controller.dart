@@ -87,7 +87,7 @@ void nambahcabangngudang_Owner(String nama_cabang, String alamat_cabang,
           );
 
           if (response2.statusCode == 200) {
-            showToast(context, 'Berhasil menambah akun!');
+            showToast(context, 'Berhasil menambah data!');
             final dataStorage = GetStorage();
             dataStorage.write('nama_cabang', nama_cabang);
             dataStorage.write('switchmode', true);
@@ -106,9 +106,9 @@ void nambahcabangngudang_Owner(String nama_cabang, String alamat_cabang,
   }
 }
 
-//tambah manager
+//tambah manager dari owner interface
 void tambahmanager_Owner(String email, String pass, String fname, String lname,
-    BuildContext context) async {
+    String alamat, String no_telp, BuildContext context) async {
   final dataStorage = GetStorage();
   String nama_cabangpass = dataStorage.read('nama_cabang');
   try {
@@ -125,13 +125,17 @@ void tambahmanager_Owner(String email, String pass, String fname, String lname,
         'password': pass,
         'fname': fname,
         'lname': lname,
+        'alamat': alamat,
+        'no_telp': no_telp,
         'role': "Manager",
       };
       final url = 'http://localhost:3000/user/addUser/$idcabang';
       if (email.isNotEmpty &&
           pass.isNotEmpty &&
           fname.isNotEmpty &&
-          lname.isNotEmpty) {
+          lname.isNotEmpty &&
+          alamat.isNotEmpty &&
+          no_telp.isNotEmpty) {
         final response = await http.post(
           Uri.parse(url),
           headers: {
@@ -223,9 +227,9 @@ void nambahcabangngudang(String nama_cabang, String alamat_cabang,
   }
 }
 
-//tambah manager
+//tambah manager startup
 void tambahmanager(String email, String pass, String fname, String lname,
-    BuildContext context) async {
+    String alamat, String no_telp, BuildContext context) async {
   final dataStorage = GetStorage();
   String nama_cabangpass = dataStorage.read('nama_cabang');
   try {
@@ -242,13 +246,17 @@ void tambahmanager(String email, String pass, String fname, String lname,
         'password': pass,
         'fname': fname,
         'lname': lname,
+        'alamat': alamat,
+        'no_telp': no_telp,
         'role': "Manager",
       };
       final url = 'http://localhost:3000/user/addUser/$idcabang';
       if (email.isNotEmpty &&
           pass.isNotEmpty &&
           fname.isNotEmpty &&
-          lname.isNotEmpty) {
+          lname.isNotEmpty &&
+          alamat.isNotEmpty &&
+          no_telp.isNotEmpty) {
         final response = await http.post(
           Uri.parse(url),
           headers: {

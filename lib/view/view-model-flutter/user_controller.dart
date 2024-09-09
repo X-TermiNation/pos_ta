@@ -139,20 +139,27 @@ void tambahOwner(String email, String pass, String fname, String lname) async {
 }
 
 //
-void tambahpegawai(
-    String email, String pass, String fname, String lname, String role) async {
+void tambahpegawai(String email, String pass, String fname, String lname,
+    String alamat, String no_telp, String role) async {
   try {
     final useradd = {
       'email': email,
       'password': pass,
       'fname': fname,
       'lname': lname,
+      'alamat': alamat,
+      'no_telp': no_telp,
       'role': role,
     };
 
     final dataStorage = GetStorage();
     String id_cabang = dataStorage.read('id_cabang');
-    if (email != "" && pass != "" && fname != "" && lname != "") {
+    if (email != "" &&
+        pass != "" &&
+        fname != "" &&
+        lname != "" &&
+        alamat != "" &&
+        no_telp != "") {
       final url = 'http://localhost:3000/user/addUser/$id_cabang';
       final response = await http.post(
         Uri.parse(url),

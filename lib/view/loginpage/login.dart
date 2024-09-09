@@ -21,7 +21,7 @@ class loginscreen extends StatefulWidget {
 class _loginscreen_state extends State<loginscreen> {
   TextEditingController email = TextEditingController();
   TextEditingController pass = TextEditingController();
-
+  bool passvisibility = false;
   @override
   void initState() {
     super.initState();
@@ -83,10 +83,12 @@ class _loginscreen_state extends State<loginscreen> {
   Widget build(BuildContext context) {
     print("owner status:$chkOwner");
     return Scaffold(
-      body: Center(
-        child: _showLoading
-            ? CircularProgressIndicator()
-            : SingleChildScrollView(
+        body: Center(
+      child: _showLoading
+          ? CircularProgressIndicator()
+          : SingleChildScrollView(
+              child: Container(
+                width: 400, // Set the width to your desired value
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
@@ -102,7 +104,7 @@ class _loginscreen_state extends State<loginscreen> {
                           color: Colors.blue[800],
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 32), // Consistent spacing
                       TextFormField(
                         controller: email,
                         onChanged: (value) {
@@ -112,10 +114,11 @@ class _loginscreen_state extends State<loginscreen> {
                         },
                         decoration: InputDecoration(
                           labelText: 'Email',
-                          labelStyle: TextStyle(color: Colors.grey[700]),
+                          labelStyle: TextStyle(color: Colors.white),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
+                          filled: true,
                           prefixIcon: Icon(Icons.email),
                         ),
                         validator: (value) {
@@ -126,27 +129,37 @@ class _loginscreen_state extends State<loginscreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16), // Consistent spacing
                       TextFormField(
                         controller: pass,
-                        obscureText: true,
+                        obscureText: !passvisibility,
+                        style: TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Password',
-                          labelStyle: TextStyle(color: Colors.grey[700]),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 16, horizontal: 20),
+                          labelText: 'Enter Password',
+                          labelStyle: TextStyle(color: Colors.white),
+                          filled: true,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          prefixIcon: Icon(Icons.lock),
+                          prefixIcon: Icon(Icons.lock, color: Colors.grey[300]),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              passvisibility
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.grey[300],
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                passvisibility = !passvisibility;
+                              });
+                            },
+                          ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            showToast(
-                                context, 'Field password tidak boleh kosong!');
-                          }
-                          return null;
-                        },
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 32), // Consistent spacing
                       ElevatedButton(
                         onPressed: () async {
                           int signcode = 0;
@@ -183,7 +196,7 @@ class _loginscreen_state extends State<loginscreen> {
                           style: TextStyle(fontSize: 18, color: Colors.white),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
                       Align(
                         alignment: Alignment.center,
                         child: ElevatedButton(
@@ -214,7 +227,7 @@ class _loginscreen_state extends State<loginscreen> {
                   ),
                 ),
               ),
-      ),
-    );
+            ),
+    ));
   }
 }

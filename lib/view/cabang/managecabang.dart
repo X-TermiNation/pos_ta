@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/loginpage/login_owner.dart';
+import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/startup_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/cabang_controller.dart';
 
@@ -23,6 +24,8 @@ class _managecabangState extends State<managecabang> {
   TextEditingController pass = TextEditingController();
   TextEditingController fname = TextEditingController();
   TextEditingController lname = TextEditingController();
+  TextEditingController alamat = TextEditingController();
+  TextEditingController no_telp_manager = TextEditingController();
   List<Map<String, dynamic>> datacabang = [];
   int _currentPage = 0;
   final int _itemsPerPage = 3;
@@ -101,7 +104,10 @@ class _managecabangState extends State<managecabang> {
                               print("gagal delete: $e");
                             }
                           },
-                          child: Text('Delete'),
+                          child: Text(
+                            'Delete',
+                            style: TextStyle(color: Colors.white),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                             padding: EdgeInsets.symmetric(
@@ -221,22 +227,40 @@ class _managecabangState extends State<managecabang> {
           controller: pass, label: 'Enter Password', obscureText: true),
       _buildTextField(controller: fname, label: 'Enter First Name'),
       _buildTextField(controller: lname, label: 'Enter Last Name'),
+      _buildTextField(controller: alamat, label: 'Enter Address'),
+      _buildTextField(
+        controller: no_telp_manager,
+        label: 'Enter Nomor Telepon Manager',
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      ),
       SizedBox(height: 10.0),
       Padding(
         padding: EdgeInsets.only(left: 20),
         child: FilledButton(
           onPressed: () {
-            tambahmanager_Owner(
-                email.text, pass.text, fname.text, lname.text, context);
-            final dataStorage = GetStorage();
-            setState(() {
-              email.text = "";
-              pass.text = "";
-              fname.text = "";
-              lname.text = "";
-              dataStorage.write('switchmode', false);
-              switchmode = dataStorage.read('switchmode');
-            });
+            if (email.text.isNotEmpty ||
+                pass.text.isNotEmpty ||
+                fname.text.isNotEmpty ||
+                lname.text.isNotEmpty ||
+                alamat.text.isNotEmpty ||
+                no_telp_manager.text.isNotEmpty) {
+              tambahmanager_Owner(email.text, pass.text, fname.text, lname.text,
+                  alamat.text, no_telp_manager.text, context);
+              final dataStorage = GetStorage();
+              setState(() {
+                email.text = "";
+                pass.text = "";
+                fname.text = "";
+                lname.text = "";
+                alamat.text = "";
+                no_telp_manager.text = "";
+                dataStorage.write('switchmode', false);
+                switchmode = dataStorage.read('switchmode');
+              });
+            } else {
+              showToast(context, "Pastikan semua data terisi!");
+            }
           },
           child: Text("Selesai"),
           style: ElevatedButton.styleFrom(
@@ -277,17 +301,24 @@ class _managecabangState extends State<managecabang> {
         padding: EdgeInsets.only(left: 20),
         child: FilledButton(
           onPressed: () {
-            nambahcabangngudang_Owner(nama_cabang.text, alamat_cabang.text,
-                no_telp.text, alamat_gudang.text, context);
-            final dataStorage = GetStorage();
-            setState(() {
-              nama_cabang.text = "";
-              alamat_cabang.text = "";
-              no_telp.text = "";
-              alamat_gudang.text = "";
-              dataStorage.write('switchmode', true);
-              switchmode = dataStorage.read('switchmode');
-            });
+            if (nama_cabang.text.isNotEmpty ||
+                alamat_cabang.text.isNotEmpty ||
+                no_telp.text.isNotEmpty ||
+                alamat_gudang.text.isNotEmpty) {
+              nambahcabangngudang_Owner(nama_cabang.text, alamat_cabang.text,
+                  no_telp.text, alamat_gudang.text, context);
+              final dataStorage = GetStorage();
+              setState(() {
+                nama_cabang.text = "";
+                alamat_cabang.text = "";
+                no_telp.text = "";
+                alamat_gudang.text = "";
+                dataStorage.write('switchmode', true);
+                switchmode = dataStorage.read('switchmode');
+              });
+            } else {
+              showToast(context, "Pastikan semua data terisi!");
+            }
           },
           child: Text("Submit"),
           style: ElevatedButton.styleFrom(

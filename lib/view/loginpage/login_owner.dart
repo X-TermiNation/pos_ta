@@ -9,8 +9,6 @@ import 'package:ta_pos/view/owner/ownermenu.dart';
 import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 
-String emailowner = "";
-
 class login_owner extends StatefulWidget {
   const login_owner({super.key});
 
@@ -21,12 +19,14 @@ class login_owner extends StatefulWidget {
 class _login_owner_state extends State<login_owner> {
   TextEditingController email = TextEditingController();
   TextEditingController pass = TextEditingController();
-
+  bool passvisibility = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
+        body: Center(
+      child: SingleChildScrollView(
+        child: Container(
+          width: 400,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
@@ -47,15 +47,16 @@ class _login_owner_state extends State<login_owner> {
                   controller: email,
                   onChanged: (value) {
                     setState(() {
-                      emailowner = value;
+                      emailstr = value;
                     });
                   },
                   decoration: InputDecoration(
                     labelText: 'Email',
-                    labelStyle: TextStyle(color: Colors.grey[700]),
+                    labelStyle: TextStyle(color: Colors.white),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
+                    filled: true,
                     prefixIcon: Icon(Icons.email),
                   ),
                   validator: (value) {
@@ -68,27 +69,38 @@ class _login_owner_state extends State<login_owner> {
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: pass,
-                  obscureText: true,
+                  obscureText: !passvisibility,
+                  style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: TextStyle(color: Colors.grey[700]),
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                    labelText: 'Enter Password',
+                    labelStyle: TextStyle(color: Colors.white),
+                    filled: true,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    prefixIcon: Icon(Icons.lock),
+                    prefixIcon: Icon(Icons.lock, color: Colors.grey[300]),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        passvisibility
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Colors.grey[300],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          passvisibility = !passvisibility;
+                        });
+                      },
+                    ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      showToast(context, 'Field password tidak boleh kosong!');
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () async {
                     int signcode = 0;
-                    signcode = await loginOwner(emailowner, pass.text);
+                    signcode = await loginOwner(email.text, pass.text);
                     if (signcode == 1) {
                       Navigator.push(context,
                           MaterialPageRoute(builder: (context) => ownermenu()));
@@ -108,7 +120,7 @@ class _login_owner_state extends State<login_owner> {
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ),
-                const SizedBox(height: 100),
+                const SizedBox(height: 30),
                 Align(
                   alignment: Alignment.center,
                   child: ElevatedButton(
@@ -140,6 +152,6 @@ class _login_owner_state extends State<login_owner> {
           ),
         ),
       ),
-    );
+    ));
   }
 }

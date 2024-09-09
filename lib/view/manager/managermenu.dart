@@ -37,6 +37,8 @@ class _ManagerMenuState extends State<ManagerMenu>
   TextEditingController pass = TextEditingController();
   TextEditingController fname = TextEditingController();
   TextEditingController lname = TextEditingController();
+  TextEditingController alamat = TextEditingController();
+  TextEditingController no_telp = TextEditingController();
   TextEditingController edit_fname = TextEditingController();
   TextEditingController edit_lname = TextEditingController();
   TextEditingController nama_diskon = TextEditingController();
@@ -308,7 +310,7 @@ class _ManagerMenuState extends State<ManagerMenu>
 
   //check boolean
   bool _isValidEmail = false;
-  bool _isEditUser = false;
+  bool visiblepass = false;
   String diskon_idbarang = "";
   String temp_id_update = "";
   String value = 'Kasir';
@@ -1568,16 +1570,16 @@ class _ManagerMenuState extends State<ManagerMenu>
                         labelText: 'Enter Email',
                         labelStyle: TextStyle(color: Colors.grey[300]),
                         filled: true,
-                        fillColor: Colors.grey[800],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
+                        prefixIcon: Icon(Icons.email, color: Colors.grey[300]),
                       ),
                     ),
                     SizedBox(height: 16.0),
                     TextFormField(
                       controller: pass,
-                      obscureText: true,
+                      obscureText: !visiblepass,
                       style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         contentPadding:
@@ -1585,9 +1587,22 @@ class _ManagerMenuState extends State<ManagerMenu>
                         labelText: 'Enter Password',
                         labelStyle: TextStyle(color: Colors.grey[300]),
                         filled: true,
-                        fillColor: Colors.grey[800],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
+                        ),
+                        prefixIcon: Icon(Icons.lock, color: Colors.grey[300]),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            visiblepass
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.grey[300],
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              visiblepass = !visiblepass;
+                            });
+                          },
                         ),
                       ),
                     ),
@@ -1601,10 +1616,10 @@ class _ManagerMenuState extends State<ManagerMenu>
                         labelText: 'Enter First Name',
                         labelStyle: TextStyle(color: Colors.grey[300]),
                         filled: true,
-                        fillColor: Colors.grey[800],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
+                        prefixIcon: Icon(Icons.person, color: Colors.grey[300]),
                       ),
                     ),
                     SizedBox(height: 16.0),
@@ -1617,16 +1632,53 @@ class _ManagerMenuState extends State<ManagerMenu>
                         labelText: 'Enter Last Name',
                         labelStyle: TextStyle(color: Colors.grey[300]),
                         filled: true,
-                        fillColor: Colors.grey[800],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
+                        prefixIcon: Icon(Icons.person, color: Colors.grey[300]),
                       ),
+                    ),
+                    SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: alamat,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        labelText: 'Enter Address',
+                        labelStyle: TextStyle(color: Colors.grey[300]),
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        prefixIcon:
+                            Icon(Icons.location_on, color: Colors.grey[300]),
+                      ),
+                    ),
+                    SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: no_telp,
+                      keyboardType: TextInputType.phone,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        labelText: 'Enter Phone Number',
+                        labelStyle: TextStyle(color: Colors.grey[300]),
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        prefixIcon: Icon(Icons.phone, color: Colors.grey[300]),
+                      ),
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                     ),
                     SizedBox(height: 16.0),
                     Container(
                       padding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                          EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                       decoration: BoxDecoration(
                         color: Colors.grey[800],
                         borderRadius: BorderRadius.circular(10),
@@ -1656,8 +1708,14 @@ class _ManagerMenuState extends State<ManagerMenu>
                       onPressed: _isValidEmail
                           ? () async {
                               try {
-                                tambahpegawai(email.text, pass.text, fname.text,
-                                    lname.text, value);
+                                tambahpegawai(
+                                    email.text,
+                                    pass.text,
+                                    fname.text,
+                                    lname.text,
+                                    alamat.text,
+                                    no_telp.text,
+                                    value);
                                 fetchUser();
                                 getUsers();
                                 setState(() {
@@ -1666,6 +1724,8 @@ class _ManagerMenuState extends State<ManagerMenu>
                                   pass.text = "";
                                   fname.text = "";
                                   lname.text = "";
+                                  alamat.text = "";
+                                  no_telp.text = "";
                                   this.value = "Kasir";
                                 });
                               } catch (e) {
