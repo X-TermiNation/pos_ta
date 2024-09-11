@@ -83,6 +83,10 @@ class _ManagerMenuState extends State<ManagerMenu>
 
   //search bar table in diskon list
   void onSearch(String query) {
+    // Normalize query for case-insensitive search
+    final lowerQuery = query.toLowerCase();
+
+    // Check if the query is empty
     if (query.isEmpty) {
       setState(() {
         _filteredDiskon = _diskonData; // Reset to original data
@@ -90,17 +94,21 @@ class _ManagerMenuState extends State<ManagerMenu>
     } else {
       setState(() {
         _filteredDiskon = _diskonData.where((map) {
-          return map['nama_diskon']
-                  .toString()
-                  .toLowerCase()
-                  .contains(query.toLowerCase()) ||
-              map['persentase_diskon'].toString().contains(query) ||
-              map['start_date'].toString().substring(0, 10).contains(query) ||
-              map['end_date'].toString().substring(0, 10).contains(query) ||
-              getStatus(DateTime.parse(map['start_date']),
-                      DateTime.parse(map['end_date']))
-                  .toLowerCase()
-                  .contains(query.toLowerCase());
+          // Ensure the fields are converted to String for comparison
+          final namaDiskon = map['nama_diskon']?.toString().toLowerCase() ?? '';
+          final persentaseDiskon = map['persentase_diskon']?.toString() ?? '';
+          final startDate =
+              map['start_date']?.toString().substring(0, 10) ?? '';
+          final endDate = map['end_date']?.toString().substring(0, 10) ?? '';
+          final status = getStatus(DateTime.parse(map['start_date']),
+                  DateTime.parse(map['end_date']))
+              .toLowerCase();
+
+          return namaDiskon.contains(lowerQuery) ||
+              persentaseDiskon.contains(query) ||
+              startDate.contains(query) ||
+              endDate.contains(query) ||
+              status.contains(lowerQuery);
         }).toList();
       });
     }

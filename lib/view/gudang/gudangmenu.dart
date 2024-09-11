@@ -409,7 +409,7 @@ class _GudangMenuState extends State<GudangMenu> {
                 children: [
                   // Daftar Barang Section
                   Expanded(
-                    flex: 2,
+                    flex: 7,
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.black,
@@ -454,150 +454,215 @@ class _GudangMenuState extends State<GudangMenu> {
                           ),
                           SizedBox(height: 16),
                           Expanded(
-                            child: FutureBuilder(
-                              future: barangdata,
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return Center(
-                                      child: CircularProgressIndicator());
-                                } else if (snapshot.hasError) {
-                                  return Center(
-                                    child: Text('Error: ${snapshot.error}'),
-                                  );
-                                } else if (!snapshot.hasData ||
-                                    snapshot.data == null) {
-                                  return Center(
-                                    child: Text('No data available'),
-                                  );
-                                } else {
-                                  final List<Map<String, dynamic>>? data =
-                                      snapshot.data;
-                                  if (data == null) {
-                                    return Center(
-                                      child: Text('No data available'),
-                                    );
-                                  }
-
-                                  // Filter the data based on the search query
-                                  final filteredData = data.where((map) {
-                                    final namaBarang =
-                                        map['nama_barang']?.toLowerCase() ?? '';
-                                    return namaBarang.contains(searchQuery);
-                                  }).toList();
-
-                                  if (filteredData.isEmpty) {
-                                    return Center(
-                                      child: Text('No items match your search'),
-                                    );
-                                  }
-
-                                  final rows = filteredData.map((map) {
-                                    return DataRow(cells: [
-                                      DataCell(
-                                        GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              barangdata = Future.delayed(
-                                                  Duration(seconds: 1),
-                                                  () => getBarang(id_gudangs));
-                                            });
-                                            edit_nama_barang.text =
-                                                map['nama_barang'];
-                                            String jenisBarang =
-                                                map['jenis_barang'];
-                                            String kategoriBarang =
-                                                map['kategori_barang'];
-                                            edit_nama_kategorijenis.text =
-                                                "$jenisBarang / $kategoriBarang";
-                                            edit_expdate_barang.text =
-                                                map['exp_date'].toString();
-                                            edit_insertdate_barang.text =
-                                                map['insert_date'].toString();
-                                            _isEditUser = true;
-                                            temp_id_update = map['_id'];
-                                            fetchsatuandetail();
-                                          },
-                                          child: Text(
-                                            map['nama_barang'],
-                                            style: TextStyle(fontSize: 16),
-                                          ),
-                                        ),
-                                      ),
-                                      DataCell(Text(
-                                        '${map['jenis_barang']} / ${map['kategori_barang']}',
-                                        style: TextStyle(fontSize: 16),
-                                      )),
-                                      DataCell(Text(
-                                        map['exp_date'] != null
-                                            ? map['exp_date']
-                                                .toString()
-                                                .substring(0, 10)
-                                            : "-",
-                                        style: TextStyle(fontSize: 16),
-                                      )),
-                                      DataCell(Text(
-                                        map['insert_date'] != null
-                                            ? map['insert_date']
-                                                .toString()
-                                                .substring(0, 10)
-                                            : "-",
-                                        style: TextStyle(fontSize: 16),
-                                      )),
-                                      DataCell(
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            deletebarang(map['_id']);
-                                            setState(() {
-                                              barangdata = Future.delayed(
-                                                  Duration(seconds: 1),
-                                                  () => getBarang(id_gudangs));
-                                            });
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.redAccent,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8.0),
-                                            ),
-                                          ),
-                                          child: Text('Delete',
-                                              style: TextStyle(
-                                                  color: Colors.white)),
-                                        ),
-                                      ),
-                                    ]);
-                                  }).toList();
-
-                                  return SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: DataTable(
-                                      columns: const <DataColumn>[
-                                        DataColumn(
-                                          label: Text('Nama Barang',
-                                              style: TextStyle(fontSize: 16)),
-                                        ),
-                                        DataColumn(
-                                          label: Text('Jenis/Kategori',
-                                              style: TextStyle(fontSize: 16)),
-                                        ),
-                                        DataColumn(
-                                          label: Text('Exp Date',
-                                              style: TextStyle(fontSize: 16)),
-                                        ),
-                                        DataColumn(
-                                          label: Text('Insert Date',
-                                              style: TextStyle(fontSize: 16)),
-                                        ),
-                                        DataColumn(
-                                          label: Text('Hapus Barang',
-                                              style: TextStyle(fontSize: 16)),
-                                        ),
-                                      ],
-                                      rows: rows,
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final availableWidth =
+                                    constraints.maxWidth - 32;
+                                return SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minWidth: availableWidth,
                                     ),
-                                  );
-                                }
+                                    child: FutureBuilder(
+                                      future: barangdata,
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return Center(
+                                              child:
+                                                  CircularProgressIndicator());
+                                        } else if (snapshot.hasError) {
+                                          return Center(
+                                              child: Text(
+                                                  'Error: ${snapshot.error}'));
+                                        } else if (!snapshot.hasData ||
+                                            snapshot.data == null) {
+                                          return Center(
+                                              child: Text('No data available'));
+                                        } else {
+                                          final List<Map<String, dynamic>>?
+                                              data = snapshot.data;
+                                          if (data == null) {
+                                            return Center(
+                                                child:
+                                                    Text('No data available'));
+                                          }
+
+                                          // Filter the data based on the search query
+                                          final filteredData =
+                                              data.where((map) {
+                                            // Convert each field to a string and check if it contains the search query
+                                            final searchText = [
+                                              map['nama_barang']
+                                                      ?.toLowerCase() ??
+                                                  '',
+                                              map['jenis_barang']
+                                                      ?.toLowerCase() ??
+                                                  '',
+                                              map['kategori_barang']
+                                                      ?.toLowerCase() ??
+                                                  '',
+                                              map['exp_date']
+                                                      ?.toString()
+                                                      .toLowerCase() ??
+                                                  '',
+                                              map['insert_date']
+                                                      ?.toString()
+                                                      .toLowerCase() ??
+                                                  '',
+                                            ].join(
+                                                ' '); // Concatenate all fields into a single string for searching
+
+                                            return searchText
+                                                .contains(searchQuery);
+                                          }).toList();
+
+                                          if (filteredData.isEmpty) {
+                                            return Center(
+                                                child: Text(
+                                                    'No items match your search'));
+                                          }
+
+                                          final rows = filteredData.map((map) {
+                                            return DataRow(cells: [
+                                              DataCell(
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    setState(() {
+                                                      edit_nama_barang.text =
+                                                          map['nama_barang'];
+                                                      String jenisBarang =
+                                                          map['jenis_barang'];
+                                                      String kategoriBarang =
+                                                          map['kategori_barang'];
+                                                      edit_nama_kategorijenis
+                                                              .text =
+                                                          "$jenisBarang / $kategoriBarang";
+                                                      edit_expdate_barang.text =
+                                                          map['exp_date']
+                                                              .toString();
+                                                      edit_insertdate_barang
+                                                              .text =
+                                                          map['insert_date']
+                                                              .toString();
+                                                      _isEditUser = true;
+                                                      temp_id_update =
+                                                          map['_id'];
+                                                      fetchsatuandetail();
+                                                    });
+                                                  },
+                                                  child: Text(
+                                                    map['nama_barang'],
+                                                    style:
+                                                        TextStyle(fontSize: 16),
+                                                  ),
+                                                ),
+                                              ),
+                                              DataCell(Text(
+                                                '${map['jenis_barang']} / ${map['kategori_barang']}',
+                                                style: TextStyle(fontSize: 16),
+                                              )),
+                                              DataCell(Text(
+                                                map['exp_date'] != null
+                                                    ? map['exp_date']
+                                                        .toString()
+                                                        .substring(0, 10)
+                                                    : "-",
+                                                style: TextStyle(fontSize: 16),
+                                              )),
+                                              DataCell(Text(
+                                                map['insert_date'] != null
+                                                    ? map['insert_date']
+                                                        .toString()
+                                                        .substring(0, 10)
+                                                    : "-",
+                                                style: TextStyle(fontSize: 16),
+                                              )),
+                                              DataCell(
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    deletebarang(map['_id']);
+                                                    setState(() {
+                                                      barangdata =
+                                                          Future.delayed(
+                                                              Duration(
+                                                                  seconds: 1),
+                                                              () => getBarang(
+                                                                  id_gudangs));
+                                                    });
+                                                  },
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.redAccent,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8.0),
+                                                    ),
+                                                  ),
+                                                  child: Text('Delete',
+                                                      style: TextStyle(
+                                                          color: Colors.white)),
+                                                ),
+                                              ),
+                                            ]);
+                                          }).toList();
+
+                                          return SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: SizedBox(
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width -
+                                                  500, // 16 + 16 padding
+                                              child: DataTable(
+                                                headingRowColor:
+                                                    MaterialStateColor
+                                                        .resolveWith(
+                                                  (states) => Colors.blue,
+                                                ),
+                                                columnSpacing: 20,
+                                                dataRowColor: MaterialStateColor
+                                                    .resolveWith(
+                                                  (states) => Colors.black,
+                                                ),
+                                                dataTextStyle: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                ),
+                                                headingTextStyle: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                columns: const <DataColumn>[
+                                                  DataColumn(
+                                                      label:
+                                                          Text('Nama Barang')),
+                                                  DataColumn(
+                                                      label: Text(
+                                                          'Jenis/Kategori')),
+                                                  DataColumn(
+                                                      label: Text('Exp Date')),
+                                                  DataColumn(
+                                                      label:
+                                                          Text('Insert Date')),
+                                                  DataColumn(
+                                                      label:
+                                                          Text('Hapus Barang')),
+                                                ],
+                                                rows: rows,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                );
                               },
                             ),
                           ),
@@ -608,7 +673,7 @@ class _GudangMenuState extends State<GudangMenu> {
                   SizedBox(width: 16.0),
                   // Detail Barang Section
                   Expanded(
-                    flex: 1,
+                    flex: 3,
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.black,
@@ -1045,7 +1110,7 @@ class _GudangMenuState extends State<GudangMenu> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Cari Barang di Gudang",
+                        "Tambah Satuan",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
