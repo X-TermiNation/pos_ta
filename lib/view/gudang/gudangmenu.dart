@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
 
@@ -124,8 +125,8 @@ class _GudangMenuState extends State<GudangMenu> {
               ),
               contentPadding: EdgeInsets.all(16),
               content: Container(
-                height: 550,
-                width: 700,
+                height: 350,
+                width: 500,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black),
                   borderRadius: BorderRadius.circular(15),
@@ -208,13 +209,18 @@ class _GudangMenuState extends State<GudangMenu> {
                                   ),
                                 ),
                                 onPressed: () {
-                                  addjenis(nama_jenis.text, context);
-                                  nama_jenis.clear();
-                                  setState(() {
-                                    fetchData();
-                                    getJenis();
-                                    step = 2; // Move to kategori step
-                                  });
+                                  if (nama_jenis.text.isNotEmpty) {
+                                    addjenis(nama_jenis.text, context);
+                                    nama_jenis.clear();
+                                    setState(() {
+                                      fetchData();
+                                      getJenis();
+                                      step = 2; // Move to kategori step
+                                    });
+                                  } else {
+                                    showToast(
+                                        context, "jenis tidak boleh kosong");
+                                  }
                                 },
                                 child: Text(
                                   "Tambah Jenis",
@@ -247,7 +253,7 @@ class _GudangMenuState extends State<GudangMenu> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 40),
+                          SizedBox(height: 20),
                           TextFormField(
                             controller: nama_kategori,
                             validator: (value) {
@@ -268,7 +274,7 @@ class _GudangMenuState extends State<GudangMenu> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 40),
+                          SizedBox(height: 20),
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
@@ -289,7 +295,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                 var entries = snapshot.data!.entries.toList();
 
                                 if (entries.isEmpty) {
-                                  return Text('No items available');
+                                  return Text('No Items available');
                                 }
 
                                 // Ensure selectedvalueJenis is valid
@@ -835,7 +841,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                   snapshot.data != null) {
                                 var entries = snapshot.data!.entries.toList();
                                 if (entries.isEmpty) {
-                                  return Text('No items available');
+                                  return Text('No Kategori Available');
                                 }
                                 if (selectedvalueKategori == null ||
                                     !entries.any((entry) =>
@@ -953,12 +959,10 @@ class _GudangMenuState extends State<GudangMenu> {
                     SizedBox(height: 16),
                     Divider(),
                     SizedBox(height: 16),
-                    Center(
-                      child: Text(
-                        "Satuan Barang",
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
+                    Text(
+                      "Masukkan informasi satuan pertama untuk barang diatas!",
+                      style:
+                          TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 16),
                     TextFormField(
@@ -1708,7 +1712,6 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
                 ? selectedExpDate!.toLocal().toString().split(' ')[0]
                 : null;
 
-            // Call UpdateBarang function
             UpdateBarang(
               widget.barangId,
               nama_barang: namaBarang,
@@ -1718,10 +1721,9 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
               exp_date: expDate,
             );
 
-            // Trigger the state update in the parent widget
             widget.onUpdated();
 
-            Navigator.of(context).pop(); // Close the dialog after updating
+            Navigator.of(context).pop();
           },
           child: Text('Update',
               style: TextStyle(fontSize: 16, color: Colors.white)),

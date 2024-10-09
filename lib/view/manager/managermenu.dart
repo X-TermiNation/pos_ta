@@ -277,8 +277,10 @@ class _ManagerMenuState extends State<ManagerMenu>
                           // Handle the confirm action
                           updatejumlahSatuan(id_barang, id_satuan, quantity,
                               "tambah", context);
+                          setState(() {
+                            showToast(context, 'Berhasil menambah data');
+                          });
                           Navigator.of(context).pop();
-                          setState(() {});
                           // Close the dialog
                         },
                         child: Text('Confirm Stock'),
@@ -468,6 +470,33 @@ class _ManagerMenuState extends State<ManagerMenu>
     setState(() {
       searchQueryDiskon = query.toLowerCase();
     });
+  }
+
+  //widget row khusus detail pegawai
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -1461,75 +1490,33 @@ class _ManagerMenuState extends State<ManagerMenu>
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      SizedBox(height: 30.0),
+                      SizedBox(height: 20),
                       selectedEmployee != null
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    Text(
-                                      "First Name:",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      " ${selectedEmployee!['fname']}",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 12.0),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    Text(
-                                      "Last Name:",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      "${selectedEmployee!['lname']}",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 12.0),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    Text(
-                                      "Role:",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      "${selectedEmployee!['role']}",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                          ? Container(
+                              padding: EdgeInsets.all(16.0),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[850],
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(
+                                    color: Colors.blueAccent, width: 1.5),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildDetailRow("First Name:",
+                                      selectedEmployee!['fname']),
+                                  _buildDetailRow(
+                                      "Last Name:", selectedEmployee!['lname']),
+                                  _buildDetailRow(
+                                      "Email:", selectedEmployee!['email']),
+                                  _buildDetailRow(
+                                      "Alamat:", selectedEmployee!['alamat']),
+                                  _buildDetailRow("No. Telp:",
+                                      selectedEmployee!['no_telp']),
+                                  _buildDetailRow(
+                                      "Role:", selectedEmployee!['role']),
+                                ],
+                              ),
                             )
                           : Center(
                               child: Text(
@@ -1540,9 +1527,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                 ),
                               ),
                             ),
-                      SizedBox(
-                        height: 30,
-                      )
+                      SizedBox(height: 30),
                     ],
                   ),
                 ),

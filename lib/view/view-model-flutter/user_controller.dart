@@ -57,7 +57,7 @@ Future<void> fetchData() async {
 
 //login
 Future<int> loginbtn(String email, String pass) async {
-  String uriString = "http://localhost:3000/user/login";
+  String uriString = "http://localhost:3000/user/loginmanager";
   Uri uri = Uri.parse(uriString);
   final response = await http.post(
     uri,

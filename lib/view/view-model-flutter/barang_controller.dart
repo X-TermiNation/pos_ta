@@ -445,7 +445,7 @@ void updatejumlahSatuan(String id_barang, String id_satuan, int jumlah_satuan,
     );
 
     if (response.statusCode == 200) {
-      showToast(context, 'Berhasil menambah data');
+      print('Berhasil menambah data');
     } else {
       showToast(context, "Gagal menambahkan data");
       print('HTTP Error: ${response.statusCode}');
