@@ -94,15 +94,14 @@ class _GudangMenuState extends State<GudangMenu> {
   Future<void> fetchDataAndUseInJsonString() async {
     try {
       List<Map<String, dynamic>> data = await barangdata;
-
-      // Ubah data menjadi format JSON dan masukkan ke dalam string jsonString
-      String jsonString = json.encode(data);
-      setState(() {
-        _jsonString = jsonString;
-        _dataList = List<Map<String, dynamic>>.from(json.decode(_jsonString));
-      });
-      // Sekarang, Anda dapat menggunakan jsonString sesuai kebutuhan
-      print('JSON String: $jsonString');
+      if (data.isNotEmpty) {
+        String jsonString = json.encode(data);
+        setState(() {
+          _jsonString = jsonString;
+          _dataList = List<Map<String, dynamic>>.from(json.decode(_jsonString));
+          print('JSON String: $jsonString');
+        });
+      }
     } catch (e) {
       print('Error: $e');
     }
@@ -364,6 +363,7 @@ class _GudangMenuState extends State<GudangMenu> {
   void initState() {
     super.initState();
     getFirstKategoriId().then((value) => edit_selectedvalueKategori);
+    getKategori();
     fetchData();
     getdatagudang();
     fetchDataAndUseInJsonString();
@@ -990,7 +990,7 @@ class _GudangMenuState extends State<GudangMenu> {
                       },
                       decoration: InputDecoration(
                         border: OutlineInputBorder(),
-                        labelText: 'Harga Barang',
+                        labelText: 'Harga Barang per Satuan',
                         prefixIcon: Icon(Icons.attach_money),
                       ),
                       keyboardType: TextInputType.number,
@@ -1054,8 +1054,10 @@ class _GudangMenuState extends State<GudangMenu> {
                               isi_satuan_initial.text,
                               harga_satuan_initial.text,
                               context);
-                          nama_kategori.text = "";
                           setState(() {
+                            barangdata = Future.delayed(Duration(seconds: 1),
+                                () => getBarang(id_gudangs));
+                            fetchDataAndUseInJsonString();
                             fetchData();
                             noExp = false;
                             nama_barang.text = "";
@@ -1063,9 +1065,6 @@ class _GudangMenuState extends State<GudangMenu> {
                             jumlah_satuan_initial.text = "";
                             harga_satuan_initial.text = "";
                             isi_satuan_initial.text = "";
-                            barangdata = Future.delayed(Duration(seconds: 1),
-                                () => getBarang(id_gudangs));
-                            fetchDataAndUseInJsonString();
                           });
                         },
                         style: FilledButton.styleFrom(
@@ -1198,7 +1197,7 @@ class _GudangMenuState extends State<GudangMenu> {
                   SizedBox(height: 12),
                   _buildTextFormField(
                     controller: harga_satuan,
-                    labelText: 'Harga Barang',
+                    labelText: 'Harga Barang per Satuan',
                     keyboardType: TextInputType.number,
                   ),
                   SizedBox(height: 12),

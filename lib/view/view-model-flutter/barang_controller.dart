@@ -58,14 +58,8 @@ void addbarang(
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(Barangdata),
     );
+    final Map<String, dynamic> jsonData = json.decode(response.body);
     if (response.statusCode == 200) {
-      final satuandata = {
-        'nama_satuan': nama_satuan,
-        'jumlah_satuan': jumlah_satuan,
-        'harga_satuan': harga_satuan,
-        'isi_satuan': isi_satuan
-      };
-      final Map<String, dynamic> jsonData = json.decode(response.body);
       if (jsonData.containsKey('data')) {
         Map<String, dynamic> data = jsonData["data"];
         String id_barang = data['_id'];
@@ -81,7 +75,7 @@ void addbarang(
     }
   } catch (error) {
     showToast(context, "Error: $error");
-    print('Exception during HTTP request: $error');
+    print('Exception during HTTP request barang: $error');
   }
 }
 
@@ -98,7 +92,7 @@ Future<List<Map<String, dynamic>>> getBarang(String idgudang) async {
     print("ini data barang dari cabang: $data");
     return data.cast<Map<String, dynamic>>();
   } else {
-    CustomToast(message: "Failed to load data: ${response.statusCode}");
+    CustomToast(message: "Failed to load data barang: ${response.statusCode}");
     return [];
   }
 }
@@ -372,6 +366,7 @@ void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
     final dataStorage = GetStorage();
     final id_cabang = dataStorage.read("id_cabang");
     String id_gudangs = dataStorage.read('id_gudang');
+
     final url =
         'http://localhost:3000/barang/addsatuan/$id_barang/$id_cabang/$id_gudangs';
     final response = await http.post(
