@@ -3,20 +3,24 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:get_storage/get_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
 
 //add barang
 void addbarang(
-    DateTime insertedDate,
-    bool noExp,
-    String nama_barang,
-    String katakategori,
-    String nama_satuan,
-    String jumlah_satuan,
-    String isi_satuan,
-    String harga_satuan,
-    BuildContext context) async {
+  DateTime insertedDate,
+  bool noExp,
+  String nama_barang,
+  String katakategori,
+  String nama_satuan,
+  String jumlah_satuan,
+  String isi_satuan,
+  String harga_satuan,
+  BuildContext context,
+  XFile? selectedImage,
+) async {
+  // Check if required fields are empty
   if (nama_barang.isEmpty ||
       katakategori.isEmpty ||
       nama_satuan.isEmpty ||
@@ -26,25 +30,34 @@ void addbarang(
     showToast(context, 'Pastikan semua field terisi dengan benar');
     return;
   }
+
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
+
   try {
     String? expDateString;
     String? creationDateString;
-    getdatagudang();
+    getdatagudang(); // This function should fetch and set the necessary data
     String id_gudangs = dataStorage.read('id_gudang');
+
+    // Get the type of item from the category
     final requestjenis = Uri.parse(
         'http://localhost:3000/barang/getjenisfromkategori/$katakategori');
     final datajenis = await http.get(requestjenis);
     final jenis = json.decode(datajenis.body);
+
+    // Handle expiration date
     if (!noExp) {
       insertedDate = insertedDate.add(Duration(days: 1));
       expDateString = insertedDate.toIso8601String();
     } else {
       expDateString = '';
     }
+
     DateTime creationDate = DateTime.now();
     creationDateString = creationDate.toIso8601String();
+
+    // Prepare data for the request
     final Barangdata = {
       'nama_barang': nama_barang,
       'jenis_barang': jenis["data"]["nama_jenis"].toString(),
@@ -52,26 +65,44 @@ void addbarang(
       'insert_date': creationDateString,
       'exp_date': expDateString,
     };
+
     final url = 'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(Barangdata),
+    var request = http.MultipartRequest('POST', Uri.parse(url));
+
+    // Add fields to the request
+    request.fields.addAll(
+      Barangdata.map((key, value) => MapEntry(key, value.toString())),
     );
-    final Map<String, dynamic> jsonData = json.decode(response.body);
-    if (response.statusCode == 200) {
+
+    // Add the selected image as a file if available
+    if (selectedImage != null) {
+      request.files.add(await http.MultipartFile.fromPath(
+          'gambar_barang', selectedImage.path));
+    } else {
+      request.fields['gambar_barang'] = '';
+    }
+
+    // Send the request
+    final response = await request.send();
+    final responseData = await http.Response.fromStream(response);
+    final Map<String, dynamic> jsonData = json.decode(responseData.body);
+
+    // Handle response
+    if (responseData.statusCode == 200) {
       if (jsonData.containsKey('data')) {
         Map<String, dynamic> data = jsonData["data"];
         String id_barang = data['_id'];
+
+        // Call addsatuan to add the unit data
         addsatuan(id_barang, nama_satuan, jumlah_satuan, harga_satuan,
             isi_satuan, context);
         showToast(context, 'Berhasil menambah data');
       } else {
-        print('Unexpected response format: ${response.body}');
+        print('Unexpected response format: ${responseData.body}');
       }
     } else {
       showToast(context, "Gagal menambahkan data");
-      print('HTTP Error: ${response.statusCode}');
+      print('HTTP Error: ${responseData.statusCode}');
     }
   } catch (error) {
     showToast(context, "Error: $error");

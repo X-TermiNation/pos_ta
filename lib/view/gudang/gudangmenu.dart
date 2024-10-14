@@ -8,6 +8,8 @@ import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 String? selectedvalueJenis = "";
 String? selectedvalueKategori = "";
@@ -50,11 +52,24 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController isi_satuan_initial = TextEditingController();
   TextEditingController _searchController = TextEditingController();
   TextEditingController _searchControllerBarangList = TextEditingController();
+  XFile? selectedImage;
+
   String searchQuery = '';
   List<Map<String, dynamic>> _dataList = [];
   List<Map<String, dynamic>> satuanList = [];
   Map<String, dynamic>? selectedSatuan;
   String _jsonString = '';
+
+  //tambah gambar pada insert gambar
+  Future<void> pickImage() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        selectedImage = image;
+      });
+    }
+  }
 
   //get kategori dan jenis untuk combo box
   void fetchData() async {
@@ -62,14 +77,6 @@ class _GudangMenuState extends State<GudangMenu> {
       edit_selectedvalueKategori = await getFirstKategoriId();
       selectedvalueJenis = await getFirstJenisId();
       selectedvalueKategori = await getFirstKategoriId();
-      // var barangdata = await getBarang(id_gudangs);
-      // if (selectedvalueJenis.isEmpty) {
-      //   selectedvalueJenis = "";
-      //   if (selectedvalueKategori.isEmpty) {
-      //     selectedvalueKategori = "";
-      //     edit_selectedvalueKategori = "";
-      //   }
-      // }
 
       print(
           "data jenis dan kategori pertama: $selectedvalueJenis dan $selectedvalueKategori");
@@ -957,6 +964,60 @@ class _GudangMenuState extends State<GudangMenu> {
                       ],
                     ),
                     SizedBox(height: 16),
+                    Text(
+                      "Upload Gambar Barang:",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        selectedImage != null
+                            ? Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey),
+                                  image: DecorationImage(
+                                    image: FileImage(File(selectedImage!.path)),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey),
+                                ),
+                                child: Center(
+                                  child: Text('No Image'),
+                                ),
+                              ),
+                        SizedBox(width: 16),
+                        ElevatedButton.icon(
+                          onPressed: pickImage,
+                          icon: Icon(
+                            Icons.photo_library,
+                            color: Colors.white,
+                          ),
+                          label: Text(
+                            "Pilih Gambar",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     Divider(),
                     SizedBox(height: 16),
                     Text(
@@ -1053,7 +1114,8 @@ class _GudangMenuState extends State<GudangMenu> {
                               jumlah_satuan_initial.text,
                               isi_satuan_initial.text,
                               harga_satuan_initial.text,
-                              context);
+                              context,
+                              selectedImage);
                           setState(() {
                             barangdata = Future.delayed(Duration(seconds: 1),
                                 () => getBarang(id_gudangs));
@@ -1065,6 +1127,7 @@ class _GudangMenuState extends State<GudangMenu> {
                             jumlah_satuan_initial.text = "";
                             harga_satuan_initial.text = "";
                             isi_satuan_initial.text = "";
+                            selectedImage = null;
                           });
                         },
                         style: FilledButton.styleFrom(
