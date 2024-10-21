@@ -13,6 +13,10 @@ import 'package:intl/intl.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/loginpage/login.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'dart:convert';
 
 List<Map<String, dynamic>> _dataList = [];
 var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
@@ -33,6 +37,11 @@ class ManagerMenu extends StatefulWidget {
 
 class _ManagerMenuState extends State<ManagerMenu>
     with SingleTickerProviderStateMixin {
+  //web socket check for courier tracking
+  LatLng? _courierPosition;
+  late WebSocketChannel channel;
+  bool isWebSocketConnected = false;
+
   TextEditingController email = TextEditingController();
   TextEditingController pass = TextEditingController();
   TextEditingController fname = TextEditingController();
@@ -332,6 +341,59 @@ class _ManagerMenuState extends State<ManagerMenu>
     return emailRegex.hasMatch(email);
   }
 
+  // Function to initialize the WebSocket connection
+  void _initializeWebSocket() {
+    setState(() {
+      isWebSocketConnected = false; // Reset connection status
+    });
+
+    // Set up WebSocket connection
+    channel = WebSocketChannel.connect(
+      Uri.parse('ws://localhost:8080/ws'), // WebSocket server URL
+    );
+
+    // Listen for location updates from the WebSocket server
+    channel.stream.listen((message) {
+      // Parse the incoming message
+      Map<String, dynamic> data = jsonDecode(message);
+
+      // Check if the message contains latitude and longitude
+      if (data.containsKey('latitude') && data.containsKey('longitude')) {
+        setState(() {
+          _courierPosition = LatLng(data['latitude'], data['longitude']);
+          isWebSocketConnected =
+              true; // WebSocket is active when data is received
+        });
+      }
+    }, onError: (error) {
+      print('WebSocket error: $error');
+      setState(() {
+        isWebSocketConnected = false; // WebSocket is inactive due to an error
+      });
+    }, onDone: () {
+      print('WebSocket connection closed.');
+      setState(() {
+        isWebSocketConnected = false; // WebSocket is inactive when closed
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    channel.sink.close();
+    super.dispose();
+  }
+
+  // Function to refresh WebSocket connection
+  void _refreshWebSocketConnection() {
+    // Close the current WebSocket connection and reinitialize it
+    channel.sink.close();
+    _initializeWebSocket();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Refreshing WebSocket connection...'),
+    ));
+  }
+
   List<ContentView> contentView = [
     ContentView(
       tab: CustomTab(title: 'Home'),
@@ -430,6 +492,7 @@ class _ManagerMenuState extends State<ManagerMenu>
     fetchDiskon();
     verify();
     getlowstocksatuan(context);
+    _initializeWebSocket();
     setState(() {
       getbarangdiskonlist();
     });
@@ -1741,10 +1804,68 @@ class _ManagerMenuState extends State<ManagerMenu>
             ),
           )),
       ContentView(
-          tab: CustomTab(title: 'Tracking Kurir'),
-          content: Center(
-            child: Container(color: Colors.green, width: 100, height: 100),
-          )),
+        tab: CustomTab(title: 'Tracking Kurir'),
+        content: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.refresh),
+                  tooltip: 'Refresh WebSocket Connection',
+                  onPressed: _refreshWebSocketConnection,
+                ),
+                IconButton(
+                  icon: Icon(Icons.history),
+                  tooltip: 'Delivery History',
+                  onPressed: () {
+                    // Navigate to history page (for now it goes nowhere)
+                    print('Clicked Delivery History');
+                  },
+                ),
+              ],
+            ),
+            Expanded(
+              child: Center(
+                child: isWebSocketConnected && _courierPosition != null
+                    ? FlutterMap(
+                        options: MapOptions(
+                          initialCenter:
+                              _courierPosition!, // Center the map on the courier
+                          initialZoom: 15.0,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                            subdomains: ['a', 'b', 'c'],
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: _courierPosition!,
+                                width: 80.0,
+                                height: 80.0,
+                                child: Icon(
+                                  Icons.location_on,
+                                  color: Colors.red,
+                                  size: 40,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      )
+                    : Text(isWebSocketConnected
+                        ? 'Waiting for location updates...'
+                        : 'WebSocket not connected or no in-progress delivery.'),
+              ),
+            ),
+            // Action buttons for refreshing WebSocket connection and navigating to history
+          ],
+        ),
+      ),
       ContentView(
           tab: CustomTab(title: 'WhatsApp Bisnis'),
           content: Center(
