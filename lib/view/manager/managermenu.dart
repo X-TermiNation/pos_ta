@@ -1,6 +1,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:ta_pos/view/manager/DeliveryHistory.dart';
 import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/diskon_controller.dart';
@@ -1820,8 +1821,10 @@ class _ManagerMenuState extends State<ManagerMenu>
                   icon: Icon(Icons.history),
                   tooltip: 'Delivery History',
                   onPressed: () {
-                    // Navigate to history page (for now it goes nowhere)
-                    print('Clicked Delivery History');
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => DeliveryHistoryScreen()));
                   },
                 ),
               ],
