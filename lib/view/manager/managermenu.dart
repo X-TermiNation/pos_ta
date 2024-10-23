@@ -2,6 +2,7 @@ import 'package:flutter/rendering.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view/manager/DeliveryHistory.dart';
+import 'package:ta_pos/view/view-model-flutter/transaksi_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/diskon_controller.dart';
@@ -18,6 +19,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:convert';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 List<Map<String, dynamic>> _dataList = [];
 var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
@@ -183,7 +185,7 @@ class _ManagerMenuState extends State<ManagerMenu>
   }
 
   //selected Pegawai di daftar pegawai
-  Map<String, dynamic>? selectedEmployee;
+  // Map<String, dynamic>? selectedEmployee;
 
   void fetchUser() async {
     this.userlist = await getUsers();
@@ -336,13 +338,17 @@ class _ManagerMenuState extends State<ManagerMenu>
   String value = 'Kasir';
   String value2 = 'Kasir';
   final roles = ['Kasir', 'Admin Gudang', 'Kurir'];
+  //delivery info only
+  PanelController _panelController = PanelController();
+  List<dynamic>? _deliveryData;
+  String id_transaksi = "";
 
   bool _validateEmail(String email) {
     RegExp emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return emailRegex.hasMatch(email);
   }
 
-  // Function to initialize the WebSocket connection
+  // Function to initialize the WebSocket connection for tracking
   void _initializeWebSocket() {
     setState(() {
       isWebSocketConnected = false; // Reset connection status
@@ -359,22 +365,27 @@ class _ManagerMenuState extends State<ManagerMenu>
       Map<String, dynamic> data = jsonDecode(message);
 
       // Check if the message contains latitude and longitude
-      if (data.containsKey('latitude') && data.containsKey('longitude')) {
+      if (data.containsKey('latitude') &&
+          data.containsKey('longitude') &&
+          data.containsKey('id_transaksi')) {
         setState(() {
-          _courierPosition = LatLng(data['latitude'], data['longitude']);
           isWebSocketConnected =
               true; // WebSocket is active when data is received
+          _courierPosition = LatLng(data['latitude'], data['longitude']);
+          id_transaksi = data['id_transaksi'];
         });
       }
     }, onError: (error) {
       print('WebSocket error: $error');
       setState(() {
-        isWebSocketConnected = false; // WebSocket is inactive due to an error
+        isWebSocketConnected = false;
       });
     }, onDone: () {
       print('WebSocket connection closed.');
       setState(() {
         isWebSocketConnected = false; // WebSocket is inactive when closed
+        id_transaksi = "";
+        _deliveryData = null;
       });
     });
   }
@@ -390,9 +401,23 @@ class _ManagerMenuState extends State<ManagerMenu>
     // Close the current WebSocket connection and reinitialize it
     channel.sink.close();
     _initializeWebSocket();
+    _getDeliveryData();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('Refreshing WebSocket connection...'),
     ));
+  }
+
+  Future<void> _getDeliveryData() async {
+    if (id_transaksi != "") {
+      final deliveryData = await showDeliveryByTransID(id_transaksi, context);
+      if (deliveryData != null) {
+        setState(() {
+          _deliveryData = deliveryData;
+        });
+      }
+    } else {
+      print("id_transaksi kosong");
+    }
   }
 
   List<ContentView> contentView = [
@@ -1342,7 +1367,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                       GestureDetector(
                                         onTap: () {
                                           setState(() {
-                                            selectedEmployee = map;
+                                            _showEmployeeDetails(context, map);
                                           });
                                         },
                                         child: Text(
@@ -1355,14 +1380,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                       ),
                                     ),
                                     DataCell(Text(
-                                      map['fname'],
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        color: Colors.white,
-                                      ),
-                                    )),
-                                    DataCell(Text(
-                                      map['lname'],
+                                      "${map['fname']} ${map['lname']}",
                                       style: TextStyle(
                                         fontSize: 15,
                                         color: Colors.white,
@@ -1402,7 +1420,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           child: Text(
                                             'Delete',
                                             style: TextStyle(
-                                                fontSize: 14,
+                                                fontSize: 18,
                                                 color: Colors.white),
                                           ),
                                         ),
@@ -1444,10 +1462,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           label: Text('Email'),
                                         ),
                                         DataColumn(
-                                          label: Text('First Name'),
-                                        ),
-                                        DataColumn(
-                                          label: Text('Last Name'),
+                                          label: Text('Full Name'),
                                         ),
                                         DataColumn(
                                           label: Text('Role'),
@@ -1534,64 +1549,6 @@ class _ManagerMenuState extends State<ManagerMenu>
                           )
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  width: MediaQuery.of(context).size.width * 0.95,
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        "Detail Pegawai",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 20),
-                      selectedEmployee != null
-                          ? Container(
-                              padding: EdgeInsets.all(16.0),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[850],
-                                borderRadius: BorderRadius.circular(12.0),
-                                border: Border.all(
-                                    color: Colors.blueAccent, width: 1.5),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildDetailRow("First Name:",
-                                      selectedEmployee!['fname']),
-                                  _buildDetailRow(
-                                      "Last Name:", selectedEmployee!['lname']),
-                                  _buildDetailRow(
-                                      "Email:", selectedEmployee!['email']),
-                                  _buildDetailRow(
-                                      "Alamat:", selectedEmployee!['alamat']),
-                                  _buildDetailRow("No. Telp:",
-                                      selectedEmployee!['no_telp']),
-                                  _buildDetailRow(
-                                      "Role:", selectedEmployee!['role']),
-                                ],
-                              ),
-                            )
-                          : Center(
-                              child: Text(
-                                "No employee selected.",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                      SizedBox(height: 30),
                     ],
                   ),
                 ),
@@ -1830,42 +1787,51 @@ class _ManagerMenuState extends State<ManagerMenu>
               ],
             ),
             Expanded(
-              child: Center(
-                child: isWebSocketConnected && _courierPosition != null
-                    ? FlutterMap(
-                        options: MapOptions(
-                          initialCenter:
-                              _courierPosition!, // Center the map on the courier
-                          initialZoom: 15.0,
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                            subdomains: ['a', 'b', 'c'],
-                          ),
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                point: _courierPosition!,
-                                width: 80.0,
-                                height: 80.0,
-                                child: Icon(
-                                  Icons.location_on,
-                                  color: Colors.red,
-                                  size: 40,
-                                ),
+              child: SlidingUpPanel(
+                controller: _panelController,
+                minHeight: 80, // Height of the closed panel
+                maxHeight: MediaQuery.of(context).size.height * 0.4,
+                panel: _deliveryData != null
+                    ? _buildDeliveryPanel()
+                    : Center(child: CircularProgressIndicator()),
+                body: Expanded(
+                  child: Center(
+                    child: isWebSocketConnected && _courierPosition != null
+                        ? FlutterMap(
+                            options: MapOptions(
+                              initialCenter:
+                                  _courierPosition!, // Center the map on the courier
+                              initialZoom: 15.0,
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate:
+                                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                subdomains: ['a', 'b', 'c'],
+                              ),
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: _courierPosition!,
+                                    width: 80.0,
+                                    height: 80.0,
+                                    child: Icon(
+                                      Icons.location_on,
+                                      color: Colors.red,
+                                      size: 40,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
-                          ),
-                        ],
-                      )
-                    : Text(isWebSocketConnected
-                        ? 'Waiting for location updates...'
-                        : 'WebSocket not connected or no in-progress delivery.'),
+                          )
+                        : Text(isWebSocketConnected
+                            ? 'Waiting for location updates...'
+                            : 'WebSocket not connected or no in-progress delivery.'),
+                  ),
+                ),
               ),
             ),
-            // Action buttons for refreshing WebSocket connection and navigating to history
           ],
         ),
       ),
@@ -2257,6 +2223,127 @@ class _ManagerMenuState extends State<ManagerMenu>
             Expanded(
               child: contentView[_selectedIndex].content,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEmployeeDetails(
+      BuildContext context, Map<String, dynamic> employee) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[850],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          title: Text(
+            'Detail Pegawai',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDetailRow("First Name:", employee['fname']),
+                _buildDetailRow("Last Name:", employee['lname']),
+                _buildDetailRow("Email:", employee['email']),
+                _buildDetailRow("Alamat:", employee['alamat']),
+                _buildDetailRow("No. Telp:", employee['no_telp']),
+                _buildDetailRow("Role:", employee['role']),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text(
+                'Close',
+                style: TextStyle(color: Colors.blueAccent),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  //sliding panel delivery info
+  Widget _buildDeliveryPanel() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black54,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(left: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey[600],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            SizedBox(height: 30),
+            Text(
+              'Ongoing Delivery:',
+              style: TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+                color: Colors.white, // White text for better contrast
+              ),
+            ),
+            SizedBox(height: 10),
+            _deliveryData != null && isWebSocketConnected
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ID Delivery: ${_deliveryData![0]['_id']}',
+                        style: TextStyle(color: Colors.white), // White text
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Alamat Tujuan: ${_deliveryData![0]['alamat_tujuan']}',
+                        style: TextStyle(color: Colors.white), // White text
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'No. Telp Customer: ${_deliveryData![0]['no_telp_cust']}',
+                        style: TextStyle(color: Colors.white), // White text
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'ID Transaksi: ${id_transaksi}',
+                        style: TextStyle(color: Colors.white), // White text
+                      ),
+                    ],
+                  )
+                : Center(
+                    child: Container(
+                    color: Colors.black,
+                    child: CircularProgressIndicator(),
+                  )),
           ],
         ),
       ),

@@ -317,6 +317,36 @@ Future<List<dynamic>?> showDelivery(
   return null; // Return null in case of an error
 }
 
+//delivery with transaction ID
+Future<List<dynamic>?> showDeliveryByTransID(
+  String id_transaksi,
+  BuildContext context,
+) async {
+  try {
+    final url =
+        'http://localhost:3000/transaksi/showDeliveryByTransID/$id_transaksi';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      showToast(context, 'Berhasil mengambil data pengiriman');
+      final responseData = jsonDecode(response.body);
+      return responseData['data'];
+    } else if (response.statusCode == 404) {
+      showToast(context, "Tidak ada pengiriman dalam proses");
+    } else {
+      showToast(context, "Gagal mengambil data pengiriman");
+      print('HTTP Error: ${response.statusCode}');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    print('Exception during HTTP request: $error');
+  }
+  return null; // Return null in case of an error
+}
+
 //show all delivery in a cabang
 Future<List<dynamic>?> showallDelivery(
   BuildContext context,
