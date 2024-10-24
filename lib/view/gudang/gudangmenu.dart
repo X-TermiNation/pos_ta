@@ -21,6 +21,8 @@ late String? edit_selectedvalueKategori;
 String temp_id_update = "";
 bool noExp = false;
 String satuan_idbarang = "";
+String base_satuan_id = "";
+String nama_satuan_initial_spc = "No Satuan";
 final dataStorage = GetStorage();
 String id_gudangs = dataStorage.read('id_gudang');
 var barangdata =
@@ -49,9 +51,9 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController nama_satuan_initial = TextEditingController();
   TextEditingController harga_satuan_initial = TextEditingController();
   TextEditingController jumlah_satuan_initial = TextEditingController();
-  TextEditingController isi_satuan_initial = TextEditingController();
   TextEditingController _searchController = TextEditingController();
   TextEditingController _searchControllerBarangList = TextEditingController();
+
   XFile? selectedImage;
 
   String searchQuery = '';
@@ -1078,25 +1080,6 @@ class _GudangMenuState extends State<GudangMenu> {
                         FilteringTextInputFormatter.digitsOnly,
                       ],
                     ),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      controller: isi_satuan_initial,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Isi satuan tidak boleh kosong';
-                        }
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Kuantitas per satuan',
-                        prefixIcon: Icon(Icons.format_list_numbered),
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: <TextInputFormatter>[
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                    ),
                     SizedBox(height: 30),
                     Center(
                       child: FilledButton(
@@ -1105,6 +1088,7 @@ class _GudangMenuState extends State<GudangMenu> {
                               _dateFormat.format(selectedDate);
                           DateTime insertedDate =
                               _dateFormat.parse(formattedDateString);
+                          int base_number = 1;
                           addbarang(
                               insertedDate,
                               noExp,
@@ -1112,7 +1096,7 @@ class _GudangMenuState extends State<GudangMenu> {
                               katakategori,
                               nama_satuan_initial.text,
                               jumlah_satuan_initial.text,
-                              isi_satuan_initial.text,
+                              base_number.toString(),
                               harga_satuan_initial.text,
                               context,
                               selectedImage);
@@ -1126,7 +1110,6 @@ class _GudangMenuState extends State<GudangMenu> {
                             nama_satuan_initial.text = "";
                             jumlah_satuan_initial.text = "";
                             harga_satuan_initial.text = "";
-                            isi_satuan_initial.text = "";
                             selectedImage = null;
                           });
                         },
@@ -1146,6 +1129,30 @@ class _GudangMenuState extends State<GudangMenu> {
                     ),
                   ],
                 ),
+              ),
+            ),
+          ),
+          Container(
+            width: 1400,
+            height: 850,
+            padding: EdgeInsets.all(16), // Add padding around the container
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(
+                  12), // Rounded corners for a modern look
+              color: Colors.black, // Background color
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.3),
+                  spreadRadius: 5,
+                  blurRadius: 7,
+                  offset: Offset(0, 3), // Adds a slight shadow effect
+                ),
+              ],
+            ),
+            //untuk konversi satuan
+            child: Center(
+              child: Column(
+                children: [Text("menunggu ada satuan dasar yang jelas")],
               ),
             ),
           ),
@@ -1213,7 +1220,6 @@ class _GudangMenuState extends State<GudangMenu> {
                                     Offset(0, 3), // Adds a slight shadow effect
                               ),
                             ],
-                            // Slightly different background
                           ),
                           child: ListView.builder(
                             itemCount: _searchResults.length,
@@ -1232,14 +1238,39 @@ class _GudangMenuState extends State<GudangMenu> {
                                   ),
                                 ),
                                 subtitle: Text('Expire Date: $expDate'),
-                                onTap: () {
+                                onTap: () async {
                                   _searchController.text = _searchResults[index]
                                           ['nama_barang']
                                       .toString();
+
                                   setState(() {
                                     satuan_idbarang =
                                         _searchResults[index]['_id'].toString();
+                                    base_satuan_id = _searchResults[index]
+                                            ['base_satuan_id']
+                                        .toString();
                                   });
+                                  if (satuan_idbarang.isNotEmpty &&
+                                      base_satuan_id.isNotEmpty) {
+                                    // Call the function to fetch satuan data
+                                    Map<String, dynamic>? satuanData =
+                                        await getSatuanById(satuan_idbarang,
+                                            base_satuan_id, context);
+
+                                    if (satuanData != null) {
+                                      setState(() {
+                                        nama_satuan_initial_spc =
+                                            "X ${satuanData['nama_satuan']}";
+                                      });
+                                      print(
+                                          'Satuan data retrieved: $satuanData');
+                                    } else {
+                                      print('Failed to retrieve satuan data');
+                                    }
+                                  } else {
+                                    showToast(context,
+                                        'Invalid satuan ID or barang ID');
+                                  }
                                 },
                                 tileColor: Colors.white,
                                 shape: RoundedRectangleBorder(
@@ -1270,11 +1301,27 @@ class _GudangMenuState extends State<GudangMenu> {
                     keyboardType: TextInputType.number,
                   ),
                   SizedBox(height: 12),
-                  _buildTextFormField(
-                    controller: isi_satuan,
-                    labelText: 'Kuantitas per Satuan',
-                    keyboardType: TextInputType.number,
+                  // _buildTextFormField(
+                  //   controller: isi_satuan,
+                  //   labelText: 'Kuantitas per Satuan',
+                  //   keyboardType: TextInputType.number,
+                  // ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextFormField(
+                          controller: isi_satuan,
+                          labelText: 'Kuantitas per Satuan',
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 8,
+                      ),
+                      Text(nama_satuan_initial_spc)
+                    ],
                   ),
+
                   Spacer(),
                   FilledButton(
                     onPressed: () {
@@ -1290,6 +1337,7 @@ class _GudangMenuState extends State<GudangMenu> {
                         jumlah_satuan.text = "";
                         harga_satuan.text = "";
                         isi_satuan.text = "";
+                        nama_satuan_initial_spc = "No Satuan";
                         getlowstocksatuan(context);
                       });
                     },
@@ -1492,7 +1540,9 @@ class _GudangMenuState extends State<GudangMenu> {
               child: Text('Mutasi Barang'),
             ),
           ),
-          Container()
+          Container(
+            child: Center(),
+          )
         ],
       ),
     );

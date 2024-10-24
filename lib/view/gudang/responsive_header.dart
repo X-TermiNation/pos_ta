@@ -27,7 +27,7 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
   }
 
   void _onMenuItemTapped(int index) {
-    if (index == 5) {
+    if (index == 6) {
       log_out = true;
       showConfirmationDialog(context);
     } else {
@@ -44,11 +44,13 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
       case 1:
         return Icons.add_box; // Tambah Barang
       case 2:
-        return Icons.category; // Tambah Satuan Barang
+        return Icons.sync_alt_rounded; //konversi satuan
       case 3:
-        return Icons.warning; // Stock Alert
+        return Icons.category; // Tambah Satuan Barang
       case 4:
-        return Icons.swap_horiz; // Mutasi Barang
+        return Icons.warning; // Stock Alert
+      case 5:
+        return Icons.move_down; // Mutasi Barang
       default:
         return Icons.logout_outlined; // Lainnya
     }
@@ -61,10 +63,12 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
       case 1:
         return "Tambah Barang";
       case 2:
-        return "Tambah Satuan Barang";
+        return "Konversi Satuan";
       case 3:
-        return "Stock Alert";
+        return "Tambah Satuan Barang";
       case 4:
+        return "Stock Alert";
+      case 5:
         return "Mutasi Barang";
       default:
         return "Log Out";

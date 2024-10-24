@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
 
-//add barang
+//tambah barang
 void addbarang(
   DateTime insertedDate,
   bool noExp,
@@ -93,9 +93,27 @@ void addbarang(
         Map<String, dynamic> data = jsonData["data"];
         String id_barang = data['_id'];
 
-        // Call addsatuan to add the unit data
-        addsatuan(id_barang, nama_satuan, jumlah_satuan, harga_satuan,
-            isi_satuan, context);
+        // Call addsatuan and get the newly added satuan _id
+        String? newSatuanId = await addsatuan(id_barang, nama_satuan,
+            jumlah_satuan, harga_satuan, isi_satuan, context);
+
+        if (newSatuanId != null) {
+          print('Newly added satuan _id: $newSatuanId');
+
+          // Call the route to update the base satuan using the new _id
+          final baseSatuanUrl =
+              'http://localhost:3000/barang/addinitialsatuan/$id_gudangs/$id_cabang/$id_barang/$newSatuanId';
+          final updateResponse = await http.put(Uri.parse(baseSatuanUrl));
+
+          if (updateResponse.statusCode == 200) {
+            print('Base Satuan updated successfully');
+          } else {
+            print('Failed to update Base Satuan: ${updateResponse.statusCode}');
+          }
+        } else {
+          print('Failed to add satuan');
+        }
+
         showToast(context, 'Berhasil menambah data');
       } else {
         print('Unexpected response format: ${responseData.body}');
@@ -385,8 +403,13 @@ Future<Map<String, String>> getmapjenis() async {
 }
 
 //satuan
-void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
-    String harga_satuan, String isi_satuan, BuildContext context) async {
+Future<String?> addsatuan(
+    String id_barang,
+    String nama_satuan,
+    String jumlah_satuan,
+    String harga_satuan,
+    String isi_satuan,
+    BuildContext context) async {
   try {
     final satuandata = {
       'nama_satuan': nama_satuan,
@@ -407,7 +430,10 @@ void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
     );
 
     if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
       showToast(context, 'Berhasil menambah data');
+      return responseData['data']
+          ['_id']; // Return only the _id of the newly added satuan
     } else {
       showToast(context, "Gagal menambahkan data");
       print('HTTP Error: ${response.statusCode}');
@@ -416,6 +442,7 @@ void addsatuan(String id_barang, String nama_satuan, String jumlah_satuan,
     showToast(context, "Error: $error");
     print('Exception during HTTP request: $error');
   }
+  return null; // Return null in case of failure
 }
 
 //delete satuan
@@ -525,5 +552,47 @@ Future<List<Map<String, dynamic>>> getsatuan(
   } catch (error) {
     showToast(context, "Error: $error");
     return [];
+  }
+}
+
+Future<Map<String, dynamic>?> getSatuanById(
+    String idBarang, String idSatuan, BuildContext context) async {
+  try {
+    // Fetch id_cabang and id_gudang from GetStorage
+    final dataStorage = GetStorage();
+    String idCabang = dataStorage.read('id_cabang');
+    String idGudang = dataStorage.read('id_gudang');
+
+    // Define the URL with the provided parameters
+    final url =
+        'http://localhost:3000/barang/searchsatuanbyId/$idCabang/$idGudang/$idBarang/$idSatuan';
+
+    // Make the GET request
+    final response = await http.get(Uri.parse(url));
+
+    // Check the status code
+    if (response.statusCode == 200) {
+      // Parse the JSON response
+      final Map<String, dynamic> jsonData = json.decode(response.body);
+
+      // Check if the response contains data
+      if (jsonData.containsKey('data')) {
+        return jsonData['data'];
+      } else {
+        showToast(context, 'Data not found');
+        return null;
+      }
+    } else if (response.statusCode == 404) {
+      showToast(context, 'Satuan not found');
+      return null;
+    } else {
+      showToast(
+          context, 'Failed to fetch data. HTTP Error: ${response.statusCode}');
+      return null;
+    }
+  } catch (error) {
+    showToast(context, 'Error: $error');
+    print('Exception during HTTP request: $error');
+    return null;
   }
 }
