@@ -555,6 +555,46 @@ Future<List<Map<String, dynamic>>> getsatuan(
   }
 }
 
+//konversi satuan
+Future<bool> convertSatuan(
+  String id_barang,
+  String id_satuanFrom,
+  String id_satuanTo,
+  int amountToDecrease,
+  int amountToIncrease,
+  BuildContext context,
+) async {
+  try {
+    final dataStorage = GetStorage();
+    final id_cabang = dataStorage.read("id_cabang");
+    final id_gudang = dataStorage.read('id_gudang');
+
+    final url =
+        'http://localhost:3000/barang/konversi_satuan/$id_barang/$id_cabang/$id_gudang/$id_satuanFrom/$id_satuanTo';
+
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'amountToDecrease': amountToDecrease,
+        'amountToIncrease': amountToIncrease,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print('Satuan conversion successful');
+      final Map<String, dynamic> jsonData = json.decode(response.body);
+      // Optionally handle the response data as needed
+      return true; // Indicate success
+    } else {
+      throw Exception('Failed to convert satuan');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    return false; // Indicate failure
+  }
+}
+
 Future<Map<String, dynamic>?> getSatuanById(
     String idBarang, String idSatuan, BuildContext context) async {
   try {
