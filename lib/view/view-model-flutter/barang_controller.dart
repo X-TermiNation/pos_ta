@@ -7,6 +7,31 @@ import 'package:image_picker/image_picker.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
 
+//cari barang dari id
+Future<Map<String, dynamic>?> searchItemByID(String idBarang) async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  String id_gudang = dataStorage.read('id_gudang');
+  final String baseUrl =
+      'http://localhost:3000/barang/searchItem'; // Adjust as needed
+  final String url = '$baseUrl/$id_cabang/$id_gudang/$idBarang';
+
+  try {
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      // Parse the JSON response if successful
+      return jsonDecode(response.body);
+    } else {
+      print('Error: ${response.statusCode} ${response.body}');
+      return null; // Return null if item is not found or there's an error
+    }
+  } catch (e) {
+    print('Failed to fetch item: $e');
+    return null; // Return null in case of any exception
+  }
+}
+
 //tambah barang
 void addbarang(
   DateTime insertedDate,
@@ -568,7 +593,6 @@ Future<bool> convertSatuan(
     final dataStorage = GetStorage();
     final id_cabang = dataStorage.read("id_cabang");
     final id_gudang = dataStorage.read('id_gudang');
-
     final url =
         'http://localhost:3000/barang/konversi_satuan/$id_barang/$id_cabang/$id_gudang/$id_satuanFrom/$id_satuanTo';
 
@@ -634,5 +658,24 @@ Future<Map<String, dynamic>?> getSatuanById(
     showToast(context, 'Error: $error');
     print('Exception during HTTP request: $error');
     return null;
+  }
+}
+
+Future<List<dynamic>> fetchConversionHistory(String idCabang) async {
+  final url =
+      Uri.parse("http://localhost:3000/barang/getHistoryByCabang/$idCabang");
+
+  try {
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      // Decode the JSON response into a List of history records
+      return json.decode(response.body) as List<dynamic>;
+    } else {
+      throw Exception("Failed to load conversion history");
+    }
+  } catch (error) {
+    print("Error fetching conversion history: $error");
+    return [];
   }
 }

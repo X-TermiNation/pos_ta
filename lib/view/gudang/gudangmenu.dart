@@ -8,6 +8,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
+import 'package:ta_pos/view/gudang/stockConversionHistory.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -1215,24 +1216,63 @@ class _GudangMenuState extends State<GudangMenu> {
 
                         return Column(
                           children: [
-                            TextField(
-                              decoration: InputDecoration(
-                                labelText: "Search Barang",
-                                hintStyle: TextStyle(color: Colors.grey),
-                                filled: true,
-                                fillColor: Colors.grey[800],
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide.none,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    decoration: InputDecoration(
+                                      labelText: "Search Barang",
+                                      hintStyle: TextStyle(color: Colors.grey),
+                                      filled: true,
+                                      fillColor: Colors.grey[800],
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      suffixIcon: Icon(Icons.search),
+                                    ),
+                                    onChanged: (query) {
+                                      setState(() {
+                                        searchQuery = query;
+                                      });
+                                    },
+                                  ),
                                 ),
-                                suffixIcon: Icon(Icons.search),
-                              ),
-                              onChanged: (query) {
-                                setState(() {
-                                  searchQuery = query;
-                                });
-                              },
+
+                                SizedBox(
+                                    width:
+                                        8), // Add some spacing between search bar and icon
+
+                                // Tooltip button
+                                Tooltip(
+                                  message: "View Conversion History",
+                                  child: IconButton(
+                                    icon: const Icon(Icons.history),
+                                    onPressed: () {
+                                      final getstorage = GetStorage();
+                                      final idCabang = getstorage
+                                              .read('id_cabang') ??
+                                          ''; // Retrieve id_cabang from storage
+
+                                      if (idCabang.isNotEmpty) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ConversionHistoryScreen(
+                                                    idCabang: idCabang),
+                                          ),
+                                        );
+                                      } else {
+                                        // Handle case where id_cabang is not set
+                                        print("id_cabang not found in storage");
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
+
                             SizedBox(height: 10),
                             // Display search results
                             Container(
