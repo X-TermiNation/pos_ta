@@ -431,7 +431,7 @@ class _GudangMenuState extends State<GudangMenu> {
     });
   }
 
-  //datepicker
+  //datepicker tambah barang
   DateTime selectedDate = DateTime.now();
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
   Future<void> _selectDate(BuildContext context) async {
@@ -445,6 +445,45 @@ class _GudangMenuState extends State<GudangMenu> {
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
+      });
+    }
+  }
+
+  //function and data type for supplier type
+  List<Map<String, dynamic>> items = [];
+  // Method to add a new item entry
+  void _addItem() {
+    setState(() {
+      items.add({
+        'nama_barang': '',
+        'satuan_barang': '',
+        'jumlah': 0,
+        'harga_satuan': 0.0,
+      });
+    });
+  }
+
+  // Method to update item fields
+  void _updateItem(int index, String key, dynamic value) {
+    setState(() {
+      items[index][key] = value;
+    });
+  }
+
+  //datepicker supplier
+  DateTime selectedDateSupplier = DateTime.now();
+  final DateFormat _dateFormatSupplier = DateFormat('dd/MM/yyyy');
+  Future<void> _selectDateSupplier(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDateSupplier,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    if (picked != null && picked != selectedDateSupplier) {
+      setState(() {
+        selectedDateSupplier = picked;
       });
     }
   }
@@ -1893,6 +1932,133 @@ class _GudangMenuState extends State<GudangMenu> {
                 );
               }
             },
+          ),
+          Container(
+            color: Colors.black,
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Supplier Information Section
+                  Text('Supplier Information',
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 16),
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Nama Supplier'),
+                  ),
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Kontak Supplier'),
+                  ),
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Alamat Supplier'),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Date Selection for Transaction
+                  InkWell(
+                    onTap: () => _selectDate(context),
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blueAccent),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.calendar_today, color: Colors.blueAccent),
+                          SizedBox(width: 8),
+                          Text(
+                            '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                            style: TextStyle(color: Colors.blueAccent),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Item Details for Stock Refill
+                  Text('Items Bought from Supplier',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextField(
+                                decoration:
+                                    InputDecoration(labelText: 'Nama Barang'),
+                                onChanged: (value) =>
+                                    _updateItem(index, 'nama_barang', value),
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      decoration: InputDecoration(
+                                          labelText: 'Satuan Barang'),
+                                      onChanged: (value) => _updateItem(
+                                          index, 'satuan_barang', value),
+                                    ),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: TextField(
+                                      decoration: InputDecoration(
+                                        labelText: 'Jumlah',
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (value) => _updateItem(index,
+                                          'jumlah', int.tryParse(value) ?? 0),
+                                    ),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: TextField(
+                                      decoration: InputDecoration(
+                                          labelText: 'Harga Satuan'),
+                                      keyboardType:
+                                          TextInputType.numberWithOptions(
+                                              decimal: true),
+                                      onChanged: (value) => _updateItem(
+                                          index,
+                                          'harga_satuan',
+                                          double.tryParse(value) ?? 0.0),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Divider(),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: _addItem,
+                    child: Text('Add Item'),
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Save supplier and items information logic
+                    },
+                    child: Text('Save Supplier and Items Information'),
+                  ),
+                ],
+              ),
+            ),
           ),
           Container(
             color: Colors.blue,

@@ -114,8 +114,7 @@ class ConversionHistoryScreen extends StatelessWidget {
                                 "To ${history['satuan_tujuan']} (${history['jumlah_awal_st']} to ${history['jumlah_akhir_st']})"),
                             if (history['jumlah_sisa'] != null)
                               Text("Remaining: ${history['jumlah_sisa']}"),
-                            SizedBox(height: 8), // Add space between sections
-                            // Displaying Barang Name and ID
+                            SizedBox(height: 8),
                           ],
                         ),
                       );
