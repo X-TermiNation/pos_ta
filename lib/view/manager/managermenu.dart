@@ -25,12 +25,6 @@ List<Map<String, dynamic>> _dataList = [];
 var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
 late bool logOwner;
 
-bool key1 = true;
-bool key2 = true;
-bool key3 = true;
-bool key4 = true;
-bool bigScreen = false;
-
 class ManagerMenu extends StatefulWidget {
   const ManagerMenu({super.key});
 
@@ -316,11 +310,6 @@ class _ManagerMenuState extends State<ManagerMenu>
 
   var scaffoldKey = GlobalKey<ScaffoldState>();
   //frontend stuff
-  late TabController tabController = TabController(length: 8, vsync: this);
-  late double screenHeight;
-  late double screenWidth;
-  late double topPadding;
-  late double bottomPadding;
   bool isHomeExpanded = false;
   bool isPegawaiExpanded = false;
   int _selectedIndex = 0;
@@ -1926,7 +1915,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                 return Container(
                   width: 80,
                   height: constraints.maxHeight,
-                  color: Colors.grey[600],
+                  color: Colors.blueGrey[900],
                   child: Column(
                     children: [
                       Expanded(

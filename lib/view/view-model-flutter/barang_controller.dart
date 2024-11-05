@@ -679,3 +679,34 @@ Future<List<dynamic>> fetchConversionHistory(String idCabang) async {
     return [];
   }
 }
+
+Future<Map<String, dynamic>> addSupplier(
+    Map<String, dynamic> supplierData) async {
+  const String apiUrl = "http://localhost:3000/barang/add-supplier";
+
+  try {
+    // Send a POST request with the supplier data as JSON
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(supplierData),
+    );
+
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      return {
+        "error": "Failed to add supplier",
+        "statusCode": response.statusCode,
+        "message": response.body,
+      };
+    }
+  } catch (error) {
+    return {
+      "error": "Failed to connect to the server",
+      "exception": error.toString(),
+    };
+  }
+}
