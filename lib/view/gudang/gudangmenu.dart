@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ta_pos/view/gudang/StockHistory.dart';
+import 'package:ta_pos/view/gudang/SupplierHistory.dart';
 import 'package:ta_pos/view/gudang/responsive_header.dart';
 import 'dart:convert';
 import 'dart:async';
@@ -54,6 +56,7 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController jumlah_satuan_initial = TextEditingController();
   TextEditingController _searchController = TextEditingController();
   TextEditingController _searchControllerBarangList = TextEditingController();
+  TextEditingController id_supplier_insert = TextEditingController();
   XFile? selectedImage;
 
   String searchQuery = '';
@@ -475,6 +478,8 @@ class _GudangMenuState extends State<GudangMenu> {
 
   //datepicker supplier
   DateTime selectedDateSupplier = DateTime.now();
+  TimeOfDay selectedTimeSupplier =
+      TimeOfDay.now(); // Initial time set to current time
   final DateFormat _dateFormatSupplier = DateFormat('dd/MM/yyyy');
   Future<void> _selectDateSupplier(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -491,9 +496,32 @@ class _GudangMenuState extends State<GudangMenu> {
     }
   }
 
+  //time date picker
+  // Method to select the time
+  Future<void> _selectTimeSupplier(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTimeSupplier,
+    );
+
+    if (picked != null && picked != selectedTimeSupplier) {
+      setState(() {
+        selectedTimeSupplier = picked;
+      });
+    }
+  }
+
   //for save data to being sent to the database
   void _saveSupplierAndItems() async {
     final idCabang = GetStorage().read("id_cabang");
+    // Combine selected date and time, then convert to UTC
+    final adjustedDateTime = DateTime(
+      selectedDateSupplier.year,
+      selectedDateSupplier.month,
+      selectedDateSupplier.day,
+      selectedTimeSupplier.hour,
+      selectedTimeSupplier.minute,
+    ).toUtc();
     final supplierData = {
       "id_cabang": idCabang,
       "nama_supplier": _supplierNameController.text,
@@ -506,7 +534,7 @@ class _GudangMenuState extends State<GudangMenu> {
               (total, item) => total + (item['jumlah'] * item['harga_satuan']),
             )
           : 0.0,
-      "tanggal_transaksi": selectedDateSupplier.toIso8601String(),
+      "tanggal_transaksi": adjustedDateTime.toIso8601String(),
     };
     await addSupplier(supplierData);
     print("Supplier Data: $supplierData");
@@ -542,13 +570,35 @@ class _GudangMenuState extends State<GudangMenu> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Daftar Barang",
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Daftar Barang",
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Tooltip(
+                                message: 'See Stock History',
+                                child: IconButton(
+                                  icon:
+                                      Icon(Icons.history, color: Colors.white),
+                                  onPressed: () {
+                                    // Navigate to the Stock History page
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            HistoryStockPage(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                           SizedBox(height: 16),
                           TextField(
@@ -911,12 +961,28 @@ class _GudangMenuState extends State<GudangMenu> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: Text(
-                        "Tambah Barang",
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Insert Barang',
+                          style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
+                        Tooltip(
+                          message: 'See Supplier History',
+                          child: IconButton(
+                              icon: Icon(Icons.history, color: Colors.white),
+                              onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            HistorySupplierPage()),
+                                  )),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 20),
                     TextFormField(
@@ -1182,7 +1248,27 @@ class _GudangMenuState extends State<GudangMenu> {
                         FilteringTextInputFormatter.digitsOnly,
                       ],
                     ),
-                    SizedBox(height: 30),
+                    SizedBox(height: 16),
+                    Text(
+                        "Informasi ini dibawah diperlukan untuk pendataan history,silahkan cek history supplier pada kanan atas laman ini!"),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: id_supplier_insert,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'ID Supplier Asal',
+                        prefixIcon: Icon(Icons.warehouse),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 30,
+                    ),
                     Center(
                       child: FilledButton(
                         onPressed: () async {
@@ -1200,6 +1286,7 @@ class _GudangMenuState extends State<GudangMenu> {
                               jumlah_satuan_initial.text,
                               base_number.toString(),
                               harga_satuan_initial.text,
+                              id_supplier_insert.text,
                               context,
                               selectedImage);
                           setState(() {
@@ -1212,6 +1299,7 @@ class _GudangMenuState extends State<GudangMenu> {
                             nama_satuan_initial.text = "";
                             jumlah_satuan_initial.text = "";
                             harga_satuan_initial.text = "";
+                            id_supplier_insert.text = "";
                             selectedImage = null;
                           });
                         },
@@ -2011,6 +2099,9 @@ class _GudangMenuState extends State<GudangMenu> {
                     ),
                     style: TextStyle(color: Colors.white),
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
                   ),
                   SizedBox(height: 16),
 
@@ -2054,6 +2145,30 @@ class _GudangMenuState extends State<GudangMenu> {
                           SizedBox(width: 8),
                           Text(
                             _dateFormatSupplier.format(selectedDateSupplier),
+                            style: TextStyle(color: Colors.blueAccent),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Time Picker Section
+                  InkWell(
+                    onTap: () => _selectTimeSupplier(context),
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blueAccent),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.access_time, color: Colors.blueAccent),
+                          SizedBox(width: 8),
+                          Text(
+                            '${selectedTimeSupplier.hour.toString().padLeft(2, '0')}:${selectedTimeSupplier.minute.toString().padLeft(2, '0')}',
                             style: TextStyle(color: Colors.blueAccent),
                           ),
                         ],

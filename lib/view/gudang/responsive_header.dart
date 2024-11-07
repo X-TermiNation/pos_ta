@@ -81,6 +81,7 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
 
   void showConfirmationDialog(BuildContext context) {
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(

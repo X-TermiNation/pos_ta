@@ -42,10 +42,10 @@ void addbarang(
   String jumlah_satuan,
   String isi_satuan,
   String harga_satuan,
+  String id_supplier,
   BuildContext context,
   XFile? selectedImage,
 ) async {
-  // Check if required fields are empty
   if (nama_barang.isEmpty ||
       katakategori.isEmpty ||
       nama_satuan.isEmpty ||
@@ -55,23 +55,20 @@ void addbarang(
     showToast(context, 'Pastikan semua field terisi dengan benar');
     return;
   }
-
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
 
   try {
     String? expDateString;
     String? creationDateString;
-    getdatagudang(); // This function should fetch and set the necessary data
+    getdatagudang();
     String id_gudangs = dataStorage.read('id_gudang');
 
-    // Get the type of item from the category
     final requestjenis = Uri.parse(
         'http://localhost:3000/barang/getjenisfromkategori/$katakategori');
     final datajenis = await http.get(requestjenis);
     final jenis = json.decode(datajenis.body);
 
-    // Handle expiration date
     if (!noExp) {
       insertedDate = insertedDate.add(Duration(days: 1));
       expDateString = insertedDate.toIso8601String();
@@ -82,7 +79,6 @@ void addbarang(
     DateTime creationDate = DateTime.now();
     creationDateString = creationDate.toIso8601String();
 
-    // Prepare data for the request
     final Barangdata = {
       'nama_barang': nama_barang,
       'jenis_barang': jenis["data"]["nama_jenis"].toString(),
@@ -94,7 +90,6 @@ void addbarang(
     final url = 'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
     var request = http.MultipartRequest('POST', Uri.parse(url));
 
-    // Add fields to the request
     request.fields.addAll(
       Barangdata.map((key, value) => MapEntry(key, value.toString())),
     );
@@ -107,12 +102,10 @@ void addbarang(
       request.fields['gambar_barang'] = '';
     }
 
-    // Send the request
     final response = await request.send();
     final responseData = await http.Response.fromStream(response);
     final Map<String, dynamic> jsonData = json.decode(responseData.body);
 
-    // Handle response
     if (responseData.statusCode == 200) {
       if (jsonData.containsKey('data')) {
         Map<String, dynamic> data = jsonData["data"];
@@ -125,21 +118,29 @@ void addbarang(
         if (newSatuanId != null) {
           print('Newly added satuan _id: $newSatuanId');
 
-          // Call the route to update the base satuan using the new _id
           final baseSatuanUrl =
               'http://localhost:3000/barang/addinitialsatuan/$id_gudangs/$id_cabang/$id_barang/$newSatuanId';
           final updateResponse = await http.put(Uri.parse(baseSatuanUrl));
 
           if (updateResponse.statusCode == 200) {
             print('Base Satuan updated successfully');
+
+            await insertHistoryStok(
+                id_barang: id_barang,
+                satuan_id: newSatuanId,
+                tanggal_pengisian: DateTime.now(),
+                jumlah_input: int.parse(jumlah_satuan),
+                jenis_pengisian: "Initial",
+                sumber_transaksi_id: id_supplier,
+                id_cabang: id_cabang);
+
+            showToast(context, 'Berhasil menambah data');
           } else {
             print('Failed to update Base Satuan: ${updateResponse.statusCode}');
           }
         } else {
           print('Failed to add satuan');
         }
-
-        showToast(context, 'Berhasil menambah data');
       } else {
         print('Unexpected response format: ${responseData.body}');
       }
@@ -708,5 +709,96 @@ Future<Map<String, dynamic>> addSupplier(
       "error": "Failed to connect to the server",
       "exception": error.toString(),
     };
+  }
+}
+
+//get supplier by cabang
+Future<List<Map<String, dynamic>>> fetchSuppliersByCabang() async {
+  final getstorage = GetStorage();
+  final String? idCabang = getstorage.read('id_cabang');
+  final url = Uri.parse('http://localhost:3000/barang/getSuppliers/$idCabang');
+
+  try {
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> suppliers = json.decode(response.body);
+      return suppliers.cast<Map<String, dynamic>>();
+    } else if (response.statusCode == 404) {
+      print("No suppliers found for cabang ID: $idCabang");
+      return [];
+    } else {
+      print("Error: ${response.statusCode}");
+      return [];
+    }
+  } catch (error) {
+    print("Error fetching suppliers: $error");
+    return [];
+  }
+}
+
+//insert stock history
+Future<void> insertHistoryStok({
+  required String id_barang,
+  required String satuan_id,
+  required DateTime tanggal_pengisian,
+  required int jumlah_input,
+  required String jenis_pengisian,
+  required String sumber_transaksi_id,
+  required String id_cabang,
+}) async {
+  final url = Uri.parse("http://localhost:3000/barang/insertHistoryStok");
+
+  final data = {
+    'cabang_id': id_cabang,
+    'barang_id': id_barang,
+    'satuan_id': satuan_id,
+    'tanggal_pengisian': tanggal_pengisian.toIso8601String(),
+    'jumlah_input': jumlah_input,
+    'jenis_pengisian': jenis_pengisian,
+    'sumber_transaksi_id': sumber_transaksi_id,
+  };
+
+  try {
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 201) {
+      print("HistoryStok entry inserted successfully");
+    } else {
+      print("Failed to insert HistoryStok entry: ${response.body}");
+    }
+  } catch (error) {
+    print("Error inserting HistoryStok: $error");
+  }
+}
+
+//get history stock by cabang
+Future<List<dynamic>> fetchHistoryStokByCabang(String idCabang) async {
+  final url = 'http://localhost:3000/barang/gethistorystok/$idCabang';
+  try {
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+
+      if (data.containsKey('data')) {
+        return data['data'];
+      } else {
+        print('Unexpected response format: ${response.body}');
+        return [];
+      }
+    } else if (response.statusCode == 404) {
+      print('No HistoryStok found for cabang ID: $idCabang');
+      return [];
+    } else {
+      throw Exception('Failed to load HistoryStok data');
+    }
+  } catch (error) {
+    print('Error fetching HistoryStok data: $error');
+    return [];
   }
 }
