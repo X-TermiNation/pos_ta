@@ -81,7 +81,7 @@ Future<Map<String, dynamic>?> addTrans(
       String id_barang = cartItem['id_reference'];
       String id_satuan = cartItem['id_satuan'];
       int quantity = cartItem['trans_qty'];
-      updatejumlahSatuan(id_barang, id_satuan, quantity, 'kurang', context);
+      updatejumlahSatuan(id_barang, id_satuan, quantity, "", 'kurang', context);
     }
 
     // Prepare transaction data

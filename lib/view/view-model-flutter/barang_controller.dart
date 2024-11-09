@@ -505,9 +505,29 @@ Future<void> deletesatuan(
 }
 
 //update stock satuan
-void updatejumlahSatuan(String id_barang, String id_satuan, int jumlah_satuan,
-    String action, BuildContext context) async {
+void updatejumlahSatuan(
+  String id_barang,
+  String id_satuan,
+  int jumlah_satuan,
+  String sumber_transaksi_id,
+  String action,
+  BuildContext context,
+) async {
   try {
+    if (sumber_transaksi_id != "" && action == 'tambah') {
+      // Insert re-stock history before updating stock quantity
+      await insertHistoryStok(
+        id_barang: id_barang,
+        satuan_id: id_satuan,
+        tanggal_pengisian: DateTime.now(),
+        jumlah_input: jumlah_satuan,
+        jenis_pengisian: "Re-Stock",
+        sumber_transaksi_id: sumber_transaksi_id,
+        id_cabang: GetStorage().read("id_cabang"),
+      );
+    }
+
+    // Update stock quantity
     final satuanUpdatedata = {
       'jumlah_satuan': jumlah_satuan,
       'action': action,
@@ -517,6 +537,7 @@ void updatejumlahSatuan(String id_barang, String id_satuan, int jumlah_satuan,
     String id_gudangs = dataStorage.read('id_gudang');
     final url =
         'http://localhost:3000/barang/editjumlahsatuan/$id_barang/$id_cabang/$id_gudangs/$id_satuan';
+
     final response = await http.put(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},

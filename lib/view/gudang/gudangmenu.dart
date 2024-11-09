@@ -16,6 +16,7 @@ import 'dart:io';
 
 String? selectedvalueJenis = "";
 String? selectedvalueKategori = "";
+String? detailbarang_ID = "";
 String katakategori = "";
 String Edit_katakategori = "";
 bool _isEditUser = false;
@@ -57,6 +58,7 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController _searchController = TextEditingController();
   TextEditingController _searchControllerBarangList = TextEditingController();
   TextEditingController id_supplier_insert = TextEditingController();
+  TextEditingController id_supplier_stock_alert = TextEditingController();
   XFile? selectedImage;
 
   String searchQuery = '';
@@ -697,6 +699,8 @@ class _GudangMenuState extends State<GudangMenu> {
                                                 GestureDetector(
                                                   onTap: () {
                                                     setState(() {
+                                                      detailbarang_ID =
+                                                          map['_id'];
                                                       edit_nama_barang.text =
                                                           map['nama_barang'];
                                                       String jenisBarang =
@@ -842,113 +846,172 @@ class _GudangMenuState extends State<GudangMenu> {
                   Expanded(
                     flex: 3,
                     child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(12.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey,
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      padding: EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Center(
-                            child: Text(
-                              "Detail Barang",
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20.0),
-                          Text(
-                            "Nama Barang : ${edit_nama_barang.text}",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                          SizedBox(height: 16.0),
-                          Text(
-                            "Jenis/Kategori Barang: ${edit_nama_kategorijenis.text}",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                          SizedBox(height: 16.0),
-                          Text(
-                            "Expire Date: ${edit_expdate_barang.text != null && edit_expdate_barang.text.length >= 10 ? edit_expdate_barang.text.substring(0, 10) : "-"}",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                          SizedBox(height: 16.0),
-                          Text(
-                            "Insert Date : ${edit_insertdate_barang.text.isNotEmpty ? edit_insertdate_barang.text.toString().substring(0, 10) : "-"}",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                          SizedBox(height: 20.0),
-                          Text(
-                            "Satuan:",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                          DropdownButton<Map<String, dynamic>>(
-                            value: selectedSatuan,
-                            hint: Text('Select Satuan'),
-                            items: satuanList.map((satuan) {
-                              return DropdownMenuItem<Map<String, dynamic>>(
-                                value: satuan,
-                                child: Text(satuan['nama_satuan'] ?? 'No Name'),
-                              );
-                            }).toList(),
-                            onChanged: (selected) {
-                              setState(() {
-                                selectedSatuan = selected;
-                              });
-                            },
-                          ),
-                          SizedBox(height: 16.0),
-                          if (selectedSatuan != null) ...[
-                            Text(
-                              "Nama Satuan: ${selectedSatuan!['nama_satuan']}",
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            SizedBox(height: 10),
-                            Text(
-                              "Jumlah Stock Satuan: ${selectedSatuan!['jumlah_satuan']}",
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            SizedBox(height: 10),
-                            Text(
-                              "Harga Satuan: Rp.${NumberFormat('#,###.00', 'id_ID').format(selectedSatuan!['harga_satuan'] ?? 0.0)}",
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            SizedBox(height: 10),
-                            Text(
-                              "Isi Satuan : ${selectedSatuan!['isi_satuan']}",
-                              style: TextStyle(fontSize: 18),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(12.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey,
+                              blurRadius: 10,
                             ),
                           ],
-                          Spacer(),
-                          ElevatedButton(
-                            onPressed: _isEditUser
-                                ? () {
-                                    _showUpdateBarangDialog();
-                                  }
-                                : null,
-                            child: Text(
-                              'Update Barang',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        padding: EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Text(
+                                "Detail Barang",
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                            SizedBox(height: 20.0),
+                            Text(
+                              "Barang ID:",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            Row(
+                              children: [
+                                Text(
+                                  "$detailbarang_ID",
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                                SizedBox(width: 8.0),
+                                detailbarang_ID != ""
+                                    ? IconButton(
+                                        icon: Icon(Icons.copy,
+                                            color: Colors.blue),
+                                        onPressed: () {
+                                          Clipboard.setData(ClipboardData(
+                                              text: detailbarang_ID!));
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(
+                                                    "Barang ID copied to clipboard")),
+                                          );
+                                        },
+                                      )
+                                    : SizedBox()
+                              ],
+                            ),
+                            SizedBox(height: 16.0),
+                            Text(
+                              "Nama Barang : ${edit_nama_barang.text}",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            SizedBox(height: 16.0),
+                            Text(
+                              "Jenis/Kategori Barang: ${edit_nama_kategorijenis.text}",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            SizedBox(height: 16.0),
+                            Text(
+                              "Expire Date: ${edit_expdate_barang.text.isNotEmpty && edit_expdate_barang.text.length >= 10 ? edit_expdate_barang.text.substring(0, 10) : "-"}",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            SizedBox(height: 16.0),
+                            Text(
+                              "Insert Date : ${edit_insertdate_barang.text.isNotEmpty ? edit_insertdate_barang.text.substring(0, 10) : "-"}",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            SizedBox(height: 20.0),
+                            Text(
+                              "Satuan:",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            DropdownButton<Map<String, dynamic>>(
+                              value: selectedSatuan,
+                              hint: Text('Select Satuan'),
+                              items: satuanList.map((satuan) {
+                                return DropdownMenuItem<Map<String, dynamic>>(
+                                  value: satuan,
+                                  child:
+                                      Text(satuan['nama_satuan'] ?? 'No Name'),
+                                );
+                              }).toList(),
+                              onChanged: (selected) {
+                                setState(() {
+                                  selectedSatuan = selected;
+                                });
+                              },
+                            ),
+                            SizedBox(height: 16.0),
+                            if (selectedSatuan != null) ...[
+                              Text(
+                                "Nama Satuan: ",
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text("${selectedSatuan!['_id']}"),
+                                      IconButton(
+                                        icon: Icon(Icons.copy,
+                                            color: Colors.blue),
+                                        onPressed: () {
+                                          Clipboard.setData(ClipboardData(
+                                              text: detailbarang_ID!));
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(
+                                                    "Barang ID copied to clipboard")),
+                                          );
+                                        },
+                                      )
+                                    ],
+                                  )
+                                ],
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                "Nama Satuan: ${selectedSatuan!['nama_satuan']}",
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                "Jumlah Stock Satuan: ${selectedSatuan!['jumlah_satuan']}",
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                "Harga Satuan: Rp.${NumberFormat('#,###.00', 'id_ID').format(selectedSatuan!['harga_satuan'] ?? 0.0)}",
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                "Isi Satuan : ${selectedSatuan!['isi_satuan']}",
+                                style: TextStyle(fontSize: 18),
+                              ),
+                            ],
+                            Spacer(),
+                            ElevatedButton(
+                              onPressed: _isEditUser
+                                  ? () {
+                                      _showUpdateBarangDialog();
+                                    }
+                                  : null,
+                              child: Text(
+                                'Update Barang',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )),
                   ),
                 ],
               ),
@@ -1864,177 +1927,294 @@ class _GudangMenuState extends State<GudangMenu> {
               ),
             ),
           ),
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: getlowstocksatuan(context),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Center(child: Text('No low stock satuan found'));
-              } else {
-                return Container(
+          Row(
+            children: [
+              // Stock Alert Section (Left Side) with FutureBuilder
+              Expanded(
+                flex: 5,
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: getlowstocksatuan(context),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Center(child: Text('No low stock satuan found'));
+                    } else {
+                      return Container(
+                        color: Colors.grey[900],
+                        padding: EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Center(
+                                  child: Text(
+                                    'Stock Alert',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: 'See Supplier History',
+                                  child: IconButton(
+                                      icon: Icon(Icons.history,
+                                          color: Colors.white),
+                                      onPressed: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    HistorySupplierPage()),
+                                          )),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 16),
+                            Table(
+                              border: TableBorder.all(),
+                              columnWidths: {
+                                0: FlexColumnWidth(2),
+                                1: FlexColumnWidth(2),
+                                2: FlexColumnWidth(1),
+                                3: FlexColumnWidth(1),
+                                4: FlexColumnWidth(1),
+                              },
+                              children: [
+                                TableRow(
+                                  decoration:
+                                      BoxDecoration(color: Colors.blue[300]),
+                                  children: [
+                                    TableCell(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Text(
+                                          'Nama Barang',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                    TableCell(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Text(
+                                          'Nama Satuan',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                    TableCell(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Text(
+                                          'Jumlah Stok',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                    TableCell(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Text(
+                                          'Re-Stock',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                    TableCell(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                ...snapshot.data!.map((data) {
+                                  return TableRow(
+                                    children: [
+                                      TableCell(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: Text(data['nama_barang']),
+                                        ),
+                                      ),
+                                      TableCell(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: Text(data['nama_satuan']),
+                                        ),
+                                      ),
+                                      TableCell(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: Text(
+                                              data['jumlah_satuan'].toString()),
+                                        ),
+                                      ),
+                                      TableCell(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              showQuantityDialog(
+                                                data['id_barang'].toString(),
+                                                data['id_satuan'].toString(),
+                                                context,
+                                              );
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.purple,
+                                              textStyle: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                            child: Text(
+                                              'Re-Stock',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      TableCell(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              confirmDeletion(
+                                                context,
+                                                data['id_barang'].toString(),
+                                                data['id_satuan'].toString(),
+                                                data['nama_satuan'],
+                                                data['nama_barang'],
+                                              );
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.purple,
+                                              textStyle: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                            child: Text(
+                                              'Delete',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+              // Re-stock Section (Right Side) - Static layout
+              Expanded(
+                flex: 3,
+                child: Container(
+                  color: Colors.black87,
                   padding: EdgeInsets.all(16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Center(
-                        child: Text(
-                          'Stock Alert',
-                          style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
+                      Text(
+                        'Re-stock Section',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                       SizedBox(height: 16),
-                      Table(
-                        border: TableBorder.all(),
-                        columnWidths: {
-                          0: FlexColumnWidth(2),
-                          1: FlexColumnWidth(2),
-                          2: FlexColumnWidth(1),
-                          3: FlexColumnWidth(1),
-                          4: FlexColumnWidth(1),
+                      // Input fields for re-stocking items
+                      TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Enter Item ID',
+                          labelStyle: TextStyle(color: Colors.white),
+                          filled: true,
+                          fillColor: Colors.white10,
+                          border: OutlineInputBorder(),
+                        ),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      SizedBox(height: 8),
+                      TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Enter Satuan ID',
+                          labelStyle: TextStyle(color: Colors.white),
+                          filled: true,
+                          fillColor: Colors.white10,
+                          border: OutlineInputBorder(),
+                        ),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      SizedBox(height: 8),
+                      TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Enter Quantity',
+                          labelStyle: TextStyle(color: Colors.white),
+                          filled: true,
+                          fillColor: Colors.white10,
+                          border: OutlineInputBorder(),
+                        ),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      SizedBox(height: 16),
+                      TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Enter Satuan ID',
+                          labelStyle: TextStyle(color: Colors.white),
+                          filled: true,
+                          fillColor: Colors.white10,
+                          border: OutlineInputBorder(),
+                        ),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Add function to handle re-stocking action
                         },
-                        children: [
-                          TableRow(
-                            decoration: BoxDecoration(color: Colors.blue[300]),
-                            children: [
-                              TableCell(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text(
-                                    'Nama Barang',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                              TableCell(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text(
-                                    'Nama Satuan',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                              TableCell(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text(
-                                    'Jumlah Stok',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                              TableCell(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text(
-                                    'Re-Stock',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                              TableCell(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Text(
-                                    'Delete',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ],
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple,
+                          textStyle: TextStyle(color: Colors.white),
+                        ),
+                        child: Text(
+                          'Submit Re-stock',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
                           ),
-                          ...snapshot.data!.map((data) {
-                            return TableRow(
-                              children: [
-                                TableCell(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text(data['nama_barang']),
-                                  ),
-                                ),
-                                TableCell(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text(data['nama_satuan']),
-                                  ),
-                                ),
-                                TableCell(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child:
-                                        Text(data['jumlah_satuan'].toString()),
-                                  ),
-                                ),
-                                TableCell(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        showQuantityDialog(
-                                            data['id_barang'].toString(),
-                                            data['id_satuan'].toString(),
-                                            context);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.purple,
-                                        textStyle:
-                                            TextStyle(color: Colors.white),
-                                      ),
-                                      child: Text(
-                                        'Re-Stock',
-                                        style: TextStyle(
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                TableCell(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        confirmDeletion(
-                                            context,
-                                            data['id_barang'].toString(),
-                                            data['id_satuan'].toString(),
-                                            data['nama_satuan'],
-                                            data['nama_barang']);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.purple,
-                                        textStyle:
-                                            TextStyle(color: Colors.white),
-                                      ),
-                                      child: Text(
-                                        'Delete',
-                                        style: TextStyle(
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                );
-              }
-            },
+                ),
+              ),
+            ],
           ),
           Container(
             color: Colors.black,
@@ -2435,24 +2615,43 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                     ],
                   ),
+                  TextFormField(
+                    controller: id_supplier_stock_alert,
+                    decoration: InputDecoration(
+                      labelText: 'ID Supplier Stock',
+                      labelStyle: TextStyle(color: Colors.white),
+                      filled: true,
+                      fillColor: Colors.black,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            BorderSide(color: Colors.blueAccent, width: 2),
+                      ),
+                    ),
+                    style: TextStyle(color: Colors.white),
+                  ),
                   SizedBox(height: 16.0),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           // Handle the confirm action
                           updatejumlahSatuan(id_barang, id_satuan, quantity,
-                              "tambah", context);
+                              id_supplier_stock_alert.text, "tambah", context);
+                          await getlowstocksatuan(context);
                           Navigator.of(context).pop();
                           setState(() {});
-                          // Close the dialog
                         },
                         child: Text('Confirm Stock'),
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.of(context).pop(); // Close the dialog
+                          Navigator.of(context).pop();
                         },
                         child: Text('Cancel'),
                       ),
@@ -2584,22 +2783,6 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
                   controller: kategoriBarangController,
                   label: 'Kategori Barang'),
               SizedBox(height: 16),
-              _buildDateCheckbox(
-                label: 'Update Insert Date',
-                isChecked: isInsertDateEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    isInsertDateEnabled = value ?? false;
-                  });
-                },
-                onDateSelected: (date) {
-                  setState(() {
-                    selectedInsertDate = date;
-                  });
-                },
-                selectedDate: selectedInsertDate,
-              ),
-              SizedBox(height: 12),
               _buildDateCheckbox(
                 label: 'Update Expiration Date',
                 isChecked: isExpDateEnabled,

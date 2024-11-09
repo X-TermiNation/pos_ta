@@ -12,10 +12,10 @@ class HistoryStockPage extends StatefulWidget {
 class _HistoryStockPageState extends State<HistoryStockPage> {
   late Future<List<dynamic>> historyStokData;
   late String idCabang;
-  Map<String, dynamic>? selectedItem; // To store the selected item's details
-  List<dynamic> filteredHistoryStok = []; // To store filtered data
-  String searchQuery = ''; // To store the search query
-  bool isAsc = true; // Flag for sorting order (ascending or descending)
+  Map<String, dynamic>? selectedItem;
+  List<dynamic> filteredHistoryStok = [];
+  String searchQuery = '';
+  bool isAsc = true;
 
   @override
   void initState() {
@@ -119,7 +119,7 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                   ),
                 ),
               ),
-              // Sort buttons (ascending/descending)
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -128,7 +128,7 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                         Icon(isAsc ? Icons.arrow_upward : Icons.arrow_downward),
                     onPressed: toggleSortOrder,
                   ),
-                  Text(isAsc ? 'Ascending' : 'Descending'),
+                  Text(isAsc ? 'Date Ascending' : 'Date Descending'),
                   SizedBox(width: 10),
                 ],
               ),
@@ -147,20 +147,49 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                           String satuanId = item['satuan_id'];
                           String tanggalPengisian = item['tanggal_pengisian'];
 
-                          return Card(
-                            margin: EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 15),
-                            child: ListTile(
-                              title: Text(
-                                  'Barang ID: $barangId - Satuan ID: $satuanId'),
-                              subtitle: Text(
-                                  'Tanggal: ${formatDate(tanggalPengisian)} WIB'),
-                              onTap: () {
-                                setState(() {
-                                  selectedItem = item; // Update selected item
-                                });
-                              },
-                            ),
+                          return FutureBuilder<Map<String, dynamic>?>(
+                            future: searchItemByID(barangId),
+                            builder: (context, barangSnapshot) {
+                              if (barangSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator(); // Loading indicator
+                              }
+
+                              return FutureBuilder<Map<String, dynamic>?>(
+                                future:
+                                    getSatuanById(barangId, satuanId, context),
+                                builder: (context, satuanSnapshot) {
+                                  if (satuanSnapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return CircularProgressIndicator(); // Loading indicator
+                                  }
+
+                                  var barang = barangSnapshot.data;
+                                  var satuan = satuanSnapshot.data;
+
+                                  String barangName = barang?['nama_barang'] ??
+                                      "Unknown Barang";
+                                  String satuanName = satuan?['nama_satuan'] ??
+                                      "Unknown Satuan";
+
+                                  return Card(
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 15),
+                                    child: ListTile(
+                                      title: Text('$barangName - $satuanName'),
+                                      subtitle: Text(
+                                          'Tanggal: ${formatDate(tanggalPengisian)} WIB'),
+                                      onTap: () {
+                                        setState(() {
+                                          selectedItem =
+                                              item; // Update selected item
+                                        });
+                                      },
+                                    ),
+                                  );
+                                },
+                              );
+                            },
                           );
                         },
                       ),
@@ -184,41 +213,135 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                                     ),
                                   ),
                                   SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Barang ID: ${selectedItem!['barang_id']}',
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 18),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(Icons.copy,
-                                            color: Colors.white),
-                                        onPressed: () {
-                                          copyToClipboard(
-                                              selectedItem!['barang_id']);
-                                        },
-                                      ),
-                                    ],
+                                  // Barang ID and details
+                                  FutureBuilder<Map<String, dynamic>?>(
+                                    future: searchItemByID(
+                                        selectedItem!['barang_id']),
+                                    builder: (context, barangSnapshot) {
+                                      var barang = barangSnapshot.data;
+                                      String barangId =
+                                          selectedItem!['barang_id'];
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                'Barang ID: $barangId',
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(Icons.copy,
+                                                    color: Colors.white),
+                                                onPressed: () {
+                                                  copyToClipboard(barangId);
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          if (barang != null) ...[
+                                            Text(
+                                              'Nama: ${barang['nama_barang']}',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16),
+                                            ),
+                                            Text(
+                                              'Jenis: ${barang['jenis_barang']}',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16),
+                                            ),
+                                            Text(
+                                              'Kategori: ${barang['kategori_barang']}',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16),
+                                            ),
+                                            Text(
+                                              'Insert Date: ${formatDate(barang['insert_date'])}',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16),
+                                            ),
+                                            if (barang['exp_date'] != null)
+                                              Text(
+                                                'Exp Date: ${formatDate(barang['exp_date'])}',
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16),
+                                              ),
+                                          ],
+                                        ],
+                                      );
+                                    },
                                   ),
-                                  SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Satuan ID: ${selectedItem!['satuan_id']}',
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 18),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(Icons.copy,
-                                            color: Colors.white),
-                                        onPressed: () {
-                                          copyToClipboard(
-                                              selectedItem!['satuan_id']);
-                                        },
-                                      ),
-                                    ],
+                                  SizedBox(height: 16),
+                                  // Satuan ID and details
+                                  FutureBuilder<Map<String, dynamic>?>(
+                                    future: getSatuanById(
+                                        selectedItem!['barang_id'],
+                                        selectedItem!['satuan_id'],
+                                        context),
+                                    builder: (context, satuanSnapshot) {
+                                      var satuan = satuanSnapshot.data;
+                                      String satuanId =
+                                          selectedItem!['satuan_id'];
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                'Satuan ID: $satuanId',
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(Icons.copy,
+                                                    color: Colors.white),
+                                                onPressed: () {
+                                                  copyToClipboard(satuanId);
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          if (satuan != null) ...[
+                                            Text(
+                                              'Nama: ${satuan['nama_satuan']}',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16),
+                                            ),
+                                            Text(
+                                              'Jumlah: ${satuan['jumlah_satuan']}',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16),
+                                            ),
+                                            Text(
+                                              'Harga: ${satuan['harga_satuan']}',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16),
+                                            ),
+                                            Text(
+                                              'Isi Satuan: ${satuan['isi_satuan']}',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16),
+                                            ),
+                                          ],
+                                        ],
+                                      );
+                                    },
                                   ),
+                                  // Remaining fields in the details section
                                   SizedBox(height: 8),
                                   Row(
                                     children: [

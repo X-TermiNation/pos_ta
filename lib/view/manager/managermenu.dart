@@ -281,8 +281,8 @@ class _ManagerMenuState extends State<ManagerMenu>
                       ElevatedButton(
                         onPressed: () {
                           // Handle the confirm action
-                          updatejumlahSatuan(id_barang, id_satuan, quantity,
-                              "tambah", context);
+                          // updatejumlahSatuan(id_barang, id_satuan, quantity,
+                          //     "tambah", context);
                           setState(() {
                             showToast(context, 'Berhasil menambah data');
                           });
