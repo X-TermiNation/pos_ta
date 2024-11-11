@@ -191,123 +191,6 @@ class _ManagerMenuState extends State<ManagerMenu>
     });
   }
 
-  //delete stock alert
-  void confirmDeletion(BuildContext context, String id_barang, String id_satuan,
-      String nama_satuan, String nama_barang) async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // User must tap a button to close the dialog
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Konfirmasi hapus'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text(
-                    'Apakah anda ingin menghapus satuan "$nama_satuan" pada item "$nama_barang"?'),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss the dialog
-              },
-            ),
-            TextButton(
-              child: Text('Delete'),
-              onPressed: () async {
-                await deletesatuan(id_barang, id_satuan, context);
-                setState(() {
-                  getlowstocksatuan(context);
-                }); // Execute the delete operation
-                Navigator.of(context).pop();
-                // Dismiss the dialog
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  //quantity widget stock alert
-  void showQuantityDialog(
-      String id_barang, String id_satuan, BuildContext context) {
-    int quantity = 1;
-
-    showDialog(
-      context: context,
-      barrierDismissible:
-          false, // Prevents closing the dialog by tapping outside
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Update Quantity'),
-          content: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Quantity:'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.remove),
-                        onPressed: () {
-                          setState(() {
-                            if (quantity > 1) {
-                              quantity--;
-                            }
-                          });
-                        },
-                      ),
-                      Text(quantity.toString()),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: () {
-                          setState(() {
-                            quantity++;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          // Handle the confirm action
-                          // updatejumlahSatuan(id_barang, id_satuan, quantity,
-                          //     "tambah", context);
-                          setState(() {
-                            showToast(context, 'Berhasil menambah data');
-                          });
-                          Navigator.of(context).pop();
-                          // Close the dialog
-                        },
-                        child: Text('Confirm Stock'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(); // Close the dialog
-                        },
-                        child: Text('Cancel'),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
   var scaffoldKey = GlobalKey<ScaffoldState>();
   //frontend stuff
   bool isHomeExpanded = false;
@@ -422,7 +305,6 @@ class _ManagerMenuState extends State<ManagerMenu>
       tab: CustomTab(title: 'Edit Diskon'),
       content: Container(),
     ),
-    ContentView(tab: CustomTab(title: 'Stock Alert'), content: Container()),
     ContentView(
       tab: CustomTab(title: 'Analisa Revenue'),
       content: Container(),
@@ -1081,183 +963,6 @@ class _ManagerMenuState extends State<ManagerMenu>
           ),
         ),
       ),
-      ContentView(
-          tab: CustomTab(title: 'Stock Alert Barang'),
-          content: Center(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: getlowstocksatuan(context),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No low stock satuan found'));
-                } else {
-                  return Container(
-                    padding: EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        Center(
-                          child: Text(
-                            'Stock Alert',
-                            style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
-                          ),
-                        ),
-                        SizedBox(height: 16),
-                        Table(
-                          border: TableBorder.all(),
-                          columnWidths: {
-                            0: FlexColumnWidth(2),
-                            1: FlexColumnWidth(2),
-                            2: FlexColumnWidth(1),
-                            3: FlexColumnWidth(1),
-                            4: FlexColumnWidth(1),
-                          },
-                          children: [
-                            TableRow(
-                              decoration:
-                                  BoxDecoration(color: Colors.blue[300]),
-                              children: [
-                                TableCell(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text(
-                                      'Nama Barang',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                                TableCell(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text(
-                                      'Nama Satuan',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                                TableCell(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text(
-                                      'Jumlah Stok',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                                TableCell(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text(
-                                      'Re-Stock',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                                TableCell(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text(
-                                      'Delete',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            ...snapshot.data!.map((data) {
-                              return TableRow(
-                                children: [
-                                  TableCell(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: Text(data['nama_barang']),
-                                    ),
-                                  ),
-                                  TableCell(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: Text(data['nama_satuan']),
-                                    ),
-                                  ),
-                                  TableCell(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: Text(
-                                          data['jumlah_satuan'].toString()),
-                                    ),
-                                  ),
-                                  TableCell(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          showQuantityDialog(
-                                              data['id_barang'].toString(),
-                                              data['id_satuan'].toString(),
-                                              context);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.purple,
-                                          textStyle:
-                                              TextStyle(color: Colors.white),
-                                        ),
-                                        child: Text(
-                                          'Re-Stock',
-                                          style: TextStyle(
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  TableCell(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          confirmDeletion(
-                                              context,
-                                              data['id_barang'].toString(),
-                                              data['id_satuan'].toString(),
-                                              data['nama_satuan'],
-                                              data['nama_barang']);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.purple,
-                                          textStyle:
-                                              TextStyle(color: Colors.white),
-                                        ),
-                                        child: Text(
-                                          'Delete',
-                                          style: TextStyle(
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }).toList(),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              },
-            ),
-          )),
       ContentView(
           tab: CustomTab(title: 'Analisa Pendapatan'),
           content: Center(
@@ -1992,17 +1697,6 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           ),
                                         ),
                                         Tooltip(
-                                          message: 'Stock Alert',
-                                          child: IconButton(
-                                            icon: Icon(
-                                              Icons.warning_amber_rounded,
-                                              size: 28,
-                                              color: Colors.blue,
-                                            ),
-                                            onPressed: () => _onItemTapped(3),
-                                          ),
-                                        ),
-                                        Tooltip(
                                           message: 'Analisa Pendapatan',
                                           child: IconButton(
                                             icon: Icon(
@@ -2010,7 +1704,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                               size: 28,
                                               color: Colors.blue,
                                             ),
-                                            onPressed: () => _onItemTapped(4),
+                                            onPressed: () => _onItemTapped(3),
                                           ),
                                         ),
                                         Tooltip(
@@ -2021,7 +1715,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                               size: 32,
                                               color: Colors.blue,
                                             ),
-                                            onPressed: () => _onItemTapped(5),
+                                            onPressed: () => _onItemTapped(4),
                                           ),
                                         ),
                                         Tooltip(
@@ -2032,7 +1726,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                               size: 32,
                                               color: Colors.blue,
                                             ),
-                                            onPressed: () => _onItemTapped(6),
+                                            onPressed: () => _onItemTapped(5),
                                           ),
                                         ),
                                         Tooltip(
@@ -2043,7 +1737,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                               size: 32,
                                               color: Colors.blue,
                                             ),
-                                            onPressed: () => _onItemTapped(7),
+                                            onPressed: () => _onItemTapped(6),
                                           ),
                                         ),
                                         Container(
@@ -2068,7 +1762,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     size: 32,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onItemTapped(8),
+                                  onPressed: () => _onItemTapped(7),
                                 ),
                               ),
                               SizedBox(height: 20),
@@ -2110,7 +1804,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           size: 28,
                                           color: Colors.blue,
                                         ),
-                                        onPressed: () => _onItemTapped(9),
+                                        onPressed: () => _onItemTapped(8),
                                       ),
                                     ),
                                     Tooltip(
@@ -2121,7 +1815,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           size: 28,
                                           color: Colors.blue,
                                         ),
-                                        onPressed: () => _onItemTapped(10),
+                                        onPressed: () => _onItemTapped(9),
                                       ),
                                     ),
                                     Container(
@@ -2144,7 +1838,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     size: 32,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onItemTapped(11),
+                                  onPressed: () => _onItemTapped(10),
                                 ),
                               ),
                               SizedBox(height: 20),
@@ -2156,7 +1850,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     size: 32,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onItemTapped(12),
+                                  onPressed: () => _onItemTapped(11),
                                 ),
                               ),
                               SizedBox(height: 20),
@@ -2168,7 +1862,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     size: 32,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onItemTapped(13),
+                                  onPressed: () => _onItemTapped(12),
                                 ),
                               ),
                               SizedBox(height: 20),

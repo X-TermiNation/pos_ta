@@ -16,6 +16,9 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
   String? searchQuery = '';
   bool isAscending = true; // To toggle between ascending and descending order
 
+  DateTime? startDate;
+  DateTime? endDate;
+
   @override
   void initState() {
     super.initState();
@@ -34,16 +37,38 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
   void _searchSuppliers() {
     setState(() {
       searchQuery = _searchController.text.toLowerCase();
-      filteredSuppliers = suppliers.where((supplier) {
-        return supplier['nama_supplier']
-                .toString()
-                .toLowerCase()
-                .contains(searchQuery!) ||
-            formatToWIB(supplier['tanggal_transaksi'])
-                .toLowerCase()
-                .contains(searchQuery!) ||
-            supplier['_id'].toString().toLowerCase().contains(searchQuery!);
-      }).toList();
+      _applyFilters();
+    });
+  }
+
+  void _applyFilters() {
+    filteredSuppliers = suppliers.where((supplier) {
+      bool matchesSearch = supplier['nama_supplier']
+              .toString()
+              .toLowerCase()
+              .contains(searchQuery!) ||
+          formatToWIB(supplier['tanggal_transaksi'])
+              .toLowerCase()
+              .contains(searchQuery!) ||
+          supplier['_id'].toString().toLowerCase().contains(searchQuery!);
+
+      if (startDate != null && endDate != null) {
+        DateTime transactionDate =
+            DateTime.parse(supplier['tanggal_transaksi']);
+        return matchesSearch &&
+            transactionDate.isAfter(startDate!.subtract(Duration(days: 1))) &&
+            transactionDate.isBefore(endDate!.add(Duration(days: 1)));
+      }
+      return matchesSearch;
+    }).toList();
+  }
+
+  void _clearFilters() {
+    setState(() {
+      startDate = null;
+      endDate = null;
+      _searchController.clear();
+      _applyFilters();
     });
   }
 
@@ -66,6 +91,40 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
             .compareTo(DateTime.parse(a['tanggal_transaksi'])));
       }
     });
+  }
+
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            primaryColor:
+                Colors.blue, // Change the primary color here if needed
+            buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: Colors.black,
+              border: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white),
+              ),
+              hintStyle: TextStyle(color: Colors.white),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        startDate = picked.start;
+        endDate = picked.end;
+      });
+      _applyFilters();
+    }
   }
 
   @override
@@ -95,6 +154,45 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
                 ),
               ),
               style: TextStyle(color: Colors.white),
+            ),
+          ),
+          // Date range and Clear Filter button
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _selectDateRange(context),
+                  child: Text(
+                    startDate != null && endDate != null
+                        ? 'Selected Range: ${DateFormat('yyyy-MM-dd').format(startDate!)} - ${DateFormat('yyyy-MM-dd').format(endDate!)}'
+                        : 'Select Date Range',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    side: BorderSide(color: Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: _clearFilters,
+                  child: Text(
+                    'Clear Filter',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           // Toggle Sort Order button
@@ -170,9 +268,7 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
                                     style: TextStyle(
                                         color: Colors.white, fontSize: 18),
                                   ),
-                                  SizedBox(
-                                      width:
-                                          8), // Spacing between ID and the copy button
+                                  SizedBox(width: 8),
                                   Tooltip(
                                     message: "Copy ID",
                                     child: IconButton(
@@ -190,10 +286,8 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
                                         );
                                       },
                                       constraints: BoxConstraints(),
-                                      padding: EdgeInsets.all(
-                                          4), // Small padding for a compact button
-                                      splashRadius:
-                                          20, // Make the button small and rounded
+                                      padding: EdgeInsets.all(4),
+                                      splashRadius: 20,
                                     ),
                                   ),
                                 ],
@@ -228,44 +322,12 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
                                 style: TextStyle(
                                     color: Colors.white, fontSize: 18),
                               ),
-                              SizedBox(height: 16),
-                              Text(
-                                "Items Bought:",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 8),
-                              Expanded(
-                                child: ListView.builder(
-                                  itemCount:
-                                      selectedSupplier!['barang_dibeli'].length,
-                                  itemBuilder: (context, index) {
-                                    final item =
-                                        selectedSupplier!['barang_dibeli']
-                                            [index];
-                                    return ListTile(
-                                      title: Text(
-                                        item['nama_barang'],
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                      subtitle: Text(
-                                        "Unit: ${item['satuan_barang']}\n"
-                                        "Quantity: ${item['jumlah']}, "
-                                        "Price per Unit: ${item['harga_satuan']}",
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
                             ],
                           )
                         : Center(
                             child: Text(
-                              'Select a supplier to view details',
-                              style: TextStyle(color: Colors.grey),
+                              "Select a supplier to see details",
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                   ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:flutter/services.dart'; // Import for clipboard functionality
+import 'package:flutter/services.dart';
 
 class HistoryStockPage extends StatefulWidget {
   @override
@@ -14,9 +14,12 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
   late String idCabang;
   Map<String, dynamic>? selectedItem;
   List<dynamic> filteredHistoryStok = [];
+  List<dynamic> historyStok = [];
   String searchQuery = '';
   bool isAsc = true;
-
+  DateTime? startDate;
+  DateTime? endDate;
+  TextEditingController searchbar = TextEditingController();
   @override
   void initState() {
     super.initState();
@@ -32,15 +35,36 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
     return wibFormat.format(parsedDate.add(Duration(hours: 7)));
   }
 
-  // Function to filter the history stock data based on the search query
-  void filterData(String query, List<dynamic> historyStok) {
+  // Function to filter the history stock data based on the search query and date range
+  void filterData() {
     setState(() {
-      searchQuery = query;
       filteredHistoryStok = historyStok.where((item) {
-        return item['barang_id'].toString().contains(query) ||
-            item['satuan_id'].toString().contains(query) ||
-            item['sumber_transaksi_id'].toString().contains(query) ||
-            formatDate(item['tanggal_pengisian']).contains(query);
+        // Parse item date (tanggal_pengisian) into DateTime
+        DateTime itemDate = DateTime.parse(item['tanggal_pengisian']).toLocal();
+
+        bool matchesSearch =
+            item['barang_id'].toString().contains(searchQuery) ||
+                item['satuan_id'].toString().contains(searchQuery) ||
+                item['sumber_transaksi_id'].toString().contains(searchQuery) ||
+                formatDate(item['tanggal_pengisian']).contains(searchQuery);
+
+        bool matchesDateRange = true;
+
+        if (startDate != null && endDate != null) {
+          // Normalize the startDate and endDate to compare only the date part (no time)
+          DateTime normalizedStartDate =
+              DateTime(startDate!.year, startDate!.month, startDate!.day);
+          DateTime normalizedEndDate =
+              DateTime(endDate!.year, endDate!.month, endDate!.day);
+
+          // Check if itemDate is within the selected range
+          matchesDateRange = itemDate.isAtSameMomentAs(normalizedStartDate) ||
+              itemDate.isAfter(normalizedStartDate);
+          matchesDateRange &= itemDate.isAtSameMomentAs(normalizedEndDate) ||
+              itemDate.isBefore(normalizedEndDate.add(Duration(days: 1)));
+        }
+
+        return matchesSearch && matchesDateRange;
       }).toList();
     });
   }
@@ -55,6 +79,41 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
         return isAsc ? aDate.compareTo(bDate) : bDate.compareTo(aDate);
       });
     });
+  }
+
+  // Function to select date range
+  Future<void> selectDateRange(BuildContext context) async {
+    DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            primaryColor:
+                Colors.blue, // Change the primary color here if needed
+            buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: Colors.black,
+              border: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white),
+              ),
+              hintStyle: TextStyle(color: Colors.white),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        startDate = picked.start;
+        endDate = picked.end;
+        filterData(); // Apply filter after selecting date range
+      });
+    }
   }
 
   // Function to copy text to clipboard
@@ -86,20 +145,10 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
             return Center(child: Text('No History Stock Data Found'));
           }
 
-          var historyStok = snapshot.data!;
-
-          // If searchQuery is empty, show all data, otherwise filter
-          if (searchQuery.isNotEmpty) {
-            filteredHistoryStok = historyStok.where((item) {
-              return item['barang_id'].toString().contains(searchQuery) ||
-                  item['satuan_id'].toString().contains(searchQuery) ||
-                  item['sumber_transaksi_id']
-                      .toString()
-                      .contains(searchQuery) ||
-                  formatDate(item['tanggal_pengisian']).contains(searchQuery);
-            }).toList();
-          } else {
-            filteredHistoryStok = historyStok;
+          // Set the initial data for historyStok and filteredHistoryStok
+          if (historyStok.isEmpty) {
+            historyStok = snapshot.data!;
+            filteredHistoryStok = List.from(historyStok);
           }
 
           return Column(
@@ -108,8 +157,10 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextField(
+                  controller: searchbar,
                   onChanged: (query) {
-                    filterData(query, historyStok);
+                    searchQuery = query;
+                    filterData();
                   },
                   decoration: InputDecoration(
                     labelText:
@@ -123,6 +174,27 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  ElevatedButton(
+                    onPressed: () => selectDateRange(context),
+                    child: Text(startDate != null && endDate != null
+                        ? '${DateFormat('dd/MM/yyyy').format(startDate!)} - ${DateFormat('dd/MM/yyyy').format(endDate!)}'
+                        : 'Select Date Range'),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        startDate = null;
+                        endDate = null;
+                        searchbar.clear();
+                        searchQuery = '';
+                        filteredHistoryStok =
+                            List.from(historyStok); // Reset filter
+                      });
+                    },
+                    child: Text('Clear Filter'),
+                  ),
+                  SizedBox(width: 10),
                   IconButton(
                     icon:
                         Icon(isAsc ? Icons.arrow_upward : Icons.arrow_downward),
@@ -132,6 +204,7 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                   SizedBox(width: 10),
                 ],
               ),
+
               // Display the filtered list and details
               Expanded(
                 child: Row(
@@ -152,7 +225,7 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                             builder: (context, barangSnapshot) {
                               if (barangSnapshot.connectionState ==
                                   ConnectionState.waiting) {
-                                return CircularProgressIndicator(); // Loading indicator
+                                return CircularProgressIndicator();
                               }
 
                               return FutureBuilder<Map<String, dynamic>?>(
@@ -161,7 +234,7 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                                 builder: (context, satuanSnapshot) {
                                   if (satuanSnapshot.connectionState ==
                                       ConnectionState.waiting) {
-                                    return CircularProgressIndicator(); // Loading indicator
+                                    return CircularProgressIndicator();
                                   }
 
                                   var barang = barangSnapshot.data;
@@ -181,8 +254,7 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                                           'Tanggal: ${formatDate(tanggalPengisian)} WIB'),
                                       onTap: () {
                                         setState(() {
-                                          selectedItem =
-                                              item; // Update selected item
+                                          selectedItem = item;
                                         });
                                       },
                                     ),
@@ -247,57 +319,26 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                                               'Nama: ${barang['nama_barang']}',
                                               style: TextStyle(
                                                   color: Colors.white,
-                                                  fontSize: 16),
+                                                  fontSize: 18),
                                             ),
                                             Text(
                                               'Jenis: ${barang['jenis_barang']}',
                                               style: TextStyle(
                                                   color: Colors.white,
-                                                  fontSize: 16),
+                                                  fontSize: 18),
                                             ),
                                             Text(
                                               'Kategori: ${barang['kategori_barang']}',
                                               style: TextStyle(
                                                   color: Colors.white,
-                                                  fontSize: 16),
+                                                  fontSize: 18),
                                             ),
-                                            Text(
-                                              'Insert Date: ${formatDate(barang['insert_date'])}',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 16),
-                                            ),
-                                            if (barang['exp_date'] != null)
-                                              Text(
-                                                'Exp Date: ${formatDate(barang['exp_date'])}',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16),
-                                              ),
                                           ],
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                  SizedBox(height: 16),
-                                  // Satuan ID and details
-                                  FutureBuilder<Map<String, dynamic>?>(
-                                    future: getSatuanById(
-                                        selectedItem!['barang_id'],
-                                        selectedItem!['satuan_id'],
-                                        context),
-                                    builder: (context, satuanSnapshot) {
-                                      var satuan = satuanSnapshot.data;
-                                      String satuanId =
-                                          selectedItem!['satuan_id'];
-                                      return Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
+                                          SizedBox(height: 16),
                                           Row(
                                             children: [
                                               Text(
-                                                'Satuan ID: $satuanId',
+                                                'Satuan ID: ${selectedItem!['satuan_id']}',
                                                 style: TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 18),
@@ -306,84 +347,59 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                                                 icon: Icon(Icons.copy,
                                                     color: Colors.white),
                                                 onPressed: () {
-                                                  copyToClipboard(satuanId);
+                                                  copyToClipboard(selectedItem![
+                                                      'satuan_id']);
                                                 },
                                               ),
                                             ],
                                           ),
-                                          if (satuan != null) ...[
-                                            Text(
-                                              'Nama: ${satuan['nama_satuan']}',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 16),
-                                            ),
-                                            Text(
-                                              'Jumlah: ${satuan['jumlah_satuan']}',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 16),
-                                            ),
-                                            Text(
-                                              'Harga: ${satuan['harga_satuan']}',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 16),
-                                            ),
-                                            Text(
-                                              'Isi Satuan: ${satuan['isi_satuan']}',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 16),
-                                            ),
-                                          ],
+                                          Text(
+                                            'Jumlah Input: ${selectedItem!['jumlah_input']}',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18),
+                                          ),
+                                          SizedBox(height: 16),
+                                          Text(
+                                            'Tanggal Pengisian: ${formatDate(selectedItem!['tanggal_pengisian'])} WIB',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18),
+                                          ),
+                                          Text(
+                                            'Jenis Pengisian: ${selectedItem!['jenis_pengisian']}',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18),
+                                          ),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                'Supplier ID: ${selectedItem!['sumber_transaksi_id']}',
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(Icons.copy,
+                                                    color: Colors.white),
+                                                onPressed: () {
+                                                  copyToClipboard(selectedItem![
+                                                      'sumber_transaksi_id']);
+                                                },
+                                              ),
+                                            ],
+                                          ),
                                         ],
                                       );
                                     },
-                                  ),
-                                  // Remaining fields in the details section
-                                  SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Sumber Transaksi ID: ${selectedItem!['sumber_transaksi_id']}',
-                                        style: TextStyle(
-                                            color: Colors.white, fontSize: 18),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(Icons.copy,
-                                            color: Colors.white),
-                                        onPressed: () {
-                                          copyToClipboard(selectedItem![
-                                              'sumber_transaksi_id']);
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Tanggal Pengisian: ${formatDate(selectedItem!['tanggal_pengisian'])}',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 18),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Jumlah Input: ${selectedItem!['jumlah_input']}',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 18),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Jenis Pengisian: ${selectedItem!['jenis_pengisian']}',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 18),
                                   ),
                                 ],
                               ),
                             )
                           : Center(
                               child: Text(
-                                'Select a stock history item to view details',
+                                'Select an item to view details',
                                 style: TextStyle(color: Colors.grey),
                               ),
                             ),

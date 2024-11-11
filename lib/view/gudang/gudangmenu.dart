@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view/gudang/StockHistory.dart';
 import 'package:ta_pos/view/gudang/SupplierHistory.dart';
@@ -59,6 +61,10 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController _searchControllerBarangList = TextEditingController();
   TextEditingController id_supplier_insert = TextEditingController();
   TextEditingController id_supplier_stock_alert = TextEditingController();
+  TextEditingController ReStock_barang_id = TextEditingController();
+  TextEditingController ReStock_satuan_id = TextEditingController();
+  TextEditingController ReStock_qty = TextEditingController();
+  TextEditingController ReStock_SumberTransaksi_id = TextEditingController();
   XFile? selectedImage;
 
   String searchQuery = '';
@@ -944,7 +950,7 @@ class _GudangMenuState extends State<GudangMenu> {
                             SizedBox(height: 16.0),
                             if (selectedSatuan != null) ...[
                               Text(
-                                "Nama Satuan: ",
+                                "ID Satuan: ",
                                 style: TextStyle(fontSize: 18),
                               ),
                               Column(
@@ -958,12 +964,12 @@ class _GudangMenuState extends State<GudangMenu> {
                                             color: Colors.blue),
                                         onPressed: () {
                                           Clipboard.setData(ClipboardData(
-                                              text: detailbarang_ID!));
+                                              text: selectedSatuan!['_id']!));
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             SnackBar(
                                                 content: Text(
-                                                    "Barang ID copied to clipboard")),
+                                                    "Satuan ID copied to clipboard")),
                                           );
                                         },
                                       )
@@ -2131,7 +2137,7 @@ class _GudangMenuState extends State<GudangMenu> {
                   },
                 ),
               ),
-              // Re-stock Section (Right Side) - Static layout
+              // Re-stock Section (Right Side)
               Expanded(
                 flex: 3,
                 child: Container(
@@ -2140,17 +2146,35 @@ class _GudangMenuState extends State<GudangMenu> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Re-stock Section',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Manual Re-stock Section',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Tooltip(
+                            message: 'See Supplier History',
+                            child: IconButton(
+                                icon: Icon(Icons.history, color: Colors.white),
+                                onPressed: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              HistorySupplierPage()),
+                                    )),
+                          ),
+                        ],
                       ),
+
                       SizedBox(height: 16),
                       // Input fields for re-stocking items
                       TextField(
+                        controller: ReStock_barang_id,
                         decoration: InputDecoration(
                           labelText: 'Enter Item ID',
                           labelStyle: TextStyle(color: Colors.white),
@@ -2162,6 +2186,7 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                       SizedBox(height: 8),
                       TextField(
+                        controller: ReStock_satuan_id,
                         decoration: InputDecoration(
                           labelText: 'Enter Satuan ID',
                           labelStyle: TextStyle(color: Colors.white),
@@ -2173,6 +2198,7 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                       SizedBox(height: 8),
                       TextField(
+                        controller: ReStock_qty,
                         decoration: InputDecoration(
                           labelText: 'Enter Quantity',
                           labelStyle: TextStyle(color: Colors.white),
@@ -2181,11 +2207,16 @@ class _GudangMenuState extends State<GudangMenu> {
                           border: OutlineInputBorder(),
                         ),
                         style: TextStyle(color: Colors.white),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                       ),
                       SizedBox(height: 16),
                       TextField(
+                        controller: ReStock_SumberTransaksi_id,
                         decoration: InputDecoration(
-                          labelText: 'Enter Satuan ID',
+                          labelText: 'Enter Supplier ID',
                           labelStyle: TextStyle(color: Colors.white),
                           filled: true,
                           fillColor: Colors.white10,
@@ -2196,7 +2227,19 @@ class _GudangMenuState extends State<GudangMenu> {
                       SizedBox(height: 8),
                       ElevatedButton(
                         onPressed: () {
-                          // Add function to handle re-stocking action
+                          if (ReStock_barang_id.text.isNotEmpty &&
+                              ReStock_satuan_id.text.isNotEmpty &&
+                              ReStock_qty.text.isNotEmpty &&
+                              ReStock_SumberTransaksi_id.text.isNotEmpty) {
+                            int jumlah = int.parse(ReStock_qty.text);
+                            updatejumlahSatuan(
+                                ReStock_barang_id.text,
+                                ReStock_satuan_id.text,
+                                jumlah,
+                                ReStock_SumberTransaksi_id.text,
+                                'tambah',
+                                context);
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.purple,
@@ -2255,7 +2298,7 @@ class _GudangMenuState extends State<GudangMenu> {
                   ),
                   SizedBox(height: 16),
 
-                  // Kontak Supplier (numeric only)
+                  // Kontak Supplier
                   TextFormField(
                     controller: _contactController,
                     decoration: InputDecoration(
