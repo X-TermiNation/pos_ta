@@ -104,7 +104,7 @@ class _loginscreen_state extends State<loginscreen> {
                           color: Colors.blue[800],
                         ),
                       ),
-                      const SizedBox(height: 32), // Consistent spacing
+                      const SizedBox(height: 32),
                       TextFormField(
                         controller: email,
                         onChanged: (value) {
@@ -159,7 +159,7 @@ class _loginscreen_state extends State<loginscreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 32), // Consistent spacing
+                      const SizedBox(height: 32),
                       ElevatedButton(
                         onPressed: () async {
                           int signcode = 0;

@@ -1,4 +1,3 @@
-import 'package:flutter/rendering.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view/manager/DeliveryHistory.dart';
@@ -1800,7 +1799,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                       message: 'Daftar Pegawai',
                                       child: IconButton(
                                         icon: Icon(
-                                          Icons.discount_rounded,
+                                          Icons.person_search_rounded,
                                           size: 28,
                                           color: Colors.blue,
                                         ),

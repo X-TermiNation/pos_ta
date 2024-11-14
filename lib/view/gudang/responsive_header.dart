@@ -69,7 +69,7 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
       case 3:
         return "Tambah Satuan Barang";
       case 4:
-        return "Stock Alert";
+        return "Stock Manager";
       case 5:
         return "Input informasi supplier";
       case 6:

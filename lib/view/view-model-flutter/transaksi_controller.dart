@@ -81,6 +81,7 @@ Future<Map<String, dynamic>?> addTrans(
       String id_barang = cartItem['id_reference'];
       String id_satuan = cartItem['id_satuan'];
       int quantity = cartItem['trans_qty'];
+      //ubah ini untuk keluar barang
       updatejumlahSatuan(id_barang, id_satuan, quantity, "", 'kurang', context);
     }
 

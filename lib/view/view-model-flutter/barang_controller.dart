@@ -42,7 +42,6 @@ void addbarang(
   String jumlah_satuan,
   String isi_satuan,
   String harga_satuan,
-  String id_supplier,
   BuildContext context,
   XFile? selectedImage,
 ) async {
@@ -112,8 +111,8 @@ void addbarang(
         String id_barang = data['_id'];
 
         // Call addsatuan and get the newly added satuan _id
-        String? newSatuanId = await addsatuan(id_barang, nama_satuan,
-            jumlah_satuan, harga_satuan, isi_satuan, context);
+        String? newSatuanId = await addsatuan(
+            id_barang, nama_satuan, harga_satuan, isi_satuan, context);
 
         if (newSatuanId != null) {
           print('Newly added satuan _id: $newSatuanId');
@@ -124,16 +123,6 @@ void addbarang(
 
           if (updateResponse.statusCode == 200) {
             print('Base Satuan updated successfully');
-
-            await insertHistoryStok(
-                id_barang: id_barang,
-                satuan_id: newSatuanId,
-                tanggal_pengisian: DateTime.now(),
-                jumlah_input: int.parse(jumlah_satuan),
-                jenis_pengisian: "Initial",
-                sumber_transaksi_id: id_supplier,
-                id_cabang: id_cabang);
-
             showToast(context, 'Berhasil menambah data');
           } else {
             print('Failed to update Base Satuan: ${updateResponse.statusCode}');
@@ -429,14 +418,10 @@ Future<Map<String, String>> getmapjenis() async {
 }
 
 //satuan
-Future<String?> addsatuan(
-    String id_barang,
-    String nama_satuan,
-    String jumlah_satuan,
-    String harga_satuan,
-    String isi_satuan,
-    BuildContext context) async {
+Future<String?> addsatuan(String id_barang, String nama_satuan,
+    String harga_satuan, String isi_satuan, BuildContext context) async {
   try {
+    String jumlah_satuan = "0";
     final satuandata = {
       'nama_satuan': nama_satuan,
       'jumlah_satuan': jumlah_satuan,
@@ -509,20 +494,20 @@ void updatejumlahSatuan(
   String id_barang,
   String id_satuan,
   int jumlah_satuan,
-  String sumber_transaksi_id,
+  String kodeAktivitas,
   String action,
   BuildContext context,
 ) async {
   try {
-    if (sumber_transaksi_id != "" && action == 'tambah') {
+    if (kodeAktivitas != "" && action == 'tambah') {
       // Insert re-stock history before updating stock quantity
       await insertHistoryStok(
         id_barang: id_barang,
         satuan_id: id_satuan,
         tanggal_pengisian: DateTime.now(),
         jumlah_input: jumlah_satuan,
-        jenis_pengisian: "Re-Stock",
-        sumber_transaksi_id: sumber_transaksi_id,
+        jenis_aktivitas: "Masuk",
+        Kode_Aktivitas: kodeAktivitas,
         id_cabang: GetStorage().read("id_cabang"),
       );
     }
@@ -764,10 +749,12 @@ Future<void> insertHistoryStok({
   required String satuan_id,
   required DateTime tanggal_pengisian,
   required int jumlah_input,
-  required String jenis_pengisian,
-  required String sumber_transaksi_id,
+  required String jenis_aktivitas,
+  required String Kode_Aktivitas,
   required String id_cabang,
 }) async {
+  final getstorage = GetStorage();
+  final String? User_email = getstorage.read('email_login');
   final url = Uri.parse("http://localhost:3000/barang/insertHistoryStok");
 
   final data = {
@@ -776,8 +763,9 @@ Future<void> insertHistoryStok({
     'satuan_id': satuan_id,
     'tanggal_pengisian': tanggal_pengisian.toIso8601String(),
     'jumlah_input': jumlah_input,
-    'jenis_pengisian': jenis_pengisian,
-    'sumber_transaksi_id': sumber_transaksi_id,
+    'jenis_aktivitas': jenis_aktivitas,
+    'Kode_Aktivitas': Kode_Aktivitas,
+    'User_email': User_email
   };
 
   try {

@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view/gudang/StockHistory.dart';
 import 'package:ta_pos/view/gudang/SupplierHistory.dart';
@@ -14,6 +12,7 @@ import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
 import 'package:ta_pos/view/gudang/stockConversionHistory.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'dart:io';
 
 String? selectedvalueJenis = "";
@@ -52,18 +51,13 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController edit_nama_kategorijenis = TextEditingController();
   TextEditingController nama_satuan = TextEditingController();
   TextEditingController harga_satuan = TextEditingController();
-  TextEditingController jumlah_satuan = TextEditingController();
   TextEditingController isi_satuan = TextEditingController();
   TextEditingController nama_satuan_initial = TextEditingController();
   TextEditingController harga_satuan_initial = TextEditingController();
-  TextEditingController jumlah_satuan_initial = TextEditingController();
   TextEditingController _searchController = TextEditingController();
   TextEditingController _searchControllerBarangList = TextEditingController();
   TextEditingController id_supplier_insert = TextEditingController();
   TextEditingController id_supplier_stock_alert = TextEditingController();
-  TextEditingController ReStock_barang_id = TextEditingController();
-  TextEditingController ReStock_satuan_id = TextEditingController();
-  TextEditingController ReStock_qty = TextEditingController();
   TextEditingController ReStock_SumberTransaksi_id = TextEditingController();
   XFile? selectedImage;
 
@@ -72,6 +66,70 @@ class _GudangMenuState extends State<GudangMenu> {
   List<Map<String, dynamic>> satuanList = [];
   Map<String, dynamic>? selectedSatuan;
   String _jsonString = '';
+
+  //for stock
+  List<Map<String, dynamic>> itemsStock = []; // List to hold each item entry
+  List<Map<String, dynamic>> barangListStock = []; // List to hold barang data
+  List<Map<String, dynamic>> satuanListStock = [];
+  Map<String, dynamic>? selectedBarangStock;
+  Map<String, dynamic>? selectedSatuanStock;
+  TextEditingController manual_restock_namabarang = TextEditingController();
+
+  // Method to add a new item entry
+  void _addItem() {
+    setState(() {
+      items.add({
+        'ID_barang': '',
+        'ID_satuan': '',
+        'jumlah': 0,
+        'harga_satuan': 0.0,
+      });
+    });
+  }
+
+  // Method to update item fields
+  void _updateItem(int index, String key, dynamic value) {
+    setState(() {
+      items[index][key] = value;
+    });
+  }
+
+  // Function to handle barang selection
+  void onBarangSelectedStock(Map<String, dynamic> item) {
+    setState(() {
+      selectedBarangStock = item;
+      fetchSatuanDetailsStock(selectedBarangStock!['_id'].toString());
+    });
+  }
+
+  Future<void> fetchBarangStock() async {
+    try {
+      // Fetch barang data
+      var data = await getBarang(id_gudangs);
+      setState(() {
+        barangListStock = List<Map<String, dynamic>>.from(
+            data); // assuming data is a List<Map<String, dynamic>>
+      });
+    } catch (e) {
+      showToast(context, 'Failed to fetch barang data: $e');
+    }
+  }
+
+  Future<void> fetchSatuanDetailsStock(String barangId) async {
+    try {
+      // Fetch satuan data for the selected barang
+      var data = await getsatuan(barangId, context);
+      setState(() {
+        satuanListStock = List<Map<String, dynamic>>.from(
+            data); // assuming data is a List<Map<String, dynamic>>
+        if (satuanListStock.isNotEmpty) {
+          selectedSatuanStock = satuanListStock[0];
+        }
+      });
+    } catch (e) {
+      showToast(context, 'Failed to fetch satuan data: $e');
+    }
+  }
 
   //konversi barang
   Map<String, dynamic>? selectedBarang;
@@ -137,6 +195,7 @@ class _GudangMenuState extends State<GudangMenu> {
     }
   }
 
+  //satuan detail for detail barang
   void fetchsatuandetail() async {
     if (temp_id_update.isNotEmpty) {
       final data = await getsatuan(temp_id_update, context);
@@ -428,6 +487,7 @@ class _GudangMenuState extends State<GudangMenu> {
     fetchDataAndUseInJsonString();
     fetchDataKategori();
     getlowstocksatuan(context);
+    fetchBarangStock();
     print("id gudangnya:$id_gudangs");
   }
 
@@ -460,89 +520,53 @@ class _GudangMenuState extends State<GudangMenu> {
     }
   }
 
+  String generateKodeAktivitas(
+      String sumberTransaksiId, String jenisAktivitas) {
+    // Get the current time in UTC and adjust for UTC+7 (WIB)
+    final now = DateTime.now().toUtc().add(Duration(hours: 7));
+
+    // Format the time to a readable string in WIB
+    final wibTimestamp = DateFormat('yyyyMMdd_HHmmss').format(now);
+
+    return '${jenisAktivitas}_${sumberTransaksiId}_${wibTimestamp}';
+  }
+
+  void updateMultipleItems(
+    List<Map<String, dynamic>> items,
+    String sumberTransaksiId,
+    String action,
+    BuildContext context,
+  ) async {
+    final kodeAktivitas = generateKodeAktivitas(sumberTransaksiId, 'MSK');
+
+    for (var item in items) {
+      final String idBarang = item['ID_barang'];
+      final String idSatuan = item['ID_satuan'];
+      final int jumlahSatuan = item['jumlah'];
+
+      updatejumlahSatuan(
+          idBarang, idSatuan, jumlahSatuan, kodeAktivitas, action, context);
+    }
+
+    // Clear the list of items after submission
+    items.clear();
+  }
+
   //function and data type for supplier type
   List<Map<String, dynamic>> items = [];
   final TextEditingController _supplierNameController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  // Method to add a new item entry
-  void _addItem() {
-    setState(() {
-      items.add({
-        'nama_barang': '',
-        'satuan_barang': '',
-        'jumlah': 0,
-        'harga_satuan': 0.0,
-      });
-    });
-  }
-
-  // Method to update item fields
-  void _updateItem(int index, String key, dynamic value) {
-    setState(() {
-      items[index][key] = value;
-    });
-  }
-
-  //datepicker supplier
-  DateTime selectedDateSupplier = DateTime.now();
-  TimeOfDay selectedTimeSupplier =
-      TimeOfDay.now(); // Initial time set to current time
-  final DateFormat _dateFormatSupplier = DateFormat('dd/MM/yyyy');
-  Future<void> _selectDateSupplier(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDateSupplier,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-
-    if (picked != null && picked != selectedDateSupplier) {
-      setState(() {
-        selectedDateSupplier = picked;
-      });
-    }
-  }
-
-  //time date picker
-  // Method to select the time
-  Future<void> _selectTimeSupplier(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: selectedTimeSupplier,
-    );
-
-    if (picked != null && picked != selectedTimeSupplier) {
-      setState(() {
-        selectedTimeSupplier = picked;
-      });
-    }
-  }
 
   //for save data to being sent to the database
-  void _saveSupplierAndItems() async {
+  void _saveSupplier() async {
     final idCabang = GetStorage().read("id_cabang");
     // Combine selected date and time, then convert to UTC
-    final adjustedDateTime = DateTime(
-      selectedDateSupplier.year,
-      selectedDateSupplier.month,
-      selectedDateSupplier.day,
-      selectedTimeSupplier.hour,
-      selectedTimeSupplier.minute,
-    ).toUtc();
     final supplierData = {
       "id_cabang": idCabang,
       "nama_supplier": _supplierNameController.text,
       "kontak": _contactController.text,
       "alamat": _addressController.text,
-      "barang_dibeli": items.isNotEmpty ? items : [],
-      "total_pengeluaran": items.isNotEmpty
-          ? items.fold<double>(
-              0.0,
-              (total, item) => total + (item['jumlah'] * item['harga_satuan']),
-            )
-          : 0.0,
-      "tanggal_transaksi": adjustedDateTime.toIso8601String(),
     };
     await addSupplier(supplierData);
     print("Supplier Data: $supplierData");
@@ -1034,7 +1058,7 @@ class _GudangMenuState extends State<GudangMenu> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Insert Barang',
+                          'Daftar Barang',
                           style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -1260,7 +1284,7 @@ class _GudangMenuState extends State<GudangMenu> {
                     Divider(),
                     SizedBox(height: 16),
                     Text(
-                      "Masukkan informasi satuan pertama untuk barang diatas!",
+                      "Masukkan informasi satuan terkecil untuk barang diatas!",
                       style:
                           TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                     ),
@@ -1298,43 +1322,6 @@ class _GudangMenuState extends State<GudangMenu> {
                         FilteringTextInputFormatter.digitsOnly,
                       ],
                     ),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      controller: jumlah_satuan_initial,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Field tidak boleh kosong';
-                        }
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Stok Satuan Barang',
-                        prefixIcon: Icon(Icons.storage),
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: <TextInputFormatter>[
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                        "Informasi ini dibawah diperlukan untuk pendataan history,silahkan cek history supplier pada kanan atas laman ini!"),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      controller: id_supplier_insert,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Field tidak boleh kosong';
-                        }
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'ID Supplier Asal',
-                        prefixIcon: Icon(Icons.warehouse),
-                      ),
-                    ),
                     SizedBox(
                       height: 30,
                     ),
@@ -1352,10 +1339,9 @@ class _GudangMenuState extends State<GudangMenu> {
                               nama_barang.text,
                               katakategori,
                               nama_satuan_initial.text,
-                              jumlah_satuan_initial.text,
+                              "0",
                               base_number.toString(),
                               harga_satuan_initial.text,
-                              id_supplier_insert.text,
                               context,
                               selectedImage);
                           setState(() {
@@ -1366,10 +1352,10 @@ class _GudangMenuState extends State<GudangMenu> {
                             noExp = false;
                             nama_barang.text = "";
                             nama_satuan_initial.text = "";
-                            jumlah_satuan_initial.text = "";
                             harga_satuan_initial.text = "";
                             id_supplier_insert.text = "";
                             selectedImage = null;
+                            fetchBarangStock();
                           });
                         },
                         style: FilledButton.styleFrom(
@@ -1871,12 +1857,6 @@ class _GudangMenuState extends State<GudangMenu> {
                     keyboardType: TextInputType.number,
                   ),
                   SizedBox(height: 12),
-                  _buildTextFormField(
-                    controller: jumlah_satuan,
-                    labelText: 'Stok Satuan Barang',
-                    keyboardType: TextInputType.number,
-                  ),
-                  SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
@@ -1899,13 +1879,11 @@ class _GudangMenuState extends State<GudangMenu> {
                       addsatuan(
                           satuan_idbarang,
                           nama_satuan.text,
-                          jumlah_satuan.text.toString(),
                           harga_satuan.text.toString(),
                           isi_satuan.text.toString(),
                           context);
                       setState(() {
                         nama_satuan.text = "";
-                        jumlah_satuan.text = "";
                         harga_satuan.text = "";
                         isi_satuan.text = "";
                         nama_satuan_initial_spc = "No Satuan";
@@ -2150,7 +2128,7 @@ class _GudangMenuState extends State<GudangMenu> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Manual Re-stock Section',
+                            'Re-stock Section',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -2174,46 +2152,6 @@ class _GudangMenuState extends State<GudangMenu> {
                       SizedBox(height: 16),
                       // Input fields for re-stocking items
                       TextField(
-                        controller: ReStock_barang_id,
-                        decoration: InputDecoration(
-                          labelText: 'Enter Item ID',
-                          labelStyle: TextStyle(color: Colors.white),
-                          filled: true,
-                          fillColor: Colors.white10,
-                          border: OutlineInputBorder(),
-                        ),
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      SizedBox(height: 8),
-                      TextField(
-                        controller: ReStock_satuan_id,
-                        decoration: InputDecoration(
-                          labelText: 'Enter Satuan ID',
-                          labelStyle: TextStyle(color: Colors.white),
-                          filled: true,
-                          fillColor: Colors.white10,
-                          border: OutlineInputBorder(),
-                        ),
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      SizedBox(height: 8),
-                      TextField(
-                        controller: ReStock_qty,
-                        decoration: InputDecoration(
-                          labelText: 'Enter Quantity',
-                          labelStyle: TextStyle(color: Colors.white),
-                          filled: true,
-                          fillColor: Colors.white10,
-                          border: OutlineInputBorder(),
-                        ),
-                        style: TextStyle(color: Colors.white),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                      ),
-                      SizedBox(height: 16),
-                      TextField(
                         controller: ReStock_SumberTransaksi_id,
                         decoration: InputDecoration(
                           labelText: 'Enter Supplier ID',
@@ -2225,20 +2163,151 @@ class _GudangMenuState extends State<GudangMenu> {
                         style: TextStyle(color: Colors.white),
                       ),
                       SizedBox(height: 8),
+                      Text(
+                        'Re-Stock Item List',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
+                      ),
+                      ElevatedButton(
+                        onPressed: _addItem,
+                        child: Text('Tambah Barang'),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: items.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // ID Barang Dropdown
+                                  TypeAheadField<Map<String, dynamic>>(
+                                    suggestionsCallback: (pattern) async {
+                                      // Filter barang list based on search pattern
+                                      return barangListStock
+                                          .where((item) => item['nama_barang']
+                                              .toLowerCase()
+                                              .contains(pattern.toLowerCase()))
+                                          .toList();
+                                    },
+                                    itemBuilder: (context, item) {
+                                      return ListTile(
+                                        title: Text(item['nama_barang']),
+                                      );
+                                    },
+                                    // onSelected is the required parameter for handling the selected suggestion
+                                    onSelected:
+                                        (Map<String, dynamic> selectedItem) {
+                                      onBarangSelectedStock(
+                                          selectedItem); // Handle selection
+                                    },
+                                    // Use builder to customize the TextField widget
+                                    builder: (context, controller, focusNode) {
+                                      return TextField(
+                                        controller: controller,
+                                        focusNode: focusNode,
+                                        autofocus: true,
+                                        decoration: InputDecoration(
+                                          labelText: 'Search Barang',
+                                          border: OutlineInputBorder(),
+                                          filled: true,
+                                          fillColor: Colors.black,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  SizedBox(height: 8),
+
+                                  // Display selected barang name
+                                  if (selectedBarangStock != null)
+                                    Text(
+                                      "Selected Barang: ${selectedBarangStock?['nama_barang']}",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  SizedBox(height: 20),
+
+                                  // ID Satuan Dropdown
+                                  DropdownButtonFormField<Map<String, dynamic>>(
+                                    value: selectedSatuanStock,
+                                    items: satuanListStock.map((satuan) {
+                                      return DropdownMenuItem<
+                                          Map<String, dynamic>>(
+                                        value: satuan,
+                                        child: Text(
+                                            satuan['nama_satuan'] ?? 'Unknown'),
+                                      );
+                                    }).toList(),
+                                    decoration: InputDecoration(
+                                      labelText: 'ID Satuan',
+                                      labelStyle:
+                                          TextStyle(color: Colors.white),
+                                      filled: true,
+                                      fillColor: Colors.black,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide:
+                                            BorderSide(color: Colors.white),
+                                      ),
+                                    ),
+                                    style: TextStyle(color: Colors.white),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedSatuanStock = value;
+                                        _updateItem(
+                                            index, 'ID_satuan', value?['_id']);
+                                      });
+                                    },
+                                  ),
+                                  SizedBox(height: 8),
+
+                                  // Jumlah Input
+                                  TextFormField(
+                                    decoration: InputDecoration(
+                                      labelText: 'Jumlah',
+                                      labelStyle:
+                                          TextStyle(color: Colors.white),
+                                      filled: true,
+                                      fillColor: Colors.black,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide:
+                                            BorderSide(color: Colors.white),
+                                      ),
+                                    ),
+                                    style: TextStyle(color: Colors.white),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (value) => _updateItem(index,
+                                        'jumlah', int.tryParse(value) ?? 0),
+                                  ),
+                                  SizedBox(height: 8),
+
+                                  // Delete button for each item
+                                  IconButton(
+                                    icon: Icon(Icons.close, color: Colors.red),
+                                    onPressed: () {
+                                      setState(() {
+                                        items.removeAt(index);
+                                      });
+                                    },
+                                  ),
+                                  Divider(color: Colors.grey),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                       ElevatedButton(
                         onPressed: () {
-                          if (ReStock_barang_id.text.isNotEmpty &&
-                              ReStock_satuan_id.text.isNotEmpty &&
-                              ReStock_qty.text.isNotEmpty &&
-                              ReStock_SumberTransaksi_id.text.isNotEmpty) {
-                            int jumlah = int.parse(ReStock_qty.text);
-                            updatejumlahSatuan(
-                                ReStock_barang_id.text,
-                                ReStock_satuan_id.text,
-                                jumlah,
-                                ReStock_SumberTransaksi_id.text,
-                                'tambah',
-                                context);
+                          if (ReStock_SumberTransaksi_id.text.isNotEmpty) {
+                            setState(() {
+                              items.clear();
+                            });
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -2268,14 +2337,13 @@ class _GudangMenuState extends State<GudangMenu> {
                 children: [
                   // Supplier Information Section
                   Text(
-                    'Supplier Information',
+                    'Insert Supplier Information',
                     style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.white),
                   ),
                   SizedBox(height: 16),
-
                   // Nama Supplier
                   TextFormField(
                     controller: _supplierNameController,
@@ -2297,7 +2365,6 @@ class _GudangMenuState extends State<GudangMenu> {
                     style: TextStyle(color: Colors.white),
                   ),
                   SizedBox(height: 16),
-
                   // Kontak Supplier
                   TextFormField(
                     controller: _contactController,
@@ -2349,224 +2416,12 @@ class _GudangMenuState extends State<GudangMenu> {
                     style: TextStyle(color: Colors.white),
                   ),
                   SizedBox(height: 16),
-
-                  // Date Selection for Transaction
-                  InkWell(
-                    onTap: () => _selectDateSupplier(context),
-                    child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.blueAccent.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blueAccent),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.calendar_today, color: Colors.blueAccent),
-                          SizedBox(width: 8),
-                          Text(
-                            _dateFormatSupplier.format(selectedDateSupplier),
-                            style: TextStyle(color: Colors.blueAccent),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Time Picker Section
-                  InkWell(
-                    onTap: () => _selectTimeSupplier(context),
-                    child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.blueAccent.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blueAccent),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.access_time, color: Colors.blueAccent),
-                          SizedBox(width: 8),
-                          Text(
-                            '${selectedTimeSupplier.hour.toString().padLeft(2, '0')}:${selectedTimeSupplier.minute.toString().padLeft(2, '0')}',
-                            style: TextStyle(color: Colors.blueAccent),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Item Details for Stock Refill
-                  Text(
-                    'Items Bought from Supplier',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Nama Barang
-                              TextFormField(
-                                decoration: InputDecoration(
-                                  labelText: 'Nama Barang',
-                                  labelStyle: TextStyle(color: Colors.white),
-                                  filled: true,
-                                  fillColor: Colors.black,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(color: Colors.white),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                        color: Colors.blueAccent, width: 2),
-                                  ),
-                                ),
-                                style: TextStyle(color: Colors.white),
-                                onChanged: (value) =>
-                                    _updateItem(index, 'nama_barang', value),
-                              ),
-                              SizedBox(height: 8),
-
-                              Row(
-                                children: [
-                                  // Satuan Barang
-                                  Expanded(
-                                    child: TextFormField(
-                                      decoration: InputDecoration(
-                                        labelText: 'Satuan Barang',
-                                        labelStyle:
-                                            TextStyle(color: Colors.white),
-                                        filled: true,
-                                        fillColor: Colors.black,
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide:
-                                              BorderSide(color: Colors.white),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              color: Colors.blueAccent,
-                                              width: 2),
-                                        ),
-                                      ),
-                                      style: TextStyle(color: Colors.white),
-                                      onChanged: (value) => _updateItem(
-                                          index, 'satuan_barang', value),
-                                    ),
-                                  ),
-                                  SizedBox(width: 16),
-
-                                  Expanded(
-                                    child: TextFormField(
-                                      decoration: InputDecoration(
-                                        labelText: 'Jumlah',
-                                        labelStyle:
-                                            TextStyle(color: Colors.white),
-                                        filled: true,
-                                        fillColor: Colors.black,
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide:
-                                              BorderSide(color: Colors.white),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              color: Colors.blueAccent,
-                                              width: 2),
-                                        ),
-                                      ),
-                                      style: TextStyle(color: Colors.white),
-                                      keyboardType: TextInputType.number,
-                                      onChanged: (value) => _updateItem(index,
-                                          'jumlah', int.tryParse(value) ?? 0),
-                                    ),
-                                  ),
-                                  SizedBox(width: 16),
-
-                                  Expanded(
-                                    child: TextFormField(
-                                      decoration: InputDecoration(
-                                        labelText: 'Harga Satuan',
-                                        labelStyle:
-                                            TextStyle(color: Colors.white),
-                                        filled: true,
-                                        fillColor: Colors.black,
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide:
-                                              BorderSide(color: Colors.white),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              color: Colors.blueAccent,
-                                              width: 2),
-                                        ),
-                                      ),
-                                      style: TextStyle(color: Colors.white),
-                                      keyboardType:
-                                          TextInputType.numberWithOptions(
-                                              decimal: true),
-                                      onChanged: (value) => _updateItem(
-                                          index,
-                                          'harga_satuan',
-                                          double.tryParse(value) ?? 0.0),
-                                    ),
-                                  ),
-
-                                  // Delete button for each item
-                                  IconButton(
-                                    icon: Icon(Icons.close, color: Colors.red),
-                                    onPressed: () {
-                                      setState(() {
-                                        items.removeAt(index);
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                              Divider(color: Colors.grey),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: _addItem,
-                    child: Text('Tambah Barang'),
-                  ),
-                  SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      _saveSupplierAndItems();
+                      _saveSupplier();
                       _supplierNameController.clear();
                       _contactController.clear();
                       _addressController.clear();
-                      setState(() {
-                        items.clear();
-                      });
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -2683,12 +2538,19 @@ class _GudangMenuState extends State<GudangMenu> {
                     children: [
                       ElevatedButton(
                         onPressed: () async {
-                          // Handle the confirm action
-                          updatejumlahSatuan(id_barang, id_satuan, quantity,
-                              id_supplier_stock_alert.text, "tambah", context);
-                          await getlowstocksatuan(context);
-                          Navigator.of(context).pop();
-                          setState(() {});
+                          if (id_supplier_stock_alert.text.isNotEmpty) {
+                            // Handle the confirm action
+                            final kodeAktivitas = generateKodeAktivitas(
+                                id_supplier_stock_alert.text, 'MSK');
+                            updatejumlahSatuan(id_barang, id_satuan, quantity,
+                                kodeAktivitas, "tambah", context);
+                            await getlowstocksatuan(context);
+                            Navigator.of(context).pop();
+                            setState(() {});
+                          } else {
+                            CustomToast(
+                                message: "ID Supplier tidak boleh kosong");
+                          }
                         },
                         child: Text('Confirm Stock'),
                       ),
