@@ -153,7 +153,7 @@ Future<List<Map<String, dynamic>>> getBarang(String idgudang) async {
   if (response.statusCode == 200 || response.statusCode == 304) {
     final Map<String, dynamic> jsonData = json.decode(response.body);
     List<dynamic> data = jsonData["data"];
-    print("ini data barang dari cabang: $data");
+    print("ini data barang dari cabang: ${data.length}");
     return data.cast<Map<String, dynamic>>();
   } else {
     CustomToast(message: "Failed to load data barang: ${response.statusCode}");

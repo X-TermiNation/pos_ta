@@ -75,30 +75,32 @@ class _GudangMenuState extends State<GudangMenu> {
   Map<String, dynamic>? selectedSatuanStock;
   TextEditingController manual_restock_namabarang = TextEditingController();
 
-  // Method to add a new item entry
   void _addItem() {
     setState(() {
-      items.add({
-        'ID_barang': '',
-        'ID_satuan': '',
+      itemsStock.add({
+        'ID_barang': null,
+        'ID_satuan': null,
         'jumlah': 0,
         'harga_satuan': 0.0,
+        'selectedBarang': null,
+        'selectedSatuan': null,
+        'satuanList': [], // Satuan list specific to this item
       });
     });
   }
 
-  // Method to update item fields
   void _updateItem(int index, String key, dynamic value) {
     setState(() {
-      items[index][key] = value;
+      itemsStock[index][key] = value;
     });
   }
 
-  // Function to handle barang selection
-  void onBarangSelectedStock(Map<String, dynamic> item) {
+  void onBarangSelectedStock(int index, Map<String, dynamic> selectedBarang) {
     setState(() {
-      selectedBarangStock = item;
-      fetchSatuanDetailsStock(selectedBarangStock!['_id'].toString());
+      itemsStock[index]['selectedBarang'] = selectedBarang;
+      itemsStock[index]['ID_barang'] = selectedBarang['_id'];
+      // Fetch satuan details for the selected barang
+      fetchSatuanDetailsStock(index, selectedBarang['_id']);
     });
   }
 
@@ -115,16 +117,17 @@ class _GudangMenuState extends State<GudangMenu> {
     }
   }
 
-  Future<void> fetchSatuanDetailsStock(String barangId) async {
+  Future<void> fetchSatuanDetailsStock(int index, String barangId) async {
     try {
-      // Fetch satuan data for the selected barang
       var data = await getsatuan(barangId, context);
       setState(() {
-        satuanListStock = List<Map<String, dynamic>>.from(
-            data); // assuming data is a List<Map<String, dynamic>>
-        if (satuanListStock.isNotEmpty) {
-          selectedSatuanStock = satuanListStock[0];
-        }
+        itemsStock[index]['satuanList'] = List<Map<String, dynamic>>.from(data);
+        itemsStock[index]['selectedSatuan'] =
+            itemsStock[index]['satuanList'].isNotEmpty
+                ? itemsStock[index]['satuanList'][0]
+                : null;
+        itemsStock[index]['ID_satuan'] =
+            itemsStock[index]['selectedSatuan']?['_id'];
       });
     } catch (e) {
       showToast(context, 'Failed to fetch satuan data: $e');
@@ -553,7 +556,6 @@ class _GudangMenuState extends State<GudangMenu> {
   }
 
   //function and data type for supplier type
-  List<Map<String, dynamic>> items = [];
   final TextEditingController _supplierNameController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -2057,6 +2059,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                                 data['id_satuan'].toString(),
                                                 context,
                                               );
+                                              setState(() {});
                                             },
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: Colors.purple,
@@ -2176,92 +2179,81 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                       Expanded(
                         child: ListView.builder(
-                          itemCount: items.length,
+                          itemCount: itemsStock.length,
                           itemBuilder: (context, index) {
+                            final item = itemsStock[index];
                             return Padding(
                               padding:
                                   const EdgeInsets.symmetric(vertical: 8.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // ID Barang Dropdown
+                                  // Barang Selection
                                   TypeAheadField<Map<String, dynamic>>(
                                     suggestionsCallback: (pattern) async {
-                                      // Filter barang list based on search pattern
                                       return barangListStock
-                                          .where((item) => item['nama_barang']
-                                              .toLowerCase()
-                                              .contains(pattern.toLowerCase()))
+                                          .where((barang) =>
+                                              barang['nama_barang']
+                                                  .toLowerCase()
+                                                  .contains(
+                                                      pattern.toLowerCase()))
                                           .toList();
                                     },
-                                    itemBuilder: (context, item) {
+                                    itemBuilder: (context, suggestion) {
                                       return ListTile(
-                                        title: Text(item['nama_barang']),
+                                        title: Text(suggestion['nama_barang']),
                                       );
                                     },
-                                    // onSelected is the required parameter for handling the selected suggestion
-                                    onSelected:
-                                        (Map<String, dynamic> selectedItem) {
+                                    onSelected: (selectedBarang) {
                                       onBarangSelectedStock(
-                                          selectedItem); // Handle selection
+                                          index, selectedBarang);
                                     },
-                                    // Use builder to customize the TextField widget
                                     builder: (context, controller, focusNode) {
                                       return TextField(
                                         controller: controller,
                                         focusNode: focusNode,
-                                        autofocus: true,
                                         decoration: InputDecoration(
                                           labelText: 'Search Barang',
                                           border: OutlineInputBorder(),
-                                          filled: true,
-                                          fillColor: Colors.black,
                                         ),
                                       );
                                     },
                                   ),
                                   SizedBox(height: 8),
 
-                                  // Display selected barang name
-                                  if (selectedBarangStock != null)
+                                  // Display Selected Barang
+                                  if (item['selectedBarang'] != null)
                                     Text(
-                                      "Selected Barang: ${selectedBarangStock?['nama_barang']}",
+                                      "Selected Barang: ${item['selectedBarang']['nama_barang']}",
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
-                                  SizedBox(height: 20),
+                                  SizedBox(height: 8),
 
-                                  // ID Satuan Dropdown
+                                  // Satuan Dropdown
                                   DropdownButtonFormField<Map<String, dynamic>>(
-                                    value: selectedSatuanStock,
-                                    items: satuanListStock.map((satuan) {
-                                      return DropdownMenuItem<
-                                          Map<String, dynamic>>(
-                                        value: satuan,
-                                        child: Text(
-                                            satuan['nama_satuan'] ?? 'Unknown'),
-                                      );
-                                    }).toList(),
-                                    decoration: InputDecoration(
-                                      labelText: 'ID Satuan',
-                                      labelStyle:
-                                          TextStyle(color: Colors.white),
-                                      filled: true,
-                                      fillColor: Colors.black,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide:
-                                            BorderSide(color: Colors.white),
-                                      ),
-                                    ),
-                                    style: TextStyle(color: Colors.white),
-                                    onChanged: (value) {
+                                    value: item['selectedSatuan'],
+                                    items: item['satuanList'].map<
+                                        DropdownMenuItem<Map<String, dynamic>>>(
+                                      (satuan) {
+                                        return DropdownMenuItem<
+                                            Map<String, dynamic>>(
+                                          value: satuan,
+                                          child: Text(satuan['nama_satuan'] ??
+                                              'Unknown'),
+                                        );
+                                      },
+                                    ).toList(),
+                                    onChanged: (newSatuan) {
                                       setState(() {
-                                        selectedSatuanStock = value;
-                                        _updateItem(
-                                            index, 'ID_satuan', value?['_id']);
+                                        item['selectedSatuan'] = newSatuan;
+                                        item['ID_satuan'] = newSatuan?['_id'];
                                       });
                                     },
+                                    decoration: InputDecoration(
+                                      labelText: 'Select Satuan',
+                                      border: OutlineInputBorder(),
+                                    ),
                                   ),
                                   SizedBox(height: 8),
 
@@ -2269,29 +2261,22 @@ class _GudangMenuState extends State<GudangMenu> {
                                   TextFormField(
                                     decoration: InputDecoration(
                                       labelText: 'Jumlah',
-                                      labelStyle:
-                                          TextStyle(color: Colors.white),
-                                      filled: true,
-                                      fillColor: Colors.black,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide:
-                                            BorderSide(color: Colors.white),
-                                      ),
+                                      border: OutlineInputBorder(),
                                     ),
-                                    style: TextStyle(color: Colors.white),
                                     keyboardType: TextInputType.number,
-                                    onChanged: (value) => _updateItem(index,
-                                        'jumlah', int.tryParse(value) ?? 0),
+                                    onChanged: (value) {
+                                      _updateItem(index, 'jumlah',
+                                          int.tryParse(value) ?? 0);
+                                    },
                                   ),
                                   SizedBox(height: 8),
 
-                                  // Delete button for each item
+                                  // Delete Item Button
                                   IconButton(
                                     icon: Icon(Icons.close, color: Colors.red),
                                     onPressed: () {
                                       setState(() {
-                                        items.removeAt(index);
+                                        itemsStock.removeAt(index);
                                       });
                                     },
                                   ),
@@ -2304,9 +2289,15 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          if (ReStock_SumberTransaksi_id.text.isNotEmpty) {
+                          if (ReStock_SumberTransaksi_id.text.isNotEmpty &&
+                              itemsStock.length != 0) {
+                            updateMultipleItems(
+                                itemsStock,
+                                ReStock_SumberTransaksi_id.text,
+                                'tambah',
+                                context);
                             setState(() {
-                              items.clear();
+                              itemsStock.clear();
                             });
                           }
                         },
@@ -2591,7 +2582,7 @@ class _GudangMenuState extends State<GudangMenu> {
             TextButton(
               child: Text('Cancel'),
               onPressed: () {
-                Navigator.of(context).pop(); // Dismiss the dialog
+                Navigator.of(context).pop();
               },
             ),
             TextButton(
@@ -2600,9 +2591,8 @@ class _GudangMenuState extends State<GudangMenu> {
                 await deletesatuan(id_barang, id_satuan, context);
                 setState(() {
                   getlowstocksatuan(context);
-                }); // Execute the delete operation
+                });
                 Navigator.of(context).pop();
-                // Dismiss the dialog
               },
             ),
           ],

@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:flutter/services.dart';
 
 class HistoryStockPage extends StatefulWidget {
   @override
@@ -81,9 +80,10 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
       filteredHistoryStok = historyStok.where((item) {
         DateTime itemDate = DateTime.parse(item['tanggal_pengisian']).toLocal();
         bool matchesSearch =
-            item['barang_id'].toString().contains(searchQuery) ||
-                item['satuan_id'].toString().contains(searchQuery) ||
-                item['sumber_transaksi_id'].toString().contains(searchQuery) ||
+            item['nama_barang'].toString().contains(searchQuery) ||
+                item['nama_satuan'].toString().contains(searchQuery) ||
+                item['jenis_aktivitas'].toString().contains(searchQuery) ||
+                item['Kode_Aktivitas'].toString().contains(searchQuery) ||
                 formatDate(item['tanggal_pengisian']).contains(searchQuery);
         bool matchesDateRange = true;
         if (startDate != null && endDate != null) {
@@ -137,7 +137,7 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                   },
                   decoration: InputDecoration(
                     labelText:
-                        'Search (Barang ID, Satuan ID, Supplier ID, Date)',
+                        'Search (Nama Barang, Nama Satuan, Kode Aktivitas, Tanggal, Jenis Aktivitas)',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.search),
                   ),
