@@ -59,6 +59,7 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController id_supplier_insert = TextEditingController();
   TextEditingController id_supplier_stock_alert = TextEditingController();
   TextEditingController ReStock_SumberTransaksi_id = TextEditingController();
+
   XFile? selectedImage;
 
   String searchQuery = '';
@@ -137,22 +138,32 @@ class _GudangMenuState extends State<GudangMenu> {
   //konversi barang
   Map<String, dynamic>? selectedBarang;
   List<Map<String, dynamic>> konversi_satuanList = [];
+  List<Map<String, dynamic>> konversi_basesatuan = [];
   String konversisearchQuery = "";
   Map<String, dynamic>? selectedSatuanFrom;
   Map<String, dynamic>? selectedSatuanTo;
   int jumlah_tambah = 0;
   int jumlah_kurang = 0;
   int stockAmount = 0;
-  TextEditingController amountkonversi = TextEditingController();
+  TextEditingController amountkonversifrom = TextEditingController();
+  TextEditingController amountkonversito = TextEditingController();
   //
   void onBarangSelected(Map<String, dynamic> barang) async {
     konversi_satuanList = await getsatuan(barang["_id"].toString(), context);
+    final satuan = await getSatuanById(
+        barang["_id"].toString(), barang["base_satuan_id"].toString(), context);
+
+    if (satuan != null) {
+      konversi_basesatuan = [satuan]; // Wrap the result in a list
+    } else {
+      konversi_basesatuan = []; // Default to an empty list
+    }
     setState(() {
       selectedBarang = barang;
       selectedSatuanFrom = null;
       selectedSatuanTo = null;
       stockAmount = 0;
-      amountkonversi.text = stockAmount.toString();
+      amountkonversifrom.text = stockAmount.toString();
     });
   }
 
@@ -1540,7 +1551,11 @@ class _GudangMenuState extends State<GudangMenu> {
                                 hint: Text("From Satuan"),
                                 isExpanded:
                                     true, // Makes the dropdown take full width
-                                items: konversi_satuanList.map((satuan) {
+                                items: konversi_satuanList
+                                    .where((satuan) =>
+                                        satuan["_id"] !=
+                                        selectedBarang!["base_satuan_id"])
+                                    .map((satuan) {
                                   return DropdownMenuItem<Map<String, dynamic>>(
                                     value: satuan,
                                     child: Text(satuan["nama_satuan"]),
@@ -1549,7 +1564,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                 onChanged: (satuan) {
                                   setState(() {
                                     stockAmount = 0;
-                                    amountkonversi.text =
+                                    amountkonversifrom.text =
                                         stockAmount.toString();
                                     selectedSatuanFrom = satuan;
                                   });
@@ -1585,7 +1600,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                 hint: Text("To Satuan"),
                                 isExpanded:
                                     true, // Makes the dropdown take full width
-                                items: konversi_satuanList.map((satuan) {
+                                items: konversi_basesatuan.map((satuan) {
                                   return DropdownMenuItem<Map<String, dynamic>>(
                                     value: satuan,
                                     child: Text(satuan["nama_satuan"]),
@@ -1615,81 +1630,137 @@ class _GudangMenuState extends State<GudangMenu> {
                       ],
                     ),
                     SizedBox(height: 20),
-
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.remove, color: Colors.white),
-                          onPressed: () {
-                            if (stockAmount > 0) {
-                              setState(() {
-                                stockAmount--;
-                                amountkonversi.text = stockAmount.toString();
-                              });
-                            }
-                          },
-                        ),
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            child: TextField(
-                              controller: amountkonversi,
-                              textAlign: TextAlign.center,
-                              decoration: InputDecoration(
-                                hintText: 'Amount to convert',
-                                hintStyle: TextStyle(color: Colors.grey),
-                                filled: true,
-                                fillColor: Colors.grey[800],
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide.none,
-                                ),
+                    selectedSatuanFrom != null && selectedSatuanTo != null
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Row(
+                                children: [
+                                  // Minus button
+                                  IconButton(
+                                    icon:
+                                        Icon(Icons.remove, color: Colors.white),
+                                    onPressed: () {
+                                      if (stockAmount > 0) {
+                                        setState(() {
+                                          stockAmount--;
+                                          amountkonversifrom.text =
+                                              stockAmount.toString();
+                                          amountkonversito.text = (stockAmount *
+                                                  selectedSatuanFrom![
+                                                      "isi_satuan"])
+                                              .toString();
+                                        });
+                                      }
+                                    },
+                                  ),
+                                  // Left editable TextField
+                                  Container(
+                                    width: 100,
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 10),
+                                    child: TextField(
+                                      controller: amountkonversifrom,
+                                      textAlign: TextAlign.center,
+                                      decoration: InputDecoration(
+                                        hintText: 'Amount',
+                                        hintStyle:
+                                            TextStyle(color: Colors.grey),
+                                        filled: true,
+                                        fillColor: Colors.grey[800],
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                      ),
+                                      style: TextStyle(color: Colors.white),
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                      ],
+                                      onSubmitted: (value) {
+                                        int? parsedValue = int.tryParse(value);
+                                        if (parsedValue != null &&
+                                            (parsedValue < 1 ||
+                                                parsedValue >
+                                                    selectedSatuanFrom![
+                                                        "jumlah_satuan"])) {
+                                          setState(() {
+                                            amountkonversifrom.text =
+                                                stockAmount.toString();
+                                            amountkonversito.text =
+                                                (stockAmount *
+                                                        selectedSatuanFrom![
+                                                            "isi_satuan"])
+                                                    .toString();
+                                          });
+                                          showToast(
+                                              context, "Input Tidak Valid!");
+                                        } else {
+                                          setState(() {
+                                            stockAmount = parsedValue!;
+                                            amountkonversifrom.text =
+                                                stockAmount.toString();
+                                            amountkonversito.text =
+                                                (stockAmount *
+                                                        selectedSatuanFrom![
+                                                            "isi_satuan"])
+                                                    .toString();
+                                          });
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                  // Plus button
+                                  IconButton(
+                                    icon: Icon(Icons.add, color: Colors.white),
+                                    onPressed: () {
+                                      if ((stockAmount + 1) <=
+                                          selectedSatuanFrom![
+                                              "jumlah_satuan"]) {
+                                        setState(() {
+                                          stockAmount++;
+                                          amountkonversifrom.text =
+                                              stockAmount.toString();
+                                          amountkonversito.text = (stockAmount *
+                                                  selectedSatuanFrom![
+                                                      "isi_satuan"])
+                                              .toString();
+                                        });
+                                      } else {
+                                        showToast(
+                                            context, "Input Mencapai Batas!");
+                                      }
+                                    },
+                                  ),
+                                ],
                               ),
-                              style: TextStyle(color: Colors.white),
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              onSubmitted: (value) {
-                                int? parsedValue = int.tryParse(value);
-                                if (parsedValue != null && parsedValue < 0 ||
-                                    parsedValue! *
-                                            selectedSatuanTo!['isi_satuan'] >
-                                        selectedSatuanFrom!["jumlah_satuan"] *
-                                            selectedSatuanFrom!["isi_satuan"]) {
-                                  setState(() {
-                                    amountkonversi.text =
-                                        stockAmount.toString();
-                                  });
-                                  showToast(context, "Input Tidak Valid!");
-                                } else {
-                                  setState(() {
-                                    stockAmount = parsedValue;
-                                    value = stockAmount.toString();
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.add, color: Colors.white),
-                          onPressed: () {
-                            setState(() {
-                              if ((stockAmount + 1) *
-                                      selectedSatuanTo!['isi_satuan'] >
-                                  selectedSatuanFrom!["jumlah_satuan"] *
-                                      selectedSatuanFrom!["isi_satuan"]) {
-                                showToast(context, "Input Mencapai Batas!");
-                              } else {
-                                stockAmount++;
-                                amountkonversi.text = stockAmount.toString();
-                              }
-                            });
-                          },
-                        ),
-                      ],
-                    ),
+
+                              // Right uneditable TextField
+                              Container(
+                                width: 100, // Set a fixed width for consistency
+                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                child: TextField(
+                                    textAlign: TextAlign.center,
+                                    readOnly:
+                                        true, // Make this field uneditable
+                                    decoration: InputDecoration(
+                                      hintText: 'Result',
+                                      hintStyle: TextStyle(color: Colors.grey),
+                                      filled: true,
+                                      fillColor: Colors.grey[800],
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                    ),
+                                    style: TextStyle(color: Colors.white),
+                                    controller: amountkonversito),
+                              ),
+                            ],
+                          )
+                        : Text("pilih satuan terlebih dahulu"),
                     SizedBox(
                       height: 50,
                     ),
@@ -1709,7 +1780,8 @@ class _GudangMenuState extends State<GudangMenu> {
                                 selectedSatuanFrom = null;
                                 selectedSatuanTo = null;
                                 stockAmount = 0;
-                                amountkonversi.text = stockAmount.toString();
+                                amountkonversifrom.text =
+                                    stockAmount.toString();
                               });
                             }
                           : null,
@@ -2127,31 +2199,14 @@ class _GudangMenuState extends State<GudangMenu> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Re-stock Section',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Tooltip(
-                            message: 'See Supplier History',
-                            child: IconButton(
-                                icon: Icon(Icons.history, color: Colors.white),
-                                onPressed: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              HistorySupplierPage()),
-                                    )),
-                          ),
-                        ],
+                      Text(
+                        'Re-stock Section',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
-
                       SizedBox(height: 16),
                       // Input fields for re-stocking items
                       TextField(
