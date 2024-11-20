@@ -2484,7 +2484,28 @@ class _GudangMenuState extends State<GudangMenu> {
           Container(
             color: Colors.blue,
             child: Center(
-              child: Text('Mutasi Barang'),
+              child: DefaultTabController(
+                length: 2,
+                child: Scaffold(
+                  appBar: AppBar(
+                    title: Text("Mutasi Barang"),
+                    bottom: TabBar(
+                      tabs: [
+                        Tab(text: "Request Transfer"),
+                        Tab(text: "Confirm Transfer"),
+                      ],
+                    ),
+                  ),
+                  body: TabBarView(
+                    children: [
+                      // First Tab: Request Transfer
+                      RequestTransferTab(),
+                      // Second Tab: Confirm Transfer
+                      ConfirmTransferTab(),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
           Container(
@@ -2875,6 +2896,150 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class RequestTransferTab extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Request Item Transfer",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 20),
+          TextField(
+            decoration: InputDecoration(
+              labelText: "Document Title",
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: 20),
+          TextField(
+            maxLines: 4,
+            decoration: InputDecoration(
+              labelText: "Transfer Details",
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              // TODO: Handle file upload logic here
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Document uploaded successfully")),
+              );
+            },
+            child: Text("Upload Document"),
+          ),
+          Spacer(),
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                // TODO: Handle submit logic here
+              },
+              child: Text("Submit Request"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ConfirmTransferTab extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Confirm Item Transfer",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 20),
+          Expanded(
+            child: ListView.builder(
+              itemCount: 5, // TODO: Replace with dynamic data count
+              itemBuilder: (context, index) {
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: ListTile(
+                    title: Text("Request #${index + 1}"),
+                    subtitle: Text("Request details for item transfer."),
+                    trailing: ElevatedButton(
+                      onPressed: () {
+                        // TODO: Accept logic here
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GiveItemScreen(),
+                          ),
+                        );
+                      },
+                      child: Text("Accept"),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class GiveItemScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Give Item for Transfer"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Transfer Item Details",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            TextField(
+              decoration: InputDecoration(
+                labelText: "Item Name",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 20),
+            TextField(
+              decoration: InputDecoration(
+                labelText: "Quantity",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // TODO: Handle transfer logic here
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Item transfer initiated")),
+                );
+              },
+              child: Text("Initiate Transfer"),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
