@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 class HistorySupplierPage extends StatefulWidget {
   @override
@@ -13,12 +13,19 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
   List<Map<String, dynamic>> filteredSuppliers = [];
   Map<String, dynamic>? selectedSupplier;
   TextEditingController _searchController = TextEditingController();
+  TextEditingController _invoiceSearchController = TextEditingController();
   String? searchQuery = '';
+  String? invoiceSearchQuery = '';
+
+  // Store the original invoices for each supplier to reset them later
+  Map<String, List<Map<String, dynamic>>> originalInvoices = {};
+
   @override
   void initState() {
     super.initState();
     loadSuppliers();
     _searchController.addListener(_searchSuppliers);
+    _invoiceSearchController.addListener(_searchInvoices);
   }
 
   Future<void> loadSuppliers() async {
@@ -26,6 +33,11 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
     setState(() {
       suppliers = data;
       filteredSuppliers = data;
+      // Store the original invoices for each supplier
+      for (var supplier in suppliers) {
+        originalInvoices[supplier['_id']] =
+            List<Map<String, dynamic>>.from(supplier['invoices']);
+      }
     });
   }
 
@@ -33,6 +45,13 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
     setState(() {
       searchQuery = _searchController.text.toLowerCase();
       _applyFilters();
+    });
+  }
+
+  void _searchInvoices() {
+    setState(() {
+      invoiceSearchQuery = _invoiceSearchController.text.toLowerCase();
+      _applyInvoiceFilters();
     });
   }
 
@@ -47,11 +66,42 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
     }).toList();
   }
 
+  void _applyInvoiceFilters() {
+    if (selectedSupplier != null && selectedSupplier!['invoices'] != null) {
+      selectedSupplier!['invoices'] =
+          originalInvoices[selectedSupplier!['_id']]!.where((invoice) {
+        return invoice['invoice_number']
+                .toString()
+                .toLowerCase()
+                .contains(invoiceSearchQuery!) ||
+            invoice['insert_date']
+                .toString()
+                .toLowerCase()
+                .contains(invoiceSearchQuery!);
+      }).toList();
+    }
+  }
+
   void _clearFilters() {
     setState(() {
       _searchController.clear();
+      _invoiceSearchController.clear();
+      // Reset the suppliers and invoices to their original state
       _applyFilters();
+      if (selectedSupplier != null) {
+        selectedSupplier!['invoices'] = List<Map<String, dynamic>>.from(
+            originalInvoices[selectedSupplier!['_id']]!);
+      }
     });
+  }
+
+  // Method to format date to WIB (UTC +7)
+  String formatDateToWIB(String dateString) {
+    DateTime dateUtc = DateTime.parse(dateString).toUtc();
+    DateTime dateWIB =
+        dateUtc.add(Duration(hours: 7)); // Convert to WIB (UTC+7)
+    return DateFormat('yyyy-MM-dd HH:mm:ss')
+        .format(dateWIB); // Format in desired format
   }
 
   @override
@@ -64,13 +114,13 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
       ),
       body: Column(
         children: [
-          // Search bar section
+          // Search bar section for suppliers
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search by Supplier Name or Date...',
+                hintText: 'Search by Supplier Name or ID...',
                 hintStyle: TextStyle(color: Colors.white60),
                 prefixIcon: Icon(Icons.search, color: Colors.white),
                 filled: true,
@@ -123,6 +173,12 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
                         onTap: () {
                           setState(() {
                             selectedSupplier = supplier;
+                            if (selectedSupplier != null) {
+                              selectedSupplier!['invoices'] =
+                                  List<Map<String, dynamic>>.from(
+                                      originalInvoices[
+                                          selectedSupplier!['_id']]!);
+                            }
                           });
                         },
                       );
@@ -165,11 +221,9 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
                                             text: selectedSupplier!['_id']
                                                 .toString()));
                                         ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: Text(
-                                                  "ID copied to clipboard")),
-                                        );
+                                            .showSnackBar(SnackBar(
+                                                content: Text(
+                                                    "ID copied to clipboard")));
                                       },
                                       constraints: BoxConstraints(),
                                       padding: EdgeInsets.all(4),
@@ -196,13 +250,67 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
                                 style: TextStyle(
                                     color: Colors.white, fontSize: 18),
                               ),
-                              SizedBox(height: 8),
+                              SizedBox(height: 16),
+
+                              // Invoice Search Bar
+                              TextField(
+                                controller: _invoiceSearchController,
+                                decoration: InputDecoration(
+                                  hintText: 'Search Invoices...',
+                                  hintStyle: TextStyle(color: Colors.white60),
+                                  prefixIcon:
+                                      Icon(Icons.search, color: Colors.white),
+                                  filled: true,
+                                  fillColor: Colors.black,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: Colors.white),
+                                  ),
+                                ),
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              SizedBox(height: 16),
+
+                              // Invoice List
+                              selectedSupplier!['invoices'] != null &&
+                                      selectedSupplier!['invoices'].isNotEmpty
+                                  ? Expanded(
+                                      child: ListView.builder(
+                                        shrinkWrap: true,
+                                        itemCount: selectedSupplier!['invoices']
+                                            .length,
+                                        itemBuilder: (context, index) {
+                                          final invoice =
+                                              selectedSupplier!['invoices']
+                                                  [index];
+                                          return ListTile(
+                                            title: Text(
+                                              'Invoice No: ${invoice['invoice_number']}',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                            subtitle: Text(
+                                              'Date: ${formatDateToWIB(invoice['insert_date'])}',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    )
+                                  : Center(
+                                      child: Text(
+                                        "No invoices found.",
+                                        style: TextStyle(color: Colors.white60),
+                                      ),
+                                    ),
                             ],
                           )
                         : Center(
                             child: Text(
-                              "Select a supplier to see details",
-                              style: TextStyle(color: Colors.white),
+                              "Select a supplier to view details.",
+                              style: TextStyle(
+                                  color: Colors.white60, fontSize: 18),
                             ),
                           ),
                   ),

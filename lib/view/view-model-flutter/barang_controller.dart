@@ -811,3 +811,40 @@ Future<List<dynamic>> fetchHistoryStokByCabang(String idCabang) async {
     return [];
   }
 }
+
+//add supplier invoice
+Future<Map<String, dynamic>> addInvoiceToSupplier({
+  required String supplierId,
+  required String invoiceNumber,
+}) async {
+  final url = Uri.parse(
+      'http://localhost:3000/barang/addSupplierInvoice'); // Update with your actual URL if different
+  try {
+    // Prepare the request body
+    final body = jsonEncode({
+      'supplierId': supplierId,
+      'invoiceNumber': invoiceNumber,
+    });
+
+    // Send the POST request
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: body,
+    );
+
+    // Parse the response
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data; // Contains 'success' and 'message'
+    } else {
+      return {
+        'success': false,
+        'message':
+            'Failed with status code ${response.statusCode}: ${response.body}',
+      };
+    }
+  } catch (e) {
+    return {'success': false, 'message': 'An error occurred: $e'};
+  }
+}

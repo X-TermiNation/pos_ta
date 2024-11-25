@@ -58,7 +58,28 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController _searchControllerBarangList = TextEditingController();
   TextEditingController id_supplier_insert = TextEditingController();
   TextEditingController id_supplier_stock_alert = TextEditingController();
-  TextEditingController ReStock_SumberTransaksi_id = TextEditingController();
+  TextEditingController ReStock_InvoiceNumber = TextEditingController();
+
+  //supplier data for dropdown in restock section
+  String selectedSupplierId = '';
+  List<Map<String, dynamic>> suppliers = [];
+  Map<String, dynamic> selectedSupplierData = {};
+
+  Future<void> loadSuppliers() async {
+    final data =
+        await fetchSuppliersByCabang(); // Use your fetchSuppliersByCabang function here
+    setState(() {
+      suppliers = data;
+    });
+  }
+
+  // Set the selected supplier data when a supplier is selected from the dropdown
+  void onSupplierSelected(Map<String, dynamic> selectedSupplier) {
+    setState(() {
+      selectedSupplierId = selectedSupplier['_id'];
+      selectedSupplierData = selectedSupplier;
+    });
+  }
 
   XFile? selectedImage;
 
@@ -502,6 +523,7 @@ class _GudangMenuState extends State<GudangMenu> {
     fetchDataKategori();
     getlowstocksatuan(context);
     fetchBarangStock();
+    loadSuppliers();
     print("id gudangnya:$id_gudangs");
   }
 
@@ -547,11 +569,12 @@ class _GudangMenuState extends State<GudangMenu> {
 
   void updateMultipleItems(
     List<Map<String, dynamic>> items,
-    String sumberTransaksiId,
+    String id_supplier,
+    String sumberTransaksi,
     String action,
     BuildContext context,
   ) async {
-    final kodeAktivitas = generateKodeAktivitas(sumberTransaksiId, 'MSK');
+    final kodeAktivitas = generateKodeAktivitas(sumberTransaksi, 'MSK');
 
     for (var item in items) {
       final String idBarang = item['ID_barang'];
@@ -564,6 +587,8 @@ class _GudangMenuState extends State<GudangMenu> {
 
     // Clear the list of items after submission
     items.clear();
+    await addInvoiceToSupplier(
+        supplierId: id_supplier, invoiceNumber: sumberTransaksi);
   }
 
   //function and data type for supplier type
@@ -2018,18 +2043,6 @@ class _GudangMenuState extends State<GudangMenu> {
                                     ),
                                   ),
                                 ),
-                                Tooltip(
-                                  message: 'See Supplier History',
-                                  child: IconButton(
-                                      icon: Icon(Icons.history,
-                                          color: Colors.white),
-                                      onPressed: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    HistorySupplierPage()),
-                                          )),
-                                ),
                               ],
                             ),
                             SizedBox(height: 16),
@@ -2077,26 +2090,26 @@ class _GudangMenuState extends State<GudangMenu> {
                                         ),
                                       ),
                                     ),
-                                    TableCell(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Text(
-                                          'Re-Stock',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                    TableCell(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Text(
-                                          'Delete',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
+                                    // TableCell(
+                                    //   child: Padding(
+                                    //     padding: EdgeInsets.all(8.0),
+                                    //     child: Text(
+                                    //       'Re-Stock',
+                                    //       style: TextStyle(
+                                    //           fontWeight: FontWeight.bold),
+                                    //     ),
+                                    //   ),
+                                    // ),
+                                    // TableCell(
+                                    //   child: Padding(
+                                    //     padding: EdgeInsets.all(8.0),
+                                    //     child: Text(
+                                    //       'Delete',
+                                    //       style: TextStyle(
+                                    //           fontWeight: FontWeight.bold),
+                                    //     ),
+                                    //   ),
+                                    // ),
                                   ],
                                 ),
                                 ...snapshot.data!.map((data) {
@@ -2121,63 +2134,63 @@ class _GudangMenuState extends State<GudangMenu> {
                                               data['jumlah_satuan'].toString()),
                                         ),
                                       ),
-                                      TableCell(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: ElevatedButton(
-                                            onPressed: () {
-                                              showQuantityDialog(
-                                                data['id_barang'].toString(),
-                                                data['id_satuan'].toString(),
-                                                context,
-                                              );
-                                              setState(() {});
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.purple,
-                                              textStyle: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                            child: Text(
-                                              'Re-Stock',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.black,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      TableCell(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: ElevatedButton(
-                                            onPressed: () {
-                                              confirmDeletion(
-                                                context,
-                                                data['id_barang'].toString(),
-                                                data['id_satuan'].toString(),
-                                                data['nama_satuan'],
-                                                data['nama_barang'],
-                                              );
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.purple,
-                                              textStyle: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                            child: Text(
-                                              'Delete',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.black,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
+                                      // TableCell(
+                                      //   child: Padding(
+                                      //     padding: EdgeInsets.all(8.0),
+                                      //     child: ElevatedButton(
+                                      //       onPressed: () {
+                                      //         showQuantityDialog(
+                                      //           data['id_barang'].toString(),
+                                      //           data['id_satuan'].toString(),
+                                      //           context,
+                                      //         );
+                                      //         setState(() {});
+                                      //       },
+                                      //       style: ElevatedButton.styleFrom(
+                                      //         backgroundColor: Colors.purple,
+                                      //         textStyle: TextStyle(
+                                      //             color: Colors.white),
+                                      //       ),
+                                      //       child: Text(
+                                      //         'Re-Stock',
+                                      //         style: TextStyle(
+                                      //           fontSize: 12,
+                                      //           color: Colors.black,
+                                      //           fontWeight: FontWeight.bold,
+                                      //         ),
+                                      //       ),
+                                      //     ),
+                                      //   ),
+                                      // ),
+                                      // TableCell(
+                                      //   child: Padding(
+                                      //     padding: EdgeInsets.all(8.0),
+                                      //     child: ElevatedButton(
+                                      //       onPressed: () {
+                                      //         confirmDeletion(
+                                      //           context,
+                                      //           data['id_barang'].toString(),
+                                      //           data['id_satuan'].toString(),
+                                      //           data['nama_satuan'],
+                                      //           data['nama_barang'],
+                                      //         );
+                                      //       },
+                                      //       style: ElevatedButton.styleFrom(
+                                      //         backgroundColor: Colors.purple,
+                                      //         textStyle: TextStyle(
+                                      //             color: Colors.white),
+                                      //       ),
+                                      //       child: Text(
+                                      //         'Delete',
+                                      //         style: TextStyle(
+                                      //           fontSize: 12,
+                                      //           color: Colors.black,
+                                      //           fontWeight: FontWeight.bold,
+                                      //         ),
+                                      //       ),
+                                      //     ),
+                                      //   ),
+                                      // ),
                                     ],
                                   );
                                 }).toList(),
@@ -2199,20 +2212,56 @@ class _GudangMenuState extends State<GudangMenu> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Re-stock Section',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Re-stock Section',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Tooltip(
+                            message: 'See Supplier History',
+                            child: IconButton(
+                                icon: Icon(Icons.history, color: Colors.white),
+                                onPressed: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              HistorySupplierPage()),
+                                    )),
+                          ),
+                        ],
                       ),
+
                       SizedBox(height: 16),
                       // Input fields for re-stocking items
+                      DropdownButton<Map<String, dynamic>>(
+                        value: selectedSupplierData.isEmpty
+                            ? null
+                            : selectedSupplierData,
+                        hint: Text('Select Supplier'),
+                        items: suppliers.map((supplier) {
+                          return DropdownMenuItem<Map<String, dynamic>>(
+                            value: supplier,
+                            child: Text(supplier['nama_supplier'] ??
+                                'No Name'), // Display supplier name
+                          );
+                        }).toList(),
+                        onChanged: (selected) {
+                          if (selected != null) {
+                            onSupplierSelected(
+                                selected); // Update the selected supplier and their details
+                          }
+                        },
+                      ),
                       TextField(
-                        controller: ReStock_SumberTransaksi_id,
+                        controller: ReStock_InvoiceNumber,
                         decoration: InputDecoration(
-                          labelText: 'Enter Supplier ID',
+                          labelText: 'Enter Invoice Number ',
                           labelStyle: TextStyle(color: Colors.white),
                           filled: true,
                           fillColor: Colors.white10,
@@ -2344,15 +2393,13 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          if (ReStock_SumberTransaksi_id.text.isNotEmpty &&
+                          if (ReStock_InvoiceNumber.text.isNotEmpty &&
                               itemsStock.length != 0) {
-                            updateMultipleItems(
-                                itemsStock,
-                                ReStock_SumberTransaksi_id.text,
-                                'tambah',
-                                context);
+                            updateMultipleItems(itemsStock, selectedSupplierId,
+                                ReStock_InvoiceNumber.text, 'tambah', context);
                             setState(() {
                               itemsStock.clear();
+                              ReStock_InvoiceNumber.clear();
                             });
                           }
                         },
@@ -2464,16 +2511,26 @@ class _GudangMenuState extends State<GudangMenu> {
                   SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      _saveSupplier();
-                      _supplierNameController.clear();
-                      _contactController.clear();
-                      _addressController.clear();
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content:
-                                Text('Informasi Supplier dan Barang disimpan')),
-                      );
+                      if (_supplierNameController.text.isNotEmpty &&
+                          _contactController.text.isNotEmpty &&
+                          _addressController.text.isNotEmpty) {
+                        _saveSupplier();
+                        _supplierNameController.clear();
+                        _contactController.clear();
+                        _addressController.clear();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  'Informasi Supplier dan Barang disimpan')),
+                        );
+                        setState(() {});
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  'Text Tidak Boleh Kosong, Insert Gagal!')),
+                        );
+                      }
                     },
                     child: Text('Simpan Informasi Supplier dan Barang'),
                   ),
