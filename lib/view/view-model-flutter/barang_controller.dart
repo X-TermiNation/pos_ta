@@ -848,3 +848,36 @@ Future<Map<String, dynamic>> addInvoiceToSupplier({
     return {'success': false, 'message': 'An error occurred: $e'};
   }
 }
+
+//search supplier by invoice
+Future<Map<String, dynamic>> fetchSupplierByInvoice(
+    String invoiceNumber) async {
+  const String baseUrl = 'http://localhost:3000/barang'; // Base API URL
+
+  final Uri apiUrl =
+      Uri.parse('$baseUrl/searchSupplierByInvoice/$invoiceNumber');
+
+  try {
+    // Make GET request
+    final response = await http.get(apiUrl);
+
+    // Check response status
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      return data;
+    } else if (response.statusCode == 404) {
+      return {
+        'success': false,
+        'message': 'Supplier not found with the given invoice number.'
+      };
+    } else {
+      return {
+        'success': false,
+        'message':
+            'Unexpected error occurred. Status code: ${response.statusCode}'
+      };
+    }
+  } catch (error) {
+    return {'success': false, 'message': 'An error occurred: $error'};
+  }
+}

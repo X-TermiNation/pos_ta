@@ -47,6 +47,16 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
         item['nama_barang'] = details['nama_barang'];
         item['nama_satuan'] = details['nama_satuan'];
       }
+      if (item['jenis_aktivitas'] == 'masuk') {
+        List<String> parts = item['Kode_Aktivitas'].toString().split('_');
+        final invoicedata = parts[1];
+        print(invoicedata);
+        final supplierDetails = await fetchSupplierDetails(invoicedata);
+        if (supplierDetails != null) {
+          item['nama_supplier'] = supplierDetails['nama_supplier'];
+          item['kontak_supplier'] = supplierDetails['kontak'];
+        }
+      }
     }
 
     setState(() {
@@ -75,6 +85,18 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
     };
   }
 
+  Future<Map<String, dynamic>?> fetchSupplierDetails(String invoice) async {
+    final supplierData = await fetchSupplierByInvoice(invoice);
+    if (supplierData.isNotEmpty) {
+      return {
+        'nama_supplier':
+            supplierData['data']['nama_supplier'] ?? 'Unknown Supplier',
+        'kontak': supplierData['data']['kontak'] ?? 'N/A',
+      };
+    }
+    return null; // Return null if no supplier data is found
+  }
+
   void filterData() {
     setState(() {
       filteredHistoryStok = historyStok.where((item) {
@@ -97,6 +119,87 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
         return matchesSearch && matchesDateRange;
       }).toList();
     });
+  }
+
+  Future<void> showDateRangePickerDialog() async {
+    final pickedDateRange = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+
+    if (pickedDateRange != null) {
+      setState(() {
+        startDate = pickedDateRange.start;
+        endDate = pickedDateRange.end;
+      });
+      filterData();
+    }
+  }
+
+  void clearDateFilters() {
+    setState(() {
+      startDate = null;
+      endDate = null;
+      filterData();
+    });
+  }
+
+  void showItemDetailsPopup(Map<String, dynamic> item) async {
+    // Check if supplier details are already available
+    if (item['jenis_aktivitas'] == 'Masuk' &&
+        (item['nama_supplier'] == null || item['kontak_supplier'] == null)) {
+      // Extract invoice data from Kode_Aktivitas
+      List<String> parts = item['Kode_Aktivitas'].toString().split('_');
+      final invoicedata = parts[1];
+
+      // Fetch supplier details
+      final supplierDetails = await fetchSupplierDetails(invoicedata);
+      print(supplierDetails);
+      if (supplierDetails != null) {
+        setState(() {
+          item['nama_supplier'] = supplierDetails['nama_supplier'];
+          item['kontak_supplier'] = supplierDetails['kontak'];
+        });
+      } else {
+        showToast(context, 'Supplier details not found.');
+      }
+    }
+
+    // Show the popup
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Activity Details'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Nama Barang: ${item['nama_barang'] ?? 'N/A'}'),
+                Text('Nama Satuan: ${item['nama_satuan'] ?? 'N/A'}'),
+                Text('Jenis Aktivitas: ${item['jenis_aktivitas'] ?? 'N/A'}'),
+                Text('Jumlah Satuan: ${item['jumlah_input'] ?? 'N/A'}'),
+                Text('Kode Aktivitas: ${item['Kode_Aktivitas'] ?? 'N/A'}'),
+                Text(
+                    'Tanggal Pengisian: ${formatDate(item['tanggal_pengisian'])}'),
+                if (item['jenis_aktivitas'] == 'Masuk') ...[
+                  Text('Nama Supplier: ${item['nama_supplier'] ?? 'N/A'}'),
+                  Text('Kontak Supplier: ${item['kontak_supplier'] ?? 'N/A'}'),
+                ],
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -129,75 +232,83 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: searchbar,
-                  onChanged: (query) {
-                    searchQuery = query;
-                    filterData();
-                  },
-                  decoration: InputDecoration(
-                    labelText:
-                        'Search (Nama Barang, Nama Satuan, Kode Aktivitas, Tanggal, Jenis Aktivitas)',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: isLoading
-                    ? Center(child: CircularProgressIndicator())
-                    : SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          sortAscending: isAsc,
-                          sortColumnIndex: 2,
-                          columns: [
-                            DataColumn(label: Text('Item Name - Satuan Name')),
-                            DataColumn(
-                              label: Text('Activity Date'),
-                              onSort: (columnIndex, ascending) {
-                                setState(() {
-                                  isAsc = ascending;
-                                  filteredHistoryStok.sort((a, b) {
-                                    DateTime aDate =
-                                        DateTime.parse(a['tanggal_pengisian']);
-                                    DateTime bDate =
-                                        DateTime.parse(b['tanggal_pengisian']);
-                                    return isAsc
-                                        ? aDate.compareTo(bDate)
-                                        : bDate.compareTo(aDate);
-                                  });
-                                });
-                              },
-                            ),
-                            DataColumn(label: Text('Jenis Aktivitas')),
-                            DataColumn(label: Text('Jumlah Satuan')),
-                            DataColumn(label: Text('Kode Aktivitas')),
-                            DataColumn(label: Text('Details')),
-                          ],
-                          rows: filteredHistoryStok.map((item) {
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(
-                                    '${item['nama_barang'] ?? 'Unknown'} - ${item['nama_satuan'] ?? 'Unknown'}')),
-                                DataCell(Text(
-                                    formatDate(item['tanggal_pengisian']))),
-                                DataCell(Text(item['jenis_aktivitas'])),
-                                DataCell(Text(item['jumlah_input'].toString())),
-                                DataCell(Text(item['Kode_Aktivitas'])),
-                                DataCell(
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      // Show detailed dialog or another action
-                                    },
-                                    child: Text('Details'),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: searchbar,
+                        onChanged: (query) {
+                          searchQuery = query;
+                          filterData();
+                        },
+                        decoration: InputDecoration(
+                          labelText:
+                              'Search (Nama Barang, Nama Satuan, Kode Aktivitas, Tanggal, Jenis Aktivitas)',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.search),
                         ),
                       ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.calendar_today),
+                      onPressed: showDateRangePickerDialog,
+                    ),
+                    if (startDate != null && endDate != null)
+                      IconButton(
+                        icon: Icon(Icons.clear),
+                        onPressed: clearDateFilters,
+                        tooltip: 'Clear date filter',
+                      ),
+                  ],
+                ),
+              ),
+              if (startDate != null && endDate != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    'Date Range: ${DateFormat('dd MMM yyyy').format(startDate!)} - ${DateFormat('dd MMM yyyy').format(endDate!)}',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                        right: 20.0), // Right padding for content
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        columns: [
+                          DataColumn(label: Text('Nama Barang & Satuan')),
+                          DataColumn(label: Text('Tanggal Pengisian')),
+                          DataColumn(label: Text('Jenis Aktivitas')),
+                          DataColumn(label: Text('Jumlah Input')),
+                          DataColumn(label: Text('Kode Aktivitas')),
+                          DataColumn(label: Text('Detail')),
+                        ],
+                        rows: filteredHistoryStok.map((item) {
+                          return DataRow(
+                            cells: [
+                              DataCell(Text(
+                                  '${item['nama_barang'] ?? 'N/A'} - ${item['nama_satuan'] ?? 'N/A'}')),
+                              DataCell(
+                                  Text(formatDate(item['tanggal_pengisian']))),
+                              DataCell(Text(item['jenis_aktivitas'] ?? 'N/A')),
+                              DataCell(Text(item['jumlah_input'].toString())),
+                              DataCell(Text(item['Kode_Aktivitas'] ?? 'N/A')),
+                              DataCell(
+                                IconButton(
+                                  icon: Icon(Icons.visibility),
+                                  onPressed: () => showItemDetailsPopup(item),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           );
