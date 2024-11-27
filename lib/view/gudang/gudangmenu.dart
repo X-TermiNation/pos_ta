@@ -190,10 +190,8 @@ class _GudangMenuState extends State<GudangMenu> {
 
   //untuk tombol konversi(masih dalam proses)
   void onConvert(String id_barang, String id_satuanFrom, String id_satuanTo) {
-    num increase = stockAmount;
-    num decrease = stockAmount *
-        selectedSatuanTo![
-            'isi_satuan']; //ini jumlah total dibutuhkan pada sisi From
+    num increase = stockAmount * selectedSatuanFrom!['isi_satuan'];
+    num decrease = stockAmount;
     convertSatuan(
       id_barang,
       id_satuanFrom,

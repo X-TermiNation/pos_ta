@@ -47,16 +47,16 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
         item['nama_barang'] = details['nama_barang'];
         item['nama_satuan'] = details['nama_satuan'];
       }
-      if (item['jenis_aktivitas'] == 'masuk') {
-        List<String> parts = item['Kode_Aktivitas'].toString().split('_');
-        final invoicedata = parts[1];
-        print(invoicedata);
-        final supplierDetails = await fetchSupplierDetails(invoicedata);
-        if (supplierDetails != null) {
-          item['nama_supplier'] = supplierDetails['nama_supplier'];
-          item['kontak_supplier'] = supplierDetails['kontak'];
-        }
-      }
+      // if (item['jenis_aktivitas'] == 'masuk') {
+      //   List<String> parts = item['Kode_Aktivitas'].toString().split('_');
+      //   final invoicedata = parts[1];
+      //   print(invoicedata);
+      //   final supplierDetails = await fetchSupplierDetails(invoicedata);
+      //   if (supplierDetails != null) {
+      //     item['nama_supplier'] = supplierDetails['nama_supplier'];
+      //     item['kontak_supplier'] = supplierDetails['kontak'];
+      //   }
+      // }
     }
 
     setState(() {
@@ -87,7 +87,9 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
 
   Future<Map<String, dynamic>?> fetchSupplierDetails(String invoice) async {
     final supplierData = await fetchSupplierByInvoice(invoice);
-    if (supplierData.isNotEmpty) {
+    print("ini data detail:$supplierData");
+    if (supplierData.isNotEmpty &&
+        supplierData['data']['nama_supplier'] != null) {
       return {
         'nama_supplier':
             supplierData['data']['nama_supplier'] ?? 'Unknown Supplier',
@@ -155,7 +157,6 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
 
       // Fetch supplier details
       final supplierDetails = await fetchSupplierDetails(invoicedata);
-      print(supplierDetails);
       if (supplierDetails != null) {
         setState(() {
           item['nama_supplier'] = supplierDetails['nama_supplier'];
@@ -271,43 +272,109 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                   ),
                 ),
               Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                        right: 20.0), // Right padding for content
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columns: [
-                          DataColumn(label: Text('Nama Barang & Satuan')),
-                          DataColumn(label: Text('Tanggal Pengisian')),
-                          DataColumn(label: Text('Jenis Aktivitas')),
-                          DataColumn(label: Text('Jumlah Input')),
-                          DataColumn(label: Text('Kode Aktivitas')),
-                          DataColumn(label: Text('Detail')),
+                child: Column(
+                  children: [
+                    // Fixed Header
+                    Container(
+                      color:
+                          Colors.black, // Optional: background color for header
+                      padding: const EdgeInsets.symmetric(vertical: 10.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                              flex: 1,
+                              child: Text('Nama Barang & Satuan',
+                                  textAlign: TextAlign.center)),
+                          Expanded(
+                              child: Text('Tanggal Pengisian',
+                                  textAlign: TextAlign.center)),
+                          Expanded(
+                              child: Text('Jenis Aktivitas',
+                                  textAlign: TextAlign.center)),
+                          Expanded(
+                              child: Text('Jumlah Input',
+                                  textAlign: TextAlign.center)),
+                          Expanded(
+                              child: Text('Kode Aktivitas',
+                                  textAlign: TextAlign.center)),
+                          Expanded(
+                              child:
+                                  Text('Detail', textAlign: TextAlign.center)),
                         ],
-                        rows: filteredHistoryStok.map((item) {
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(
-                                  '${item['nama_barang'] ?? 'N/A'} - ${item['nama_satuan'] ?? 'N/A'}')),
-                              DataCell(
-                                  Text(formatDate(item['tanggal_pengisian']))),
-                              DataCell(Text(item['jenis_aktivitas'] ?? 'N/A')),
-                              DataCell(Text(item['jumlah_input'].toString())),
-                              DataCell(Text(item['Kode_Aktivitas'] ?? 'N/A')),
-                              DataCell(
-                                IconButton(
-                                  icon: Icon(Icons.visibility),
-                                  onPressed: () => showItemDetailsPopup(item),
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
                       ),
                     ),
-                  ),
+                    // Scrollable Content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: Column(
+                          children: filteredHistoryStok.map((item) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                      color: Colors.grey[300]!, width: 0.5),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 1,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                          '${item['nama_barang'] ?? 'N/A'} - ${item['nama_satuan'] ?? 'N/A'}'),
+                                    ),
+                                  ),
+                                  Expanded(
+                                      child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(formatDate(
+                                          item['tanggal_pengisian'])),
+                                    ),
+                                  )),
+                                  Expanded(
+                                      child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                          item['jenis_aktivitas'] ?? 'N/A'),
+                                    ),
+                                  )),
+                                  Expanded(
+                                      child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child:
+                                          Text(item['jumlah_input'].toString()),
+                                    ),
+                                  )),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: SelectableText(
+                                          item['Kode_Aktivitas'] ?? 'N/A'),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: IconButton(
+                                        icon: Icon(Icons.visibility),
+                                        onPressed: () =>
+                                            showItemDetailsPopup(item),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
