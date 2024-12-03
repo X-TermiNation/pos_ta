@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view/gudang/StockHistory.dart';
+import 'package:ta_pos/view/gudang/SubmitRequestScreen.dart';
 import 'package:ta_pos/view/gudang/SupplierHistory.dart';
 import 'package:ta_pos/view/gudang/responsive_header.dart';
 import 'dart:convert';
@@ -2958,50 +2959,51 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
 class RequestTransferTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Request Item Transfer",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 20),
-          TextField(
-            decoration: InputDecoration(
-              labelText: "Document Title",
-              border: OutlineInputBorder(),
-            ),
-          ),
-          SizedBox(height: 20),
-          TextField(
-            maxLines: 4,
-            decoration: InputDecoration(
-              labelText: "Transfer Details",
-              border: OutlineInputBorder(),
-            ),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // TODO: Handle file upload logic here
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Document uploaded successfully")),
-              );
-            },
-            child: Text("Upload Document"),
-          ),
-          Spacer(),
-          Center(
-            child: ElevatedButton(
+    return Scaffold(
+      appBar: AppBar(title: Text("Request Transfer")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            ElevatedButton(
               onPressed: () {
-                // TODO: Handle submit logic here
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => SubmitRequestScreen()),
+                );
               },
-              child: Text("Submit Request"),
+              child: Text("Ajukan Request"),
             ),
-          ),
-        ],
+            SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                      minWidth: MediaQuery.of(context).size.width),
+                  child: DataTable(
+                    columnSpacing: 16.0, // Adjust spacing between columns
+                    columns: [
+                      DataColumn(label: Text("Tanggal Request")),
+                      DataColumn(label: Text("Cabang")),
+                      DataColumn(label: Text("Barang-Jumlah")),
+                      DataColumn(label: Text("Status")),
+                    ],
+                    rows: List.generate(5, (index) {
+                      return DataRow(cells: [
+                        DataCell(Text("2024-11-29")),
+                        DataCell(Text("Cabang $index")),
+                        DataCell(Text("Barang $index - $index pcs")),
+                        DataCell(Text(index % 2 == 0 ? "Approved" : "Pending")),
+                      ]);
+                    }),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -3010,43 +3012,109 @@ class RequestTransferTab extends StatelessWidget {
 class ConfirmTransferTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Confirm Item Transfer",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 20),
-          Expanded(
-            child: ListView.builder(
-              itemCount: 5, // TODO: Replace with dynamic data count
-              itemBuilder: (context, index) {
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: ListTile(
-                    title: Text("Request #${index + 1}"),
-                    subtitle: Text("Request details for item transfer."),
-                    trailing: ElevatedButton(
-                      onPressed: () {
-                        // TODO: Accept logic here
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => GiveItemScreen(),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Confirm Item Transfer"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Confirm Item Transfer",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Fixed header row
+                    Container(
+                      color: Colors.grey,
+                      padding:
+                          EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Flexible(
+                            flex: 2,
+                            child: Text(
+                              'Request ID',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Flexible(
+                            flex: 3,
+                            child: Text(
+                              'Details',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Flexible(
+                            flex: 1,
+                            child: Text(
+                              'Action',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Scrollable content rows
+                    ListView.builder(
+                      shrinkWrap:
+                          true, // Allows the ListView to be scrollable inside a Column
+                      physics:
+                          NeverScrollableScrollPhysics(), // Prevent ListView from conflicting with parent scroll
+                      itemCount: 5, // TODO: Replace with dynamic data count
+                      itemBuilder: (context, index) {
+                        return Container(
+                          padding: EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 16.0),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: Colors.grey[300]!),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Flexible(
+                                flex: 2,
+                                child: Text("Request #${index + 1}"),
+                              ),
+                              Flexible(
+                                flex: 3,
+                                child: Text("Details for item transfer."),
+                              ),
+                              Flexible(
+                                flex: 1,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => GiveItemScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: Text("Accept"),
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       },
-                      child: Text("Accept"),
                     ),
-                  ),
-                );
-              },
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
