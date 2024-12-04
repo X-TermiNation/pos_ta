@@ -135,131 +135,135 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
               child: ListView.builder(
                 itemCount: items.length,
                 itemBuilder: (context, index) {
-                  return Row(
-                    children: [
-                      // Barang Dropdown
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: items[index]["item"],
-                          hint: Text("Pilih Barang"),
-                          onChanged: (value) async {
-                            setState(() {
-                              items[index]["item"] = value;
-                              items[index]["satuan"] = null; // Reset satuan
-                              items[index]
-                                  ["satuanOptions"] = []; // Reset options
-                            });
-                            if (value != null) {
-                              await fetchSatuan(value, index);
-                            }
-                          },
-                          items: availableItems
-                              .where((item) =>
-                                  !items.any((e) => e["item"] == item["_id"]) ||
-                                  item["_id"] ==
-                                      items[index]
-                                          ["item"]) // Allow current value
-                              .map((item) {
-                            return DropdownMenuItem<String>(
-                              value: item["_id"] as String,
-                              child: Text(item["nama_barang"] as String),
-                            );
-                          }).toList(),
-                          decoration: InputDecoration(
-                            labelText: "Barang",
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      // Satuan Dropdown
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: items[index]["satuan"],
-                          hint: Text("Pilih Satuan"),
-                          onChanged: (value) {
-                            setState(() {
-                              items[index]["satuan"] = value;
-                            });
-                          },
-                          items: (items[index]["satuanOptions"]
-                                  is List<Map<String, dynamic>>)
-                              ? (items[index]["satuanOptions"]
-                                      as List<Map<String, dynamic>>)
-                                  .map((satuan) => DropdownMenuItem<String>(
-                                        value: satuan["_id"] as String,
-                                        child: Text(
-                                            satuan["nama_satuan"] as String),
-                                      ))
-                                  .toList()
-                              : [], // Fallback to an empty list
-                          decoration: InputDecoration(
-                            labelText: "Satuan",
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      // Jumlah Input
-                      Expanded(
-                        child: TextFormField(
-                          controller: items[index]
-                              ["controller"], // Use the controller
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: "Jumlah",
-                            border: OutlineInputBorder(),
-                          ),
-                          onFieldSubmitted: (value) {
-                            final input =
-                                int.tryParse(value) ?? 0; // Parse the input
-                            final satuan = items[index]["satuan"];
-                            final satuanData =
-                                items[index]["satuanOptions"]?.firstWhere(
-                              (opt) => opt["_id"] == satuan,
-                              orElse: () => {} as Map<String,
-                                  dynamic>, // Cast to Map<String, dynamic>
-                            );
-
-                            final maxJumlah =
-                                satuanData != null && satuanData.isNotEmpty
-                                    ? satuanData["jumlah_satuan"] ?? 0
-                                    : 0;
-
-                            if (input < 0 || input > maxJumlah) {
-                              // Invalid input
+                  return Padding(
+                    padding:
+                        const EdgeInsets.only(bottom: 16.0), // Add spacing here
+                    child: Row(
+                      children: [
+                        // Barang Dropdown
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: items[index]["item"],
+                            hint: Text("Pilih Barang"),
+                            onChanged: (value) async {
                               setState(() {
-                                items[index]["quantity"] =
-                                    0; // Reset quantity to 0
-                                items[index]["controller"].text =
-                                    "0"; // Update controller to 0
+                                items[index]["item"] = value;
+                                items[index]["satuan"] = null; // Reset satuan
+                                items[index]
+                                    ["satuanOptions"] = []; // Reset options
                               });
-
-                              // Show an error message
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text(
-                                        "Jumlah harus antara 0 dan $maxJumlah")),
+                              if (value != null) {
+                                await fetchSatuan(value, index);
+                              }
+                            },
+                            items: availableItems
+                                .where((item) =>
+                                    !items
+                                        .any((e) => e["item"] == item["_id"]) ||
+                                    item["_id"] ==
+                                        items[index]
+                                            ["item"]) // Allow current value
+                                .map((item) {
+                              return DropdownMenuItem<String>(
+                                value: item["_id"] as String,
+                                child: Text(item["nama_barang"] as String),
                               );
-                            } else {
-                              // Valid input
-                              setState(() {
-                                items[index]["quantity"] = input;
-                              });
-                            }
-                          },
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
+                            }).toList(),
+                            decoration: InputDecoration(
+                              labelText: "Barang",
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
                         ),
-                      ),
+                        SizedBox(width: 10),
+                        // Satuan Dropdown
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: items[index]["satuan"],
+                            hint: Text("Pilih Satuan"),
+                            onChanged: (value) {
+                              setState(() {
+                                items[index]["satuan"] = value;
+                              });
+                            },
+                            items: (items[index]["satuanOptions"]
+                                    is List<Map<String, dynamic>>)
+                                ? (items[index]["satuanOptions"]
+                                        as List<Map<String, dynamic>>)
+                                    .map((satuan) => DropdownMenuItem<String>(
+                                          value: satuan["_id"] as String,
+                                          child: Text(
+                                              satuan["nama_satuan"] as String),
+                                        ))
+                                    .toList()
+                                : [], // Fallback to an empty list
+                            decoration: InputDecoration(
+                              labelText: "Satuan",
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        // Jumlah Input
+                        Expanded(
+                          child: TextFormField(
+                            controller: items[index]
+                                ["controller"], // Use the controller
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: "Jumlah",
+                              border: OutlineInputBorder(),
+                            ),
+                            onFieldSubmitted: (value) {
+                              final input =
+                                  int.tryParse(value) ?? 0; // Parse the input
+                              final satuan = items[index]["satuan"];
+                              final satuanData =
+                                  items[index]["satuanOptions"]?.firstWhere(
+                                (opt) => opt["_id"] == satuan,
+                                orElse: () => {} as Map<String,
+                                    dynamic>, // Cast to Map<String, dynamic>
+                              );
 
-                      // Remove Button
-                      IconButton(
-                        icon: Icon(Icons.remove_circle, color: Colors.red),
-                        onPressed: () => removeItem(index),
-                      ),
-                    ],
+                              final maxJumlah =
+                                  satuanData != null && satuanData.isNotEmpty
+                                      ? satuanData["jumlah_satuan"] ?? 0
+                                      : 0;
+
+                              if (input < 0 || input > maxJumlah) {
+                                // Invalid input
+                                setState(() {
+                                  items[index]["quantity"] =
+                                      0; // Reset quantity to 0
+                                  items[index]["controller"].text =
+                                      "0"; // Update controller to 0
+                                });
+
+                                // Show an error message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          "Jumlah harus antara 0 dan $maxJumlah")),
+                                );
+                              } else {
+                                // Valid input
+                                setState(() {
+                                  items[index]["quantity"] = input;
+                                });
+                              }
+                            },
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                          ),
+                        ),
+                        // Remove Button
+                        IconButton(
+                          icon: Icon(Icons.remove_circle, color: Colors.red),
+                          onPressed: () => removeItem(index),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
