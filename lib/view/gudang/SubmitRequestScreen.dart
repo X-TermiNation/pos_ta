@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/cabang_controller.dart';
+import 'package:get_storage/get_storage.dart';
 
 class SubmitRequestScreen extends StatefulWidget {
   @override
@@ -13,6 +14,8 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
   List<Map<String, dynamic>> branches = [];
   List<Map<String, dynamic>> availableItems = [];
   List<Map<String, dynamic>> items = [];
+  String? id_cabang_temp = "";
+  String? id_gudang_temp = "";
 
   @override
   void initState() {
@@ -21,19 +24,25 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
   }
 
   Future<void> fetchBranches() async {
+    final dataStorage = GetStorage();
+    String id_cabang_current = dataStorage.read('id_cabang');
     try {
       final response = await getallcabang(); // Fetch branches
       setState(() {
-        branches = response;
+        // Filter out the current branch
+        branches = response
+            .where((branch) => branch["_id"] != id_cabang_current)
+            .toList();
       });
     } catch (e) {
       print("Error fetching branches: $e");
     }
   }
 
-  Future<void> fetchItems(String idGudang) async {
+  Future<void> fetchItems(String? idCabang, String idGudang) async {
     try {
-      final response = await getBarang(idGudang); // Fetch items by gudang ID
+      final response =
+          await getBarangMutasi(idCabang, idGudang); // Fetch items by gudang ID
       setState(() {
         availableItems = response;
       });
@@ -42,9 +51,11 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
     }
   }
 
-  Future<void> fetchSatuan(String idBarang, int index) async {
+  Future<void> fetchSatuan(
+      String? id_cabang, String? id_gudang, String idBarang, int index) async {
     try {
-      final response = await getsatuan(idBarang, context);
+      final response =
+          await getsatuanMutasi(id_cabang, id_gudang, idBarang, context);
       if (response is List &&
           response.every((e) => e is Map<String, dynamic>)) {
         setState(() {
@@ -114,7 +125,12 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
                 });
                 final selectedBranch =
                     branches.firstWhere((branch) => branch["_id"] == value);
-                await fetchItems(selectedBranch["Gudang"][0]["_id"]);
+                await fetchItems(value, selectedBranch["Gudang"][0]["_id"]);
+                setState(() {
+                  id_cabang_temp = value.toString();
+                  id_gudang_temp =
+                      selectedBranch["Gudang"][0]["_id"].toString();
+                });
               },
               items: branches
                   .map((branch) => DropdownMenuItem<String>(
@@ -153,7 +169,8 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
                                     ["satuanOptions"] = []; // Reset options
                               });
                               if (value != null) {
-                                await fetchSatuan(value, index);
+                                await fetchSatuan(id_cabang_temp,
+                                    id_gudang_temp, value, index);
                               }
                             },
                             items: availableItems

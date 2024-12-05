@@ -144,11 +144,30 @@ void addbarang(
 }
 
 //get barang
-Future<List<Map<String, dynamic>>> getBarang(String idgudang) async {
+Future<List<Map<String, dynamic>>> getBarang() async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
+  String idgudang = dataStorage.read('id_gudang');
   final request =
       Uri.parse('http://localhost:3000/barang/baranglist/$idgudang/$id_cabang');
+  final response = await http.get(request);
+  if (response.statusCode == 200 || response.statusCode == 304) {
+    final Map<String, dynamic> jsonData = json.decode(response.body);
+    List<dynamic> data = jsonData["data"];
+    print("ini data barang dari cabang: ${data.length}");
+    return data.cast<Map<String, dynamic>>();
+  } else {
+    CustomToast(message: "Failed to load data barang: ${response.statusCode}");
+    return [];
+  }
+}
+
+//get barang mutasi
+Future<List<Map<String, dynamic>>> getBarangMutasi(
+    String? idcabang, String idgudang) async {
+  final dataStorage = GetStorage();
+  final request =
+      Uri.parse('http://localhost:3000/barang/baranglist/$idgudang/$idcabang');
   final response = await http.get(request);
   if (response.statusCode == 200 || response.statusCode == 304) {
     final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -570,6 +589,27 @@ Future<List<Map<String, dynamic>>> getsatuan(
     final dataStorage = GetStorage();
     final id_cabang = dataStorage.read("id_cabang");
     String id_gudangs = dataStorage.read('id_gudang');
+    final url =
+        'http://localhost:3000/barang/getsatuan/$id_barang/$id_cabang/$id_gudangs';
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200 || response.statusCode == 304) {
+      print('berhasil akses data jenis');
+      final Map<String, dynamic> jsonData = json.decode(response.body);
+      List<dynamic> data = jsonData["data"];
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Gagal mengambil data dari server');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    return [];
+  }
+}
+
+//get satuan mutasi
+Future<List<Map<String, dynamic>>> getsatuanMutasi(String? id_cabang,
+    String? id_gudangs, String id_barang, BuildContext context) async {
+  try {
     final url =
         'http://localhost:3000/barang/getsatuan/$id_barang/$id_cabang/$id_gudangs';
     final response = await http.get(Uri.parse(url));

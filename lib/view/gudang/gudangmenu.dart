@@ -29,8 +29,6 @@ bool noExp = false;
 String satuan_idbarang = "";
 String base_satuan_id = "";
 String nama_satuan_initial_spc = "No Satuan";
-final dataStorage = GetStorage();
-String id_gudangs = dataStorage.read('id_gudang');
 Future<List<Map<String, dynamic>>> barangdata = Future.value([]);
 
 class GudangMenu extends StatefulWidget {
@@ -65,15 +63,13 @@ class _GudangMenuState extends State<GudangMenu> {
   List<Map<String, dynamic>> suppliers = [];
   Map<String, dynamic> selectedSupplierData = {};
 
-  void onUserLogin(String idGudangs) {
-    print("User logging in with idGudangs: $idGudangs");
+  void onUserLogin() {
     setState(() {
-      barangdata = Future.value([]); // Clear the current barangdata
+      barangdata = Future.value([]);
     });
-    // Update barangdata with the new future
     setState(() {
-      // Trigger a new fetch for the new user
-      barangdata = getBarang(idGudangs);
+      barangdata = getBarang();
+      print(barangdata);
     });
   }
 
@@ -141,7 +137,7 @@ class _GudangMenuState extends State<GudangMenu> {
   Future<void> fetchBarangStock() async {
     try {
       // Fetch barang data
-      var data = await getBarang(id_gudangs);
+      var data = await getBarang();
       setState(() {
         barangListStock = List<Map<String, dynamic>>.from(
             data); // assuming data is a List<Map<String, dynamic>>
@@ -154,15 +150,19 @@ class _GudangMenuState extends State<GudangMenu> {
   Future<void> fetchSatuanDetailsStock(int index, String barangId) async {
     try {
       var data = await getsatuan(barangId, context);
-      setState(() {
-        itemsStock[index]['satuanList'] = List<Map<String, dynamic>>.from(data);
-        itemsStock[index]['selectedSatuan'] =
-            itemsStock[index]['satuanList'].isNotEmpty
-                ? itemsStock[index]['satuanList'][0]
-                : null;
-        itemsStock[index]['ID_satuan'] =
-            itemsStock[index]['selectedSatuan']?['_id'];
-      });
+
+      if (mounted) {
+        setState(() {
+          itemsStock[index]['satuanList'] =
+              List<Map<String, dynamic>>.from(data);
+          itemsStock[index]['selectedSatuan'] =
+              itemsStock[index]['satuanList'].isNotEmpty
+                  ? itemsStock[index]['satuanList'][0]
+                  : null;
+          itemsStock[index]['ID_satuan'] =
+              itemsStock[index]['selectedSatuan']?['_id'];
+        });
+      }
     } catch (e) {
       showToast(context, 'Failed to fetch satuan data: $e');
     }
@@ -525,7 +525,7 @@ class _GudangMenuState extends State<GudangMenu> {
   @override
   void initState() {
     super.initState();
-    onUserLogin(id_gudangs);
+    onUserLogin();
     getFirstKategoriId().then((value) => edit_selectedvalueKategori);
     getKategori();
     fetchData();
@@ -535,7 +535,6 @@ class _GudangMenuState extends State<GudangMenu> {
     getlowstocksatuan(context);
     fetchBarangStock();
     loadSuppliers();
-    print("id gudangnya:$id_gudangs");
   }
 
   List<Map<String, dynamic>> _searchResults = [];
@@ -835,12 +834,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                                   onPressed: () {
                                                     deletebarang(map['_id']);
                                                     setState(() {
-                                                      barangdata =
-                                                          Future.delayed(
-                                                              Duration(
-                                                                  seconds: 1),
-                                                              () => getBarang(
-                                                                  id_gudangs));
+                                                      onUserLogin();
                                                     });
                                                   },
                                                   style:
@@ -1395,8 +1389,7 @@ class _GudangMenuState extends State<GudangMenu> {
                               context,
                               selectedImage);
                           setState(() {
-                            barangdata = Future.delayed(Duration(seconds: 1),
-                                () => getBarang(id_gudangs));
+                            onUserLogin();
                             fetchDataAndUseInJsonString();
                             fetchData();
                             noExp = false;
@@ -2599,8 +2592,7 @@ class _GudangMenuState extends State<GudangMenu> {
               edit_insertdate_barang.text = "";
               _isEditUser = false;
               temp_id_update = "";
-              barangdata = Future.delayed(
-                  Duration(seconds: 1), () => getBarang(id_gudangs));
+              onUserLogin();
             });
           },
         );
