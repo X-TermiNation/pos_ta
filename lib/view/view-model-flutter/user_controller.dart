@@ -16,6 +16,25 @@ Future<void> verify() async {
   final response = await http.get(uri);
 }
 
+//delete redis cache
+Future<void> flushCache() async {
+  final url =
+      Uri.parse('http://localhost:3000/user/flush-cache'); // Backend API URL
+
+  try {
+    final response = await http.post(url);
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      print('Cache flushed successfully: ${responseData['message']}');
+    } else {
+      print('Failed to flush cache: ${response.body}');
+    }
+  } catch (error) {
+    print('Error flushing cache: $error');
+  }
+}
+
 //get user
 Future<List<Map<String, dynamic>>> getUsers() async {
   final dataStorage = GetStorage();
@@ -74,6 +93,7 @@ Future<int> loginbtn(String email, String pass) async {
     int signcode = jsonDecode(response.body)['signcode'];
     idcabangglobal = jsonDecode(response.body)['userCabangId'];
     final dataStorage = GetStorage();
+    dataStorage.erase();
     dataStorage.write('id_cabang', idcabangglobal);
     dataStorage.write('email_login', email);
     await getdatagudang();

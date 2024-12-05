@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/loginpage/login.dart';
+import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
 
 class ResponsiveSideMenu extends StatefulWidget {
   final List<Widget> containers;
@@ -92,8 +93,12 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
               onPressed: () {
                 Navigator.of(context).pop();
                 GetStorage().erase();
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => loginscreen()));
+                flushCache();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => loginscreen()),
+                  (Route<dynamic> route) => false,
+                );
                 // Close the dialog
               },
               child: Text('Ya'),

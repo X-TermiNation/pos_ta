@@ -31,8 +31,7 @@ String base_satuan_id = "";
 String nama_satuan_initial_spc = "No Satuan";
 final dataStorage = GetStorage();
 String id_gudangs = dataStorage.read('id_gudang');
-var barangdata =
-    Future.delayed(Duration(seconds: 1), () => getBarang(id_gudangs));
+Future<List<Map<String, dynamic>>> barangdata = Future.value([]);
 
 class GudangMenu extends StatefulWidget {
   const GudangMenu({super.key});
@@ -65,6 +64,18 @@ class _GudangMenuState extends State<GudangMenu> {
   String selectedSupplierId = '';
   List<Map<String, dynamic>> suppliers = [];
   Map<String, dynamic> selectedSupplierData = {};
+
+  void onUserLogin(String idGudangs) {
+    print("User logging in with idGudangs: $idGudangs");
+    setState(() {
+      barangdata = Future.value([]); // Clear the current barangdata
+    });
+    // Update barangdata with the new future
+    setState(() {
+      // Trigger a new fetch for the new user
+      barangdata = getBarang(idGudangs);
+    });
+  }
 
   Future<void> loadSuppliers() async {
     final data =
@@ -514,6 +525,7 @@ class _GudangMenuState extends State<GudangMenu> {
   @override
   void initState() {
     super.initState();
+    onUserLogin(id_gudangs);
     getFirstKategoriId().then((value) => edit_selectedvalueKategori);
     getKategori();
     fetchData();
@@ -718,7 +730,8 @@ class _GudangMenuState extends State<GudangMenu> {
                                               child: Text('No data available'));
                                         } else {
                                           final List<Map<String, dynamic>>?
-                                              data = snapshot.data;
+                                              data = snapshot.data as List<
+                                                  Map<String, dynamic>>?;
                                           if (data == null) {
                                             return Center(
                                                 child:

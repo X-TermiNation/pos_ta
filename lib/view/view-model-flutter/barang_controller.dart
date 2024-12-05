@@ -881,3 +881,50 @@ Future<Map<String, dynamic>> fetchSupplierByInvoice(
     return {'success': false, 'message': 'An error occurred: $error'};
   }
 }
+
+//mutasi
+Future<Map<String, dynamic>?> insertMutasiBarang(
+    Map<String, dynamic> data) async {
+  try {
+    final url = Uri.parse('http://localhost:3000/barang/mutasiBarang');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body); // Success response
+    } else {
+      print(
+          'Failed to insert MutasiBarang. Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      return null;
+    }
+  } catch (e) {
+    print('Error inserting MutasiBarang: $e');
+    return null;
+  }
+}
+
+Future<List<Map<String, dynamic>>?> getMutasiBarangByCabangRequest(
+    String idCabangRequest) async {
+  try {
+    final url =
+        Uri.parse('http://localhost:3000/barang/mutasiBarang/$idCabangRequest');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(
+          jsonDecode(response.body)); // Success response
+    } else {
+      print(
+          'Failed to fetch MutasiBarang. Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      return null;
+    }
+  } catch (e) {
+    print('Error fetching MutasiBarang: $e');
+    return null;
+  }
+}
