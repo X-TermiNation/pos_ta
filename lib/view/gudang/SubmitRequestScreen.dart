@@ -56,14 +56,9 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
     try {
       final response =
           await getsatuanMutasi(id_cabang, id_gudang, idBarang, context);
-      if (response is List &&
-          response.every((e) => e is Map<String, dynamic>)) {
-        setState(() {
-          items[index]["satuanOptions"] = response;
-        });
-      } else {
-        throw Exception("Invalid response format");
-      }
+      setState(() {
+        items[index]["satuanOptions"] = response;
+      });
     } catch (e) {
       print("Error fetching satuan: $e");
     }
@@ -96,6 +91,46 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
       item["controller"]?.dispose();
     }
     super.dispose();
+  }
+
+  //submit request
+  Future<void> submitRequest() async {
+    if (selectedBranchId == null || items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text("Please select a branch and add at least one item.")),
+      );
+      return;
+    }
+
+    try {
+      // Construct the request payload
+      final data = {
+        "id_cabang_request": GetStorage().read('id_cabang'),
+        "id_cabang_confirm": selectedBranchId,
+        "tanggal_request": DateTime.now().toIso8601String(),
+        "status": "pending",
+        "Items": items.map((item) {
+          return {
+            "nama_item": availableItems.firstWhere((availableItem) =>
+                availableItem["_id"] == item["item"])["nama_barang"],
+            "id_barang_cabang_confirm": item["item"],
+            "nama_satuan": item["satuanOptions"].firstWhere(
+                (opt) => opt["_id"] == item["satuan"],
+                orElse: () => <String, dynamic>{})["nama_satuan"],
+            "id_satuan_cabang_confirm": item["satuan"],
+            "jumlah_item": item["quantity"],
+          };
+        }).toList(),
+      };
+      insertMutasiBarang(data);
+    } catch (e) {
+      print("Error submitting request: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text("An error occurred while submitting the request.$e")),
+      );
+    }
   }
 
   @override
@@ -294,7 +329,8 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
             // Submit Button
             Center(
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
+                  await submitRequest();
                   print("Selected Branch: $selectedBranchId");
                   print("Items: $items");
                 },
