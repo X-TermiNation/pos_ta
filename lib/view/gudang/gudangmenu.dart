@@ -2561,7 +2561,13 @@ class _GudangMenuState extends State<GudangMenu> {
                   body: TabBarView(
                     children: [
                       // First Tab: Request Transfer
-                      RequestTransferTab(),
+                      RequestTransferTab(
+                        fetchData: () async {
+                          List<Map<String, dynamic>>? data =
+                              await getMutasiBarangByCabangRequest();
+                          return data ?? [];
+                        },
+                      ),
                       // Second Tab: Confirm Transfer
                       ConfirmTransferTab(),
                     ],
@@ -2962,6 +2968,23 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
 }
 
 class RequestTransferTab extends StatelessWidget {
+  final Future<List<Map<String, dynamic>>> Function() fetchData;
+
+  RequestTransferTab({required this.fetchData});
+
+  // Helper method to format date to WIB
+  String formatToWIB(String dateTimeString) {
+    try {
+      DateTime utcTime = DateTime.parse(dateTimeString).toUtc();
+      // Adjust to WIB (UTC+7)
+      DateTime wibTime = utcTime.add(Duration(hours: 7));
+      // Format the date
+      return DateFormat('yyyy-MM-dd HH:mm').format(wibTime);
+    } catch (e) {
+      return "Invalid Date";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -2974,36 +2997,60 @@ class RequestTransferTab extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => SubmitRequestScreen()),
+                    builder: (context) => SubmitRequestScreen(),
+                  ),
                 );
               },
               child: Text("Ajukan Request"),
             ),
             SizedBox(height: 20),
             Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                      minWidth: MediaQuery.of(context).size.width),
-                  child: DataTable(
-                    columnSpacing: 16.0, // Adjust spacing between columns
-                    columns: [
-                      DataColumn(label: Text("Tanggal Request")),
-                      DataColumn(label: Text("Cabang")),
-                      DataColumn(label: Text("Barang-Jumlah")),
-                      DataColumn(label: Text("Status")),
-                    ],
-                    rows: List.generate(5, (index) {
-                      return DataRow(cells: [
-                        DataCell(Text("2024-11-29")),
-                        DataCell(Text("Cabang $index")),
-                        DataCell(Text("Barang $index - $index pcs")),
-                        DataCell(Text(index % 2 == 0 ? "Approved" : "Pending")),
-                      ]);
-                    }),
-                  ),
-                ),
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: fetchData(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text("Error fetching data."));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(child: Text("No requests found."));
+                  }
+
+                  final List<Map<String, dynamic>> data = snapshot.data!;
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                          minWidth: MediaQuery.of(context).size.width),
+                      child: DataTable(
+                        columnSpacing: 16.0,
+                        columns: [
+                          DataColumn(label: Text("Tanggal Request (WIB)")),
+                          DataColumn(label: Text("Cabang")),
+                          DataColumn(label: Text("Barang-Jumlah")),
+                          DataColumn(label: Text("Status")),
+                        ],
+                        rows: data.map((request) {
+                          final String tanggalRequest =
+                              formatToWIB(request['tanggal_request']);
+                          final String cabang = request['id_cabang_request'];
+                          final String items = (request['Items'] as List)
+                              .map((item) =>
+                                  "${item['nama_item']}-${item['jumlah_item']}")
+                              .join(", ");
+                          final String status = request['status'];
+
+                          return DataRow(cells: [
+                            DataCell(Text(tanggalRequest)),
+                            DataCell(Text(cabang)),
+                            DataCell(Text(items)),
+                            DataCell(Text(status)),
+                          ]);
+                        }).toList(),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],

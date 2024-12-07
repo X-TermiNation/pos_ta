@@ -947,11 +947,12 @@ Future<Map<String, dynamic>?> insertMutasiBarang(
   }
 }
 
-Future<List<Map<String, dynamic>>?> getMutasiBarangByCabangRequest(
-    String idCabangRequest) async {
+Future<List<Map<String, dynamic>>?> getMutasiBarangByCabangRequest() async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
   try {
-    final url =
-        Uri.parse('http://localhost:3000/barang/mutasiBarang/$idCabangRequest');
+    final url = Uri.parse(
+        'http://localhost:3000/barang/mutasiBarangRequest/$id_cabang');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
