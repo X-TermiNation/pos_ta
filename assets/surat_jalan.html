@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Note</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        .date {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .info-section .box {
+            width: 45%;
+        }
+        .box p {
+            margin: 5px 0; /* Ensuring uniform margin for the text */
+        }
+        .divider {
+            border-top: 1px solid #000;
+            margin: 20px 0;
+        }
+        .table-container {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .table-container th, .table-container td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .table-container th {
+            background-color: #f2f2f2;
+        }
+        .table-container td {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Surat Jalan</h1>
+    </div>
+
+    <div class="date">
+        <p><strong>Tanggal:</strong> <!-- Insert the date here --></p>
+    </div>
+
+    <div class="info-section">
+        <!-- Cabang Request (TO) -->
+        <div class="box">
+            <h3>TO:</h3>
+            <p><strong>Cabang:</strong> <!-- Insert Cabang Request Name here --></p>
+            <p><strong>No Telp:</strong> <!-- Insert Cabang Request Phone Number here --></p>
+            <p><strong>Alamat:</strong> <!-- Insert Cabang Request Address here --></p>
+        </div>
+
+        <!-- Cabang Confirmed (FROM) without border -->
+        <div class="box">
+            <h3>FROM:</h3>
+            <p><strong>Cabang:</strong> <!-- Insert Cabang Confirmed Name here --></p>
+            <p><strong>No Telp:</strong> <!-- Insert Cabang Confirmed Phone Number here --></p>
+            <p><strong>Alamat:</strong> <!-- Insert Cabang Confirmed Address here --></p>
+        </div>
+    </div>
+
+    <!-- Divider Line -->
+    <div class="divider"></div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nama Barang</th>
+                    <th>Nama Satuan</th>
+                    <th>Jumlah Item</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Example of table rows. You can generate these dynamically. -->
+                <tr>
+                    <td><!-- Nama Barang --></td>
+                    <td><!-- Nama Satuan --></td>
+                    <td><!-- Jumlah Item --></td>
+                </tr>
+                <tr>
+                    <td><!-- Nama Barang --></td>
+                    <td><!-- Nama Satuan --></td>
+                    <td><!-- Jumlah Item --></td>
+                </tr>
+                <!-- Add more rows as needed -->
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

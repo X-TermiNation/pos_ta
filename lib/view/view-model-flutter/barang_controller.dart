@@ -969,3 +969,106 @@ Future<List<Map<String, dynamic>>?> getMutasiBarangByCabangRequest() async {
     return null;
   }
 }
+
+Future<List<Map<String, dynamic>>?> getMutasiBarangByCabangConfirm() async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  final String url =
+      'http://localhost:3000/barang/mutasiBarangConfirm/$id_cabang';
+
+  try {
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data);
+    } else if (response.statusCode == 404) {
+      print('No Mutasi Barang found for the given Cabang.');
+      return [];
+    } else {
+      print('Failed to fetch Mutasi Barang: ${response.reasonPhrase}');
+      return null;
+    }
+  } catch (e) {
+    print('Error fetching Mutasi Barang: $e');
+    return null;
+  }
+}
+
+Future<void> updateStatusToConfirmed(String mutasiBarangId) async {
+  final String url =
+      'http://localhost:3000/barang/MutasiChangeConfirmed/$mutasiBarangId';
+
+  try {
+    final response = await http.put(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      print(responseData['message']); // Success message
+    } else {
+      print('Failed to update status: ${response.reasonPhrase}');
+    }
+  } catch (e) {
+    print('Error updating status to confirmed: $e');
+  }
+}
+
+Future<void> updateStatusToDenied(String mutasiBarangId) async {
+  final String url =
+      'http://localhost:3000/barang/MutasiChangeDenied/$mutasiBarangId';
+
+  try {
+    final response = await http.put(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      print(responseData['message']); // Success message
+    } else {
+      print('Failed to update status: ${response.reasonPhrase}');
+    }
+  } catch (e) {
+    print('Error updating status to denied: $e');
+  }
+}
+
+Future<void> updateStatusToDelivered(String mutasiBarangId) async {
+  final String url =
+      'http://localhost:3000/barang/MutasiChangeDelivered/$mutasiBarangId';
+
+  try {
+    final response = await http.put(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      print(responseData['message']); // Success message
+    } else {
+      print('Failed to update status: ${response.reasonPhrase}');
+    }
+  } catch (e) {
+    print('Error updating status to delivered: $e');
+  }
+}
+
+Future<Map<String, dynamic>?> fetchMutasiBarangById(String id) async {
+  final String url = 'http://localhost:3000/barang/getmutasiBarang/$id';
+  try {
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      // Successfully fetched data, decode the JSON
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else if (response.statusCode == 404) {
+      // Handle "not found" case
+      print("MutasiBarang with ID $id not found.");
+      return null;
+    } else {
+      // Handle other error codes
+      print("Error: ${response.statusCode} - ${response.reasonPhrase}");
+      return null;
+    }
+  } catch (e) {
+    // Handle network or other errors
+    print("An error occurred: $e");
+    return null;
+  }
+}

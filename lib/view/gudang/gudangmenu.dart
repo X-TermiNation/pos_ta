@@ -10,7 +10,9 @@ import 'package:intl/intl.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
+import 'package:ta_pos/view/view-model-flutter/cabang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
+import 'package:ta_pos/view/view-model-flutter/SuratJalan_controller.dart';
 import 'package:ta_pos/view/gudang/stockConversionHistory.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
@@ -2561,13 +2563,7 @@ class _GudangMenuState extends State<GudangMenu> {
                   body: TabBarView(
                     children: [
                       // First Tab: Request Transfer
-                      RequestTransferTab(
-                        fetchData: () async {
-                          List<Map<String, dynamic>>? data =
-                              await getMutasiBarangByCabangRequest();
-                          return data ?? [];
-                        },
-                      ),
+                      RequestTransferTab(),
                       // Second Tab: Confirm Transfer
                       ConfirmTransferTab(),
                     ],
@@ -2967,10 +2963,32 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
   }
 }
 
-class RequestTransferTab extends StatelessWidget {
-  final Future<List<Map<String, dynamic>>> Function() fetchData;
+class RequestTransferTab extends StatefulWidget {
+  RequestTransferTab({Key? key}) : super(key: key);
+  @override
+  _RequestTransferTabState createState() => _RequestTransferTabState();
+}
 
-  RequestTransferTab({required this.fetchData});
+class _RequestTransferTabState extends State<RequestTransferTab> {
+  late Future<List<Map<String, dynamic>>> fetchDataRequest;
+
+  @override
+  void initState() {
+    super.initState();
+    // Call the fetchData function when the widget is initialized
+    fetchDataRequest = fetchData();
+  }
+
+  // Function to fetch data for requests
+  Future<List<Map<String, dynamic>>> fetchData() async {
+    try {
+      List<Map<String, dynamic>>? data = await getMutasiBarangByCabangRequest();
+      return data ?? [];
+    } catch (e) {
+      print('Error fetching data for request: $e');
+      return []; // Return an empty list in case of an error
+    }
+  }
 
   // Helper method to format date to WIB
   String formatToWIB(String dateTimeString) {
@@ -2985,6 +3003,37 @@ class RequestTransferTab extends StatelessWidget {
     }
   }
 
+  // Function to get branch name from its ID
+  Future<String> getNamaCabang(String idCabang) async {
+    try {
+      // Directly call the getCabangByID function here
+      final cabangList = await getCabangByID(idCabang);
+      if (cabangList != null && cabangList.isNotEmpty) {
+        return cabangList.first['nama_cabang'] ?? 'Unknown';
+      } else {
+        return 'Unknown';
+      }
+    } catch (e) {
+      return 'Error';
+    }
+  }
+
+  // Function to get status color based on the status value
+  Color getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'denied':
+        return Colors.red;
+      case 'confirmed':
+        return Colors.green;
+      case 'pending':
+        return Colors.yellow.shade700;
+      case 'delivered':
+        return Colors.green;
+      default:
+        return Colors.black;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -2992,6 +3041,7 @@ class RequestTransferTab extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // Button to navigate to the SubmitRequestScreen
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -3004,9 +3054,10 @@ class RequestTransferTab extends StatelessWidget {
               child: Text("Ajukan Request"),
             ),
             SizedBox(height: 20),
+            // FutureBuilder to display the request data
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: fetchData(),
+                future: fetchDataRequest, // Use the initialized future here
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
@@ -3017,6 +3068,7 @@ class RequestTransferTab extends StatelessWidget {
                   }
 
                   final List<Map<String, dynamic>> data = snapshot.data!;
+
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: ConstrainedBox(
@@ -3033,18 +3085,123 @@ class RequestTransferTab extends StatelessWidget {
                         rows: data.map((request) {
                           final String tanggalRequest =
                               formatToWIB(request['tanggal_request']);
-                          final String cabang = request['id_cabang_request'];
+                          final String cabangId = request['id_cabang_request'];
                           final String items = (request['Items'] as List)
                               .map((item) =>
-                                  "${item['nama_item']}-${item['jumlah_item']}")
+                                  "${item['nama_item']}-${item['jumlah_item']} ${item['nama_satuan']}")
                               .join(", ");
                           final String status = request['status'];
 
                           return DataRow(cells: [
                             DataCell(Text(tanggalRequest)),
-                            DataCell(Text(cabang)),
+                            DataCell(
+                              FutureBuilder<String>(
+                                future: getNamaCabang(cabangId),
+                                builder: (context, cabangSnapshot) {
+                                  if (cabangSnapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Text("Loading...");
+                                  } else if (cabangSnapshot.hasError) {
+                                    return Text("Error");
+                                  }
+                                  return Text(cabangSnapshot.data ?? "Unknown");
+                                },
+                              ),
+                            ),
                             DataCell(Text(items)),
-                            DataCell(Text(status)),
+                            DataCell(
+                              Row(
+                                children: [
+                                  Text(
+                                    status,
+                                    style: TextStyle(
+                                      color: getStatusColor(status),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (status == 'confirmed')
+                                    IconButton(
+                                      icon: Icon(Icons.picture_as_pdf),
+                                      onPressed: () async {
+                                        try {
+                                          // Fetch MutasiBarang data by ID
+                                          final mutasiBarang =
+                                              await fetchMutasiBarangById(
+                                                  request['_id']);
+                                          if (mutasiBarang == null) {
+                                            print(
+                                                "No MutasiBarang data found.");
+                                            return;
+                                          }
+
+                                          // Fetch branch data
+                                          final cabangRequest =
+                                              await getNamaCabang(mutasiBarang[
+                                                  'id_cabang_request']);
+                                          final cabangConfirm =
+                                              await getNamaCabang(mutasiBarang[
+                                                  'id_cabang_confirm']);
+                                          final cabangRequestData =
+                                              await getCabangByID(mutasiBarang[
+                                                  'id_cabang_request']);
+                                          final cabangConfirmData =
+                                              await getCabangByID(mutasiBarang[
+                                                  'id_cabang_confirm']);
+
+                                          // Extract branch details
+                                          final cabangRequestPhone =
+                                              cabangRequestData
+                                                      ?.first['no_telp'] ??
+                                                  'Unknown';
+                                          final cabangRequestAddress =
+                                              cabangRequestData
+                                                      ?.first['alamat'] ??
+                                                  'Unknown';
+                                          final cabangConfirmPhone =
+                                              cabangConfirmData
+                                                      ?.first['no_telp'] ??
+                                                  'Unknown';
+                                          final cabangConfirmAddress =
+                                              cabangConfirmData
+                                                      ?.first['alamat'] ??
+                                                  'Unknown';
+
+                                          // Generate PDF
+                                          await generateSuratJalanPDF(
+                                            cabangRequest: cabangRequest,
+                                            telpRequest: cabangRequestPhone,
+                                            alamatRequest: cabangRequestAddress,
+                                            cabangConfirm: cabangConfirm,
+                                            telpConfirm: cabangConfirmPhone,
+                                            alamatConfirm: cabangConfirmAddress,
+                                            items:
+                                                List<Map<String, dynamic>>.from(
+                                                    mutasiBarang['Items']),
+                                            date: formatToWIB(DateTime.now()
+                                                .toIso8601String()),
+                                          );
+
+                                          // Show success message
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(
+                                                    'Surat Jalan PDF generated successfully!')),
+                                          );
+                                        } catch (e) {
+                                          print("Error generating PDF: $e");
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(
+                                                    'Failed to generate Surat Jalan PDF.')),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ),
                           ]);
                         }).toList(),
                       ),
@@ -3060,7 +3217,56 @@ class RequestTransferTab extends StatelessWidget {
   }
 }
 
-class ConfirmTransferTab extends StatelessWidget {
+class ConfirmTransferTab extends StatefulWidget {
+  ConfirmTransferTab({Key? key}) : super(key: key);
+  @override
+  _ConfirmTransferTabState createState() => _ConfirmTransferTabState();
+}
+
+class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
+  late Future<List<Map<String, dynamic>>> futureData;
+
+  @override
+  void initState() {
+    super.initState();
+    futureData = fetchData();
+  }
+
+  Future<List<Map<String, dynamic>>> fetchData() async {
+    try {
+      List<Map<String, dynamic>>? data = await getMutasiBarangByCabangConfirm();
+      return data ?? [];
+    } catch (e) {
+      print('Error fetching data: $e');
+      return []; // Return an empty list in case of an error
+    }
+  }
+
+  // Helper method to format date to WIB
+  String formatToWIB(String dateTimeString) {
+    try {
+      DateTime utcTime = DateTime.parse(dateTimeString).toUtc();
+      DateTime wibTime = utcTime.add(Duration(hours: 7));
+      return DateFormat('yyyy-MM-dd HH:mm').format(wibTime);
+    } catch (e) {
+      return "Invalid Date";
+    }
+  }
+
+  Future<String> getNamaCabang(String idCabang) async {
+    try {
+      // Directly call the getCabangByID function here
+      final cabangList = await getCabangByID(idCabang);
+      if (cabangList != null && cabangList.isNotEmpty) {
+        return cabangList.first['nama_cabang'] ?? 'Unknown';
+      } else {
+        return 'Unknown';
+      }
+    } catch (e) {
+      return 'Error';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -3075,90 +3281,103 @@ class ConfirmTransferTab extends StatelessWidget {
             ),
             SizedBox(height: 20),
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Fixed header row
-                    Container(
-                      color: Colors.grey,
-                      padding:
-                          EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Flexible(
-                            flex: 2,
-                            child: Text(
-                              'Request ID',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          Flexible(
-                            flex: 3,
-                            child: Text(
-                              'Details',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          Flexible(
-                            flex: 1,
-                            child: Text(
-                              'Action',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: futureData,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text("Error fetching data."));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(child: Text("No transfers to confirm."));
+                  }
+
+                  final List<Map<String, dynamic>> data = snapshot.data!;
+
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                          minWidth: MediaQuery.of(context).size.width),
+                      child: DataTable(
+                        columnSpacing: 16.0,
+                        columns: [
+                          DataColumn(label: Text("Tanggal Request (WIB)")),
+                          DataColumn(label: Text("Cabang")),
+                          DataColumn(label: Text("Details (Items)")),
+                          DataColumn(
+                              label: Padding(
+                                  padding: EdgeInsets.only(left: 70),
+                                  child: Text("Action"))),
                         ],
+                        rows: data.map((transfer) {
+                          final String tanggalRequest =
+                              formatToWIB(transfer['tanggal_request']);
+                          final String cabang = transfer['id_cabang_request'];
+                          final String id_mutasi = transfer['_id'];
+                          final String status =
+                              transfer['status']; // Get the status
+                          final String items = (transfer['Items'] as List)
+                              .map((item) =>
+                                  "${item['nama_item']}-${item['jumlah_item']} ${item['nama_satuan']}")
+                              .join(", ");
+
+                          return DataRow(cells: [
+                            DataCell(Text(tanggalRequest)),
+                            DataCell(
+                              FutureBuilder<String>(
+                                future: getNamaCabang(cabang),
+                                builder: (context, cabangSnapshot) {
+                                  if (cabangSnapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Text("Loading...");
+                                  } else if (cabangSnapshot.hasError) {
+                                    return Text("Error");
+                                  }
+                                  return Text(cabangSnapshot.data ?? "Unknown");
+                                },
+                              ),
+                            ),
+                            DataCell(Text(items)),
+                            DataCell(Row(
+                              children: [
+                                if (status == 'pending')
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      await updateStatusToConfirmed(id_mutasi);
+                                      setState(() {});
+                                    },
+                                    child: Text("Accept"),
+                                  ),
+                                if (status == 'pending')
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      await updateStatusToDenied(id_mutasi);
+                                      setState(() {});
+                                    },
+                                    child: Text("Decline"),
+                                  ),
+                                if (status == 'confirmed')
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      //menuju Delivered
+                                    },
+                                    child: Text("Konfirmasi Barang Diambil"),
+                                  ),
+                                if (status == 'denied')
+                                  Padding(
+                                    padding: EdgeInsets.only(left: 70),
+                                    child: Text("Denied",
+                                        style: TextStyle(color: Colors.red)),
+                                  ),
+                              ],
+                            )),
+                          ]);
+                        }).toList(),
                       ),
                     ),
-                    // Scrollable content rows
-                    ListView.builder(
-                      shrinkWrap:
-                          true, // Allows the ListView to be scrollable inside a Column
-                      physics:
-                          NeverScrollableScrollPhysics(), // Prevent ListView from conflicting with parent scroll
-                      itemCount: 5, // TODO: Replace with dynamic data count
-                      itemBuilder: (context, index) {
-                        return Container(
-                          padding: EdgeInsets.symmetric(
-                              vertical: 8.0, horizontal: 16.0),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey[300]!),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              Flexible(
-                                flex: 2,
-                                child: Text("Request #${index + 1}"),
-                              ),
-                              Flexible(
-                                flex: 3,
-                                child: Text("Details for item transfer."),
-                              ),
-                              Flexible(
-                                flex: 1,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => GiveItemScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Text("Accept"),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
           ],

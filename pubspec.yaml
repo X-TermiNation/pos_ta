@@ -27,10 +27,15 @@ dependencies:
   web_socket_channel: ^2.1.0
   sliding_up_panel: ^2.0.0
   flutter_typeahead: ^5.2.0
+  html: ^0.15.0
+  pdf: ^3.6.0
+  path_provider: ^2.0.13
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
 
 flutter:
+  assets:
+    - assets/surat_jalan.html
   uses-material-design: true
