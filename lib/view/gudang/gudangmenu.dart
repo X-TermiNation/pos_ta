@@ -3165,6 +3165,32 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                                               cabangConfirmData
                                                       ?.first['alamat'] ??
                                                   'Unknown';
+                                          String formattedDate = '';
+                                          if (mutasiBarang[
+                                                  'tanggal_konfirmasi'] !=
+                                              null) {
+                                            // Check if 'tanggal_konfirmasi' is a String or DateTime
+                                            var tanggalKonfirmasi =
+                                                mutasiBarang[
+                                                    'tanggal_konfirmasi'];
+                                            if (tanggalKonfirmasi is String) {
+                                              // If it's a string, parse it into DateTime
+                                              DateTime dateTime =
+                                                  DateTime.parse(
+                                                      tanggalKonfirmasi);
+                                              formattedDate = formatToWIB(
+                                                  dateTime.toIso8601String());
+                                            } else if (tanggalKonfirmasi
+                                                is DateTime) {
+                                              // If it's already DateTime, format it directly
+                                              formattedDate = formatToWIB(
+                                                  tanggalKonfirmasi
+                                                      .toIso8601String());
+                                            }
+                                          } else {
+                                            formattedDate =
+                                                'N/A'; // If there's no confirmation date
+                                          }
 
                                           // Generate PDF
                                           await generateSuratJalanPDF(
@@ -3177,8 +3203,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                                             items:
                                                 List<Map<String, dynamic>>.from(
                                                     mutasiBarang['Items']),
-                                            date: formatToWIB(DateTime.now()
-                                                .toIso8601String()),
+                                            date: formattedDate,
                                           );
 
                                           // Show success message
@@ -3359,8 +3384,8 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                                   ),
                                 if (status == 'confirmed')
                                   ElevatedButton(
-                                    onPressed: () {
-                                      //menuju Delivered
+                                    onPressed: () async {
+                                      await updateStatusToDelivered(id_mutasi);
                                     },
                                     child: Text("Konfirmasi Barang Diambil"),
                                   ),
@@ -3369,6 +3394,12 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                                     padding: EdgeInsets.only(left: 70),
                                     child: Text("Denied",
                                         style: TextStyle(color: Colors.red)),
+                                  ),
+                                if (status == 'delivered')
+                                  Padding(
+                                    padding: EdgeInsets.only(left: 70),
+                                    child: Text("Delivered",
+                                        style: TextStyle(color: Colors.green)),
                                   ),
                               ],
                             )),

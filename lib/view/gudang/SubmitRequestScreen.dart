@@ -104,7 +104,6 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
     }
 
     try {
-      // Construct the request payload
       final data = {
         "id_cabang_request": GetStorage().read('id_cabang'),
         "id_cabang_confirm": selectedBranchId,
@@ -123,12 +122,18 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
           };
         }).toList(),
       };
-      insertMutasiBarang(data);
+
+      final result = await insertMutasiBarang(data);
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("Error atau Barang Tidak Terdaftar Pada Cabang.")),
+        );
+      }
     } catch (e) {
       print("Error submitting request: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text("An error occurred while submitting the request.$e")),
+        SnackBar(content: Text("Terjadi Error!, $e")),
       );
     }
   }
