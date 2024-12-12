@@ -3070,165 +3070,177 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                   final List<Map<String, dynamic>> data = snapshot.data!;
 
                   return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                          minWidth: MediaQuery.of(context).size.width),
-                      child: DataTable(
-                        columnSpacing: 16.0,
-                        columns: [
-                          DataColumn(label: Text("Tanggal Request (WIB)")),
-                          DataColumn(label: Text("Cabang")),
-                          DataColumn(label: Text("Barang-Jumlah")),
-                          DataColumn(label: Text("Status")),
-                        ],
-                        rows: data.map((request) {
-                          final String tanggalRequest =
-                              formatToWIB(request['tanggal_request']);
-                          final String cabangId = request['id_cabang_request'];
-                          final String items = (request['Items'] as List)
-                              .map((item) =>
-                                  "${item['nama_item']}-${item['jumlah_item']} ${item['nama_satuan']}")
-                              .join(", ");
-                          final String status = request['status'];
+                    scrollDirection: Axis.horizontal, // Horizontal scrolling
+                    child: SingleChildScrollView(
+                      // Vertical scrolling
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                            minWidth: MediaQuery.of(context).size.width),
+                        child: DataTable(
+                          columnSpacing: 16.0,
+                          columns: [
+                            DataColumn(label: Text("Tanggal Request (WIB)")),
+                            DataColumn(label: Text("Cabang")),
+                            DataColumn(label: Text("Barang-Jumlah")),
+                            DataColumn(label: Text("Status")),
+                          ],
+                          rows: data.map((request) {
+                            final String tanggalRequest =
+                                formatToWIB(request['tanggal_request']);
+                            final String cabangId =
+                                request['id_cabang_request'];
+                            final String items = (request['Items'] as List)
+                                .map((item) =>
+                                    "${item['nama_item']}-${item['jumlah_item']} ${item['nama_satuan']}")
+                                .join(", ");
+                            final String status = request['status'];
 
-                          return DataRow(cells: [
-                            DataCell(Text(tanggalRequest)),
-                            DataCell(
-                              FutureBuilder<String>(
-                                future: getNamaCabang(cabangId),
-                                builder: (context, cabangSnapshot) {
-                                  if (cabangSnapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return Text("Loading...");
-                                  } else if (cabangSnapshot.hasError) {
-                                    return Text("Error");
-                                  }
-                                  return Text(cabangSnapshot.data ?? "Unknown");
-                                },
+                            return DataRow(cells: [
+                              DataCell(Text(tanggalRequest)),
+                              DataCell(
+                                FutureBuilder<String>(
+                                  future: getNamaCabang(cabangId),
+                                  builder: (context, cabangSnapshot) {
+                                    if (cabangSnapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return Text("Loading...");
+                                    } else if (cabangSnapshot.hasError) {
+                                      return Text("Error");
+                                    }
+                                    return Text(
+                                        cabangSnapshot.data ?? "Unknown");
+                                  },
+                                ),
                               ),
-                            ),
-                            DataCell(Text(items)),
-                            DataCell(
-                              Row(
-                                children: [
-                                  Text(
-                                    status,
-                                    style: TextStyle(
-                                      color: getStatusColor(status),
-                                      fontWeight: FontWeight.bold,
+                              DataCell(Text(items)),
+                              DataCell(
+                                Row(
+                                  children: [
+                                    Text(
+                                      status,
+                                      style: TextStyle(
+                                        color: getStatusColor(status),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  if (status == 'confirmed')
-                                    IconButton(
-                                      icon: Icon(Icons.picture_as_pdf),
-                                      onPressed: () async {
-                                        try {
-                                          // Fetch MutasiBarang data by ID
-                                          final mutasiBarang =
-                                              await fetchMutasiBarangById(
-                                                  request['_id']);
-                                          if (mutasiBarang == null) {
-                                            print(
-                                                "No MutasiBarang data found.");
-                                            return;
-                                          }
-
-                                          // Fetch branch data
-                                          final cabangRequest =
-                                              await getNamaCabang(mutasiBarang[
-                                                  'id_cabang_request']);
-                                          final cabangConfirm =
-                                              await getNamaCabang(mutasiBarang[
-                                                  'id_cabang_confirm']);
-                                          final cabangRequestData =
-                                              await getCabangByID(mutasiBarang[
-                                                  'id_cabang_request']);
-                                          final cabangConfirmData =
-                                              await getCabangByID(mutasiBarang[
-                                                  'id_cabang_confirm']);
-
-                                          // Extract branch details
-                                          final cabangRequestPhone =
-                                              cabangRequestData
-                                                      ?.first['no_telp'] ??
-                                                  'Unknown';
-                                          final cabangRequestAddress =
-                                              cabangRequestData
-                                                      ?.first['alamat'] ??
-                                                  'Unknown';
-                                          final cabangConfirmPhone =
-                                              cabangConfirmData
-                                                      ?.first['no_telp'] ??
-                                                  'Unknown';
-                                          final cabangConfirmAddress =
-                                              cabangConfirmData
-                                                      ?.first['alamat'] ??
-                                                  'Unknown';
-                                          String formattedDate = '';
-                                          if (mutasiBarang[
-                                                  'tanggal_konfirmasi'] !=
-                                              null) {
-                                            // Check if 'tanggal_konfirmasi' is a String or DateTime
-                                            var tanggalKonfirmasi =
-                                                mutasiBarang[
-                                                    'tanggal_konfirmasi'];
-                                            if (tanggalKonfirmasi is String) {
-                                              // If it's a string, parse it into DateTime
-                                              DateTime dateTime =
-                                                  DateTime.parse(
-                                                      tanggalKonfirmasi);
-                                              formattedDate = formatToWIB(
-                                                  dateTime.toIso8601String());
-                                            } else if (tanggalKonfirmasi
-                                                is DateTime) {
-                                              // If it's already DateTime, format it directly
-                                              formattedDate = formatToWIB(
-                                                  tanggalKonfirmasi
-                                                      .toIso8601String());
+                                    if (status == 'confirmed')
+                                      IconButton(
+                                        icon: Icon(Icons.picture_as_pdf),
+                                        onPressed: () async {
+                                          try {
+                                            // Fetch MutasiBarang data by ID
+                                            final mutasiBarang =
+                                                await fetchMutasiBarangById(
+                                                    request['_id']);
+                                            if (mutasiBarang == null) {
+                                              print(
+                                                  "No MutasiBarang data found.");
+                                              return;
                                             }
-                                          } else {
-                                            formattedDate =
-                                                'N/A'; // If there's no confirmation date
+
+                                            // Fetch branch data
+                                            final cabangRequest =
+                                                await getNamaCabang(
+                                                    mutasiBarang[
+                                                        'id_cabang_request']);
+                                            final cabangConfirm =
+                                                await getNamaCabang(
+                                                    mutasiBarang[
+                                                        'id_cabang_confirm']);
+                                            final cabangRequestData =
+                                                await getCabangByID(
+                                                    mutasiBarang[
+                                                        'id_cabang_request']);
+                                            final cabangConfirmData =
+                                                await getCabangByID(
+                                                    mutasiBarang[
+                                                        'id_cabang_confirm']);
+
+                                            // Extract branch details
+                                            final cabangRequestPhone =
+                                                cabangRequestData
+                                                        ?.first['no_telp'] ??
+                                                    'Unknown';
+                                            final cabangRequestAddress =
+                                                cabangRequestData
+                                                        ?.first['alamat'] ??
+                                                    'Unknown';
+                                            final cabangConfirmPhone =
+                                                cabangConfirmData
+                                                        ?.first['no_telp'] ??
+                                                    'Unknown';
+                                            final cabangConfirmAddress =
+                                                cabangConfirmData
+                                                        ?.first['alamat'] ??
+                                                    'Unknown';
+                                            String formattedDate = '';
+                                            if (mutasiBarang[
+                                                    'tanggal_konfirmasi'] !=
+                                                null) {
+                                              // Check if 'tanggal_konfirmasi' is a String or DateTime
+                                              var tanggalKonfirmasi =
+                                                  mutasiBarang[
+                                                      'tanggal_konfirmasi'];
+                                              if (tanggalKonfirmasi is String) {
+                                                // If it's a string, parse it into DateTime
+                                                DateTime dateTime =
+                                                    DateTime.parse(
+                                                        tanggalKonfirmasi);
+                                                formattedDate = formatToWIB(
+                                                    dateTime.toIso8601String());
+                                              } else if (tanggalKonfirmasi
+                                                  is DateTime) {
+                                                // If it's already DateTime, format it directly
+                                                formattedDate = formatToWIB(
+                                                    tanggalKonfirmasi
+                                                        .toIso8601String());
+                                              }
+                                            } else {
+                                              formattedDate =
+                                                  'N/A'; // If there's no confirmation date
+                                            }
+
+                                            // Generate PDF
+                                            await generateSuratJalanPDF(
+                                              cabangRequest: cabangRequest,
+                                              telpRequest: cabangRequestPhone,
+                                              alamatRequest:
+                                                  cabangRequestAddress,
+                                              cabangConfirm: cabangConfirm,
+                                              telpConfirm: cabangConfirmPhone,
+                                              alamatConfirm:
+                                                  cabangConfirmAddress,
+                                              items: List<
+                                                      Map<String,
+                                                          dynamic>>.from(
+                                                  mutasiBarang['Items']),
+                                              date: formattedDate,
+                                            );
+
+                                            // Show success message
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      'Surat Jalan PDF generated successfully!')),
+                                            );
+                                          } catch (e) {
+                                            print("Error generating PDF: $e");
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      'Failed to generate Surat Jalan PDF.')),
+                                            );
                                           }
-
-                                          // Generate PDF
-                                          await generateSuratJalanPDF(
-                                            cabangRequest: cabangRequest,
-                                            telpRequest: cabangRequestPhone,
-                                            alamatRequest: cabangRequestAddress,
-                                            cabangConfirm: cabangConfirm,
-                                            telpConfirm: cabangConfirmPhone,
-                                            alamatConfirm: cabangConfirmAddress,
-                                            items:
-                                                List<Map<String, dynamic>>.from(
-                                                    mutasiBarang['Items']),
-                                            date: formattedDate,
-                                          );
-
-                                          // Show success message
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                                content: Text(
-                                                    'Surat Jalan PDF generated successfully!')),
-                                          );
-                                        } catch (e) {
-                                          print("Error generating PDF: $e");
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                                content: Text(
-                                                    'Failed to generate Surat Jalan PDF.')),
-                                          );
-                                        }
-                                      },
-                                    ),
-                                ],
+                                        },
+                                      ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ]);
-                        }).toList(),
+                            ]);
+                          }).toList(),
+                        ),
                       ),
                     ),
                   );
@@ -3244,6 +3256,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
 
 class ConfirmTransferTab extends StatefulWidget {
   ConfirmTransferTab({Key? key}) : super(key: key);
+
   @override
   _ConfirmTransferTabState createState() => _ConfirmTransferTabState();
 }
@@ -3267,7 +3280,6 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
     }
   }
 
-  // Helper method to format date to WIB
   String formatToWIB(String dateTimeString) {
     try {
       DateTime utcTime = DateTime.parse(dateTimeString).toUtc();
@@ -3280,7 +3292,6 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
 
   Future<String> getNamaCabang(String idCabang) async {
     try {
-      // Directly call the getCabangByID function here
       final cabangList = await getCabangByID(idCabang);
       if (cabangList != null && cabangList.isNotEmpty) {
         return cabangList.first['nama_cabang'] ?? 'Unknown';
@@ -3320,91 +3331,103 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                   final List<Map<String, dynamic>> data = snapshot.data!;
 
                   return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                          minWidth: MediaQuery.of(context).size.width),
-                      child: DataTable(
-                        columnSpacing: 16.0,
-                        columns: [
-                          DataColumn(label: Text("Tanggal Request (WIB)")),
-                          DataColumn(label: Text("Cabang")),
-                          DataColumn(label: Text("Details (Items)")),
-                          DataColumn(
+                    scrollDirection: Axis.vertical,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minWidth: MediaQuery.of(context)
+                              .size
+                              .width, // Ensure it takes full width
+                        ),
+                        child: DataTable(
+                          columnSpacing: 16.0,
+                          columns: [
+                            DataColumn(label: Text("Tanggal Request (WIB)")),
+                            DataColumn(label: Text("Cabang")),
+                            DataColumn(label: Text("Details (Items)")),
+                            DataColumn(
                               label: Padding(
-                                  padding: EdgeInsets.only(left: 70),
-                                  child: Text("Action"))),
-                        ],
-                        rows: data.map((transfer) {
-                          final String tanggalRequest =
-                              formatToWIB(transfer['tanggal_request']);
-                          final String cabang = transfer['id_cabang_request'];
-                          final String id_mutasi = transfer['_id'];
-                          final String status =
-                              transfer['status']; // Get the status
-                          final String items = (transfer['Items'] as List)
-                              .map((item) =>
-                                  "${item['nama_item']}-${item['jumlah_item']} ${item['nama_satuan']}")
-                              .join(", ");
-
-                          return DataRow(cells: [
-                            DataCell(Text(tanggalRequest)),
-                            DataCell(
-                              FutureBuilder<String>(
-                                future: getNamaCabang(cabang),
-                                builder: (context, cabangSnapshot) {
-                                  if (cabangSnapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return Text("Loading...");
-                                  } else if (cabangSnapshot.hasError) {
-                                    return Text("Error");
-                                  }
-                                  return Text(cabangSnapshot.data ?? "Unknown");
-                                },
+                                padding: EdgeInsets.only(left: 70),
+                                child: Text("Action"),
                               ),
                             ),
-                            DataCell(Text(items)),
-                            DataCell(Row(
-                              children: [
-                                if (status == 'pending')
-                                  ElevatedButton(
-                                    onPressed: () async {
-                                      await updateStatusToConfirmed(id_mutasi);
-                                      setState(() {});
-                                    },
-                                    child: Text("Accept"),
-                                  ),
-                                if (status == 'pending')
-                                  ElevatedButton(
-                                    onPressed: () async {
-                                      await updateStatusToDenied(id_mutasi);
-                                      setState(() {});
-                                    },
-                                    child: Text("Decline"),
-                                  ),
-                                if (status == 'confirmed')
-                                  ElevatedButton(
-                                    onPressed: () async {
-                                      await updateStatusToDelivered(id_mutasi);
-                                    },
-                                    child: Text("Konfirmasi Barang Diambil"),
-                                  ),
-                                if (status == 'denied')
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 70),
-                                    child: Text("Denied",
-                                        style: TextStyle(color: Colors.red)),
-                                  ),
-                                if (status == 'delivered')
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 70),
-                                    child: Text("Delivered",
-                                        style: TextStyle(color: Colors.green)),
-                                  ),
-                              ],
-                            )),
-                          ]);
-                        }).toList(),
+                          ],
+                          rows: data.map((transfer) {
+                            final String tanggalRequest =
+                                formatToWIB(transfer['tanggal_request']);
+                            final String cabang = transfer['id_cabang_request'];
+                            final String id_mutasi = transfer['_id'];
+                            final String status =
+                                transfer['status']; // Get the status
+                            final String items = (transfer['Items'] as List)
+                                .map((item) =>
+                                    "${item['nama_item']}-${item['jumlah_item']} ${item['nama_satuan']}")
+                                .join(", ");
+
+                            return DataRow(cells: [
+                              DataCell(Text(tanggalRequest)),
+                              DataCell(
+                                FutureBuilder<String>(
+                                  future: getNamaCabang(cabang),
+                                  builder: (context, cabangSnapshot) {
+                                    if (cabangSnapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return Text("Loading...");
+                                    } else if (cabangSnapshot.hasError) {
+                                      return Text("Error");
+                                    }
+                                    return Text(
+                                        cabangSnapshot.data ?? "Unknown");
+                                  },
+                                ),
+                              ),
+                              DataCell(Text(items)),
+                              DataCell(Row(
+                                children: [
+                                  if (status == 'pending')
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        await updateStatusToConfirmed(
+                                            id_mutasi);
+                                        setState(() {}); // Refresh the UI
+                                      },
+                                      child: Text("Accept"),
+                                    ),
+                                  if (status == 'pending')
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        await updateStatusToDenied(id_mutasi);
+                                        setState(() {}); // Refresh the UI
+                                      },
+                                      child: Text("Decline"),
+                                    ),
+                                  if (status == 'confirmed')
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        await updateStatusToDelivered(
+                                            id_mutasi);
+                                      },
+                                      child: Text("Konfirmasi Barang Diambil"),
+                                    ),
+                                  if (status == 'denied')
+                                    Padding(
+                                      padding: EdgeInsets.only(left: 70),
+                                      child: Text("Denied",
+                                          style: TextStyle(color: Colors.red)),
+                                    ),
+                                  if (status == 'delivered')
+                                    Padding(
+                                      padding: EdgeInsets.only(left: 70),
+                                      child: Text("Delivered",
+                                          style:
+                                              TextStyle(color: Colors.green)),
+                                    ),
+                                ],
+                              )),
+                            ]);
+                          }).toList(),
+                        ),
                       ),
                     ),
                   );

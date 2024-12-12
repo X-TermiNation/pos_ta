@@ -338,6 +338,7 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
                   await submitRequest();
                   print("Selected Branch: $selectedBranchId");
                   print("Items: $items");
+                  Navigator.pop(context);
                 },
                 child: Text("Submit Request"),
               ),

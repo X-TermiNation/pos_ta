@@ -1033,20 +1033,99 @@ Future<void> updateStatusToDenied(String mutasiBarangId) async {
 }
 
 Future<void> updateStatusToDelivered(String mutasiBarangId) async {
-  final String url =
+  final String updateUrl =
       'http://localhost:3000/barang/MutasiChangeDelivered/$mutasiBarangId';
-
   try {
-    final response = await http.put(Uri.parse(url));
+    // Fetch MutasiBarang details using the reusable function
+    final mutasiData = await fetchMutasiBarangById(mutasiBarangId);
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      print(responseData['message']); // Success message
-    } else {
-      print('Failed to update status: ${response.reasonPhrase}');
+    if (mutasiData == null) {
+      throw Exception(
+          "Failed to fetch MutasiBarang details for ID: $mutasiBarangId");
     }
+
+    // Check if 'Items' is present and not null
+    final items = mutasiData['Items'];
+    if (items == null || items.isEmpty) {
+      throw Exception(
+          "No items found in MutasiBarang with ID: $mutasiBarangId");
+    }
+
+    final now = DateTime.now();
+
+    // Insert HistoryStok for both cabang
+    for (var item in items) {
+      // Print out the item for debugging
+      print("Item: $item");
+
+      final idBarangRequest = item['id_barang_cabang_request'];
+      final satuanIdRequest = item['id_satuan_cabang_request'];
+      final jumlahInput = item['jumlah_item'];
+
+      // Validate if the required fields are not null
+      if (idBarangRequest == null ||
+          satuanIdRequest == null ||
+          jumlahInput == null) {
+        print(
+            "Missing fields in item: idBarangRequest: $idBarangRequest, satuanIdRequest: $satuanIdRequest, jumlahInput: $jumlahInput");
+        throw Exception("Missing required fields in MutasiItems");
+      }
+
+      // Generate unique activity codes
+      // Get the current time in UTC
+      final DateTime nowUtc = DateTime.now().toUtc();
+
+      // Convert to WIB (UTC+7)
+      final DateTime nowWib = nowUtc.add(Duration(hours: 7));
+
+      // Format date and time separately
+      final String dateWib =
+          "${nowWib.year}${nowWib.month.toString().padLeft(2, '0')}${nowWib.day.toString().padLeft(2, '0')}";
+      final String timeWib =
+          "${nowWib.hour.toString().padLeft(2, '0')}${nowWib.minute.toString().padLeft(2, '0')}${nowWib.second.toString().padLeft(2, '0')}";
+
+      // Create Kode_Aktivitas using the formatted date and time
+      final String kodeAktivitasRequest =
+          "TRF_Masuk_${mutasiBarangId}_${dateWib}_${timeWib}";
+      final String kodeAktivitasConfirm =
+          "TRF_Keluar_${mutasiBarangId}_${dateWib}_${timeWib}";
+
+      // Insert for request cabang (masuk)
+      await insertHistoryStok(
+        id_barang: idBarangRequest,
+        satuan_id: satuanIdRequest,
+        tanggal_pengisian: now,
+        jumlah_input: jumlahInput,
+        jenis_aktivitas: "transfer",
+        Kode_Aktivitas: kodeAktivitasRequest,
+        id_cabang: mutasiData['id_cabang_request'],
+      );
+
+      // Insert for confirm cabang (keluar)
+      await insertHistoryStok(
+        id_barang: item['id_barang_cabang_confirm'],
+        satuan_id: item['id_satuan_cabang_confirm'],
+        tanggal_pengisian: now,
+        jumlah_input: jumlahInput,
+        jenis_aktivitas: "transfer",
+        Kode_Aktivitas: kodeAktivitasConfirm,
+        id_cabang: mutasiData['id_cabang_confirm'],
+      );
+    }
+
+    // Update status to delivered
+    final statusResponse = await http.put(Uri.parse(updateUrl));
+
+    if (statusResponse.statusCode != 200) {
+      throw Exception(
+          'Failed to update status: ${statusResponse.reasonPhrase}');
+    }
+
+    // Print success message
+    print(jsonDecode(statusResponse.body)['message']);
   } catch (e) {
-    print('Error updating status to delivered: $e');
+    print('Error during updateStatusToDelivered: $e');
+    throw Exception('Failed to complete updateStatusToDelivered: $e');
   }
 }
 
