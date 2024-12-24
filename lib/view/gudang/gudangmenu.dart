@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ta_pos/view/gudang/AddHierarchyPage.dart';
 import 'package:ta_pos/view/gudang/StockHistory.dart';
 import 'package:ta_pos/view/gudang/SubmitRequestScreen.dart';
 import 'package:ta_pos/view/gudang/SupplierHistory.dart';
@@ -173,7 +174,8 @@ class _GudangMenuState extends State<GudangMenu> {
   //konversi barang
   Map<String, dynamic>? selectedBarang;
   List<Map<String, dynamic>> konversi_satuanList = [];
-  List<Map<String, dynamic>> konversi_basesatuan = [];
+  List<Map<String, dynamic>> konversi_satuanTo = [];
+  int ConversionRate = 0;
   String konversisearchQuery = "";
   Map<String, dynamic>? selectedSatuanFrom;
   Map<String, dynamic>? selectedSatuanTo;
@@ -182,29 +184,88 @@ class _GudangMenuState extends State<GudangMenu> {
   int stockAmount = 0;
   TextEditingController amountkonversifrom = TextEditingController();
   TextEditingController amountkonversito = TextEditingController();
+  Map<String, dynamic>? hierarchysatuan;
   //
   void onBarangSelected(Map<String, dynamic> barang) async {
-    konversi_satuanList = await getsatuan(barang["_id"].toString(), context);
-    final satuan = await getSatuanById(
-        barang["_id"].toString(), barang["base_satuan_id"].toString(), context);
+    final satuanList = await getsatuan(barang["_id"].toString(), context);
 
-    if (satuan != null) {
-      konversi_basesatuan = [satuan]; // Wrap the result in a list
-    } else {
-      konversi_basesatuan = []; // Default to an empty list
-    }
+    // Exclude the base satuan from the list
+    final List<Map<String, dynamic>> filteredSatuanList = satuanList
+        .where((satuan) => satuan["_id"] != barang["base_satuan_id"])
+        .toList();
+
     setState(() {
       selectedBarang = barang;
-      selectedSatuanFrom = null;
+      konversi_satuanList =
+          filteredSatuanList; // Update the satuanFrom dropdown with filtered list
+      selectedSatuanFrom = null; // Reset selected left dropdown
+      konversi_satuanTo = []; // Reset right dropdown
       selectedSatuanTo = null;
-      stockAmount = 0;
-      amountkonversifrom.text = stockAmount.toString();
     });
+  }
+
+  void onSatuanFromSelected(Map<String, dynamic> satuanFrom) async {
+    if (selectedBarang == null) {
+      showToast(context, 'Please select a Barang first.');
+      return;
+    }
+
+    final String idBarang =
+        selectedBarang!["_id"]?.toString() ?? ''; // Use empty string if null
+    final String selectedSatuanFromId =
+        satuanFrom["_id"]?.toString() ?? ''; // Use empty string if null
+
+    // Check if both IDs are not empty before proceeding
+    if (idBarang.isEmpty || selectedSatuanFromId.isEmpty) {
+      showToast(context, 'Barang or SatuanFrom ID is missing.');
+      return;
+    }
+
+    try {
+      // Fetch hierarchy for the selected satuanFrom
+      final List<Map<String, dynamic>> hierarchyData =
+          await fetchUnitConversionsWithId(selectedSatuanFromId, context);
+
+      // Check if the hierarchyData has valid entries
+      if (hierarchyData.isEmpty) {
+        showToast(context, 'No hierarchies found for the selected satuan.');
+        setState(() {
+          konversi_satuanTo = []; // Reset right dropdown
+          selectedSatuanTo = null;
+        });
+        return;
+      }
+
+      // Extract child satuan details from the hierarchyData
+      List<Map<String, dynamic>> childSatuans = [];
+
+      for (var hierarchy in hierarchyData) {
+        final String? childSatuanId = hierarchy['target'];
+        // Check if childSatuanId is not null
+        if (childSatuanId != null && childSatuanId.isNotEmpty) {
+          // Fetch each child satuan
+          final satuanDetails =
+              await getSatuanById(idBarang, childSatuanId, context);
+          if (satuanDetails != null) {
+            childSatuans.add(satuanDetails);
+          }
+        }
+      }
+
+      setState(() {
+        selectedSatuanFrom = satuanFrom;
+        konversi_satuanTo = childSatuans; // Populate right dropdown
+        selectedSatuanTo = null; // Reset selected right dropdown
+      });
+    } catch (error) {
+      showToast(context, 'Error fetching child satuans: $error');
+      print('Error fetching child satuans: $error');
+    }
   }
 
   //untuk tombol konversi(masih dalam proses)
   void onConvert(String id_barang, String id_satuanFrom, String id_satuanTo) {
-    num increase = stockAmount * selectedSatuanFrom!['isi_satuan'];
+    num increase = stockAmount * ConversionRate;
     num decrease = stockAmount;
     convertSatuan(
       id_barang,
@@ -1104,7 +1165,7 @@ class _GudangMenuState extends State<GudangMenu> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Daftar Barang',
+                          'Tambah Barang',
                           style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -1446,6 +1507,18 @@ class _GudangMenuState extends State<GudangMenu> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Search bar for Barang
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Konversi Satuan",
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+
+                  SizedBox(
+                    height: 10,
+                  ),
                   FutureBuilder<List<Map<String, dynamic>>>(
                     future: barangdata,
                     builder: (context, snapshot) {
@@ -1578,29 +1651,23 @@ class _GudangMenuState extends State<GudangMenu> {
                         Expanded(
                           child: Column(
                             children: [
-                              DropdownButton<Map<String, dynamic>>(
+                              DropdownButtonFormField<Map<String, dynamic>>(
                                 value: selectedSatuanFrom,
-                                hint: Text("From Satuan"),
-                                isExpanded:
-                                    true, // Makes the dropdown take full width
-                                items: konversi_satuanList
-                                    .where((satuan) =>
-                                        satuan["_id"] !=
-                                        selectedBarang!["base_satuan_id"])
-                                    .map((satuan) {
-                                  return DropdownMenuItem<Map<String, dynamic>>(
+                                items: konversi_satuanList.map((satuan) {
+                                  return DropdownMenuItem(
                                     value: satuan,
-                                    child: Text(satuan["nama_satuan"]),
+                                    child: Text(satuan["nama_satuan"] ?? ""),
                                   );
                                 }).toList(),
-                                onChanged: (satuan) {
-                                  setState(() {
-                                    stockAmount = 0;
-                                    amountkonversifrom.text =
-                                        stockAmount.toString();
-                                    selectedSatuanFrom = satuan;
-                                  });
+                                onChanged: (newValue) {
+                                  if (newValue != null) {
+                                    onSatuanFromSelected(newValue);
+                                    ConversionRate = 0;
+                                  }
                                 },
+                                decoration: InputDecoration(
+                                  labelText: 'Select Satuan From',
+                                ),
                               ),
                               // Stock information and other details
                               if (selectedSatuanFrom != null) ...[
@@ -1609,8 +1676,6 @@ class _GudangMenuState extends State<GudangMenu> {
                                     "Price: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(selectedSatuanFrom!['harga_satuan'])}"),
                                 Text(
                                     "Amount: ${selectedSatuanFrom!['jumlah_satuan']}"),
-                                Text(
-                                    "Count: ${selectedSatuanFrom!['isi_satuan']}"),
                               ] else
                                 SizedBox(height: 24),
                             ],
@@ -1618,9 +1683,17 @@ class _GudangMenuState extends State<GudangMenu> {
                         ),
 
                         // Arrow Icon
-                        Container(
-                          width: 100,
-                          child: Icon(Icons.arrow_forward, size: 50),
+                        Column(
+                          children: [
+                            Container(
+                              width: 100,
+                              child: Icon(Icons.arrow_forward, size: 50),
+                            ),
+                            Text("Conversion Rate"),
+                            ConversionRate == 0
+                                ? Text("0")
+                                : Text(ConversionRate.toString()),
+                          ],
                         ),
 
                         // 'To' Satuan Column
@@ -1632,16 +1705,27 @@ class _GudangMenuState extends State<GudangMenu> {
                                 hint: Text("To Satuan"),
                                 isExpanded:
                                     true, // Makes the dropdown take full width
-                                items: konversi_basesatuan.map((satuan) {
+                                items: konversi_satuanTo.map((satuan) {
                                   return DropdownMenuItem<Map<String, dynamic>>(
                                     value: satuan,
                                     child: Text(satuan["nama_satuan"]),
                                   );
                                 }).toList(),
-                                onChanged: (satuan) {
+                                onChanged: (satuan) async {
+                                  hierarchysatuan =
+                                      await fetchConversionByTarget(
+                                          selectedBarang!['_id'],
+                                          selectedSatuanFrom!['_id'],
+                                          satuan!['_id']);
                                   setState(() {
                                     stockAmount = 0;
                                     selectedSatuanTo = satuan;
+                                    ConversionRate =
+                                        hierarchysatuan!['conversionRate'];
+                                    amountkonversifrom.text = "0";
+                                    amountkonversito.text =
+                                        (stockAmount * ConversionRate)
+                                            .toString();
                                   });
                                 },
                               ),
@@ -1652,8 +1736,6 @@ class _GudangMenuState extends State<GudangMenu> {
                                     "Price: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(selectedSatuanTo!['harga_satuan'])}"),
                                 Text(
                                     "Amount: ${selectedSatuanTo!['jumlah_satuan']}"),
-                                Text(
-                                    "Count: ${selectedSatuanTo!['isi_satuan']}"),
                               ] else
                                 SizedBox(height: 24),
                             ],
@@ -1678,10 +1760,9 @@ class _GudangMenuState extends State<GudangMenu> {
                                           stockAmount--;
                                           amountkonversifrom.text =
                                               stockAmount.toString();
-                                          amountkonversito.text = (stockAmount *
-                                                  selectedSatuanFrom![
-                                                      "isi_satuan"])
-                                              .toString();
+                                          amountkonversito.text =
+                                              (stockAmount * ConversionRate)
+                                                  .toString();
                                         });
                                       }
                                     },
@@ -1722,9 +1803,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                             amountkonversifrom.text =
                                                 stockAmount.toString();
                                             amountkonversito.text =
-                                                (stockAmount *
-                                                        selectedSatuanFrom![
-                                                            "isi_satuan"])
+                                                (stockAmount * ConversionRate)
                                                     .toString();
                                           });
                                           showToast(
@@ -1735,9 +1814,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                             amountkonversifrom.text =
                                                 stockAmount.toString();
                                             amountkonversito.text =
-                                                (stockAmount *
-                                                        selectedSatuanFrom![
-                                                            "isi_satuan"])
+                                                (stockAmount * ConversionRate)
                                                     .toString();
                                           });
                                         }
@@ -1755,10 +1832,9 @@ class _GudangMenuState extends State<GudangMenu> {
                                           stockAmount++;
                                           amountkonversifrom.text =
                                               stockAmount.toString();
-                                          amountkonversito.text = (stockAmount *
-                                                  selectedSatuanFrom![
-                                                      "isi_satuan"])
-                                              .toString();
+                                          amountkonversito.text =
+                                              (stockAmount * ConversionRate)
+                                                  .toString();
                                         });
                                       } else {
                                         showToast(
@@ -1803,9 +1879,10 @@ class _GudangMenuState extends State<GudangMenu> {
                               selectedSatuanFrom! != selectedSatuanTo!)
                           ? () {
                               onConvert(
-                                  selectedBarang!['_id'].toString(),
-                                  selectedSatuanFrom!['_id'],
-                                  selectedSatuanTo!['_id']);
+                                selectedBarang!['_id'].toString(),
+                                selectedSatuanFrom!['_id'],
+                                selectedSatuanTo!['_id'],
+                              );
 
                               setState(() {
                                 selectedBarang = null;
@@ -1814,6 +1891,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                 stockAmount = 0;
                                 amountkonversifrom.text =
                                     stockAmount.toString();
+                                ConversionRate = 0;
                               });
                             }
                           : null,
@@ -1851,12 +1929,25 @@ class _GudangMenuState extends State<GudangMenu> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Tambah Satuan",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Tambah Satuan",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          FilledButton(
+                              onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            AddHierarchyPage()),
+                                  ),
+                              child: Text("Manage Hierarchy Satuan"))
+                        ],
                       ),
                       SizedBox(height: 8),
                       TextField(
@@ -1981,13 +2072,50 @@ class _GudangMenuState extends State<GudangMenu> {
 
                   Spacer(),
                   FilledButton(
-                    onPressed: () {
-                      addsatuan(
-                          satuan_idbarang,
-                          nama_satuan.text,
-                          harga_satuan.text.toString(),
-                          isi_satuan.text.toString(),
-                          context);
+                    onPressed: () async {
+                      final itemData = await searchItemByID(satuan_idbarang);
+                      if (itemData != null) {
+                        // Extract base_satuan_id from the item data
+                        String baseSatuanId = itemData['base_satuan_id'];
+                        double conversionRate =
+                            double.parse(isi_satuan.text.toString());
+                        String id_satuan = await addsatuan(
+                            satuan_idbarang,
+                            nama_satuan.text,
+                            harga_satuan.text.toString(),
+                            isi_satuan.text.toString(),
+                            context);
+                        if (id_satuan != "") {
+                          final conversionResponse = await insertConversion(
+                            sourceSatuanId: id_satuan,
+                            targetSatuanId: baseSatuanId,
+                            conversionRate: conversionRate,
+                          );
+
+                          if (conversionResponse['success']) {
+                            print('Conversion added successfully!');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content:
+                                      Text('Conversion berhasil ditambahkan')),
+                            );
+                          } else {
+                            print(
+                                'Failed to add conversion: ${conversionResponse['message']}');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Gagal menambahkan konversi')),
+                            );
+                          }
+                        }
+                      } else {
+                        print('Item not found or error occurred');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  'Barang tidak ditemukan atau terjadi kesalahan')),
+                        );
+                      }
                       setState(() {
                         nama_satuan.text = "";
                         harga_satuan.text = "";

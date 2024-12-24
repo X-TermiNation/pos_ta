@@ -437,7 +437,7 @@ Future<Map<String, String>> getmapjenis() async {
 }
 
 //satuan
-Future<String?> addsatuan(String id_barang, String nama_satuan,
+Future<String> addsatuan(String id_barang, String nama_satuan,
     String harga_satuan, String isi_satuan, BuildContext context) async {
   try {
     String jumlah_satuan = "0";
@@ -472,7 +472,7 @@ Future<String?> addsatuan(String id_barang, String nama_satuan,
     showToast(context, "Error: $error");
     print('Exception during HTTP request: $error');
   }
-  return null; // Return null in case of failure
+  return ""; // Return null in case of failure
 }
 
 //delete satuan
@@ -1149,6 +1149,131 @@ Future<Map<String, dynamic>?> fetchMutasiBarangById(String id) async {
   } catch (e) {
     // Handle network or other errors
     print("An error occurred: $e");
+    return null;
+  }
+}
+
+//konversi hierarki
+Future<Map<String, dynamic>> insertConversion({
+  required String sourceSatuanId,
+  required String targetSatuanId,
+  required double conversionRate,
+}) async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  String id_gudang = dataStorage.read('id_gudang');
+  final response = await http.post(
+    Uri.parse(
+        'http://localhost:3000/barang/insert-conversion/$id_cabang/$id_gudang'),
+    headers: {'Content-Type': 'application/json'},
+    body: json.encode({
+      'sourceSatuanId': sourceSatuanId,
+      'targetSatuanId': targetSatuanId,
+      'conversionRate': conversionRate,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    return json.decode(response.body);
+  } else {
+    return {
+      'success': false,
+      'message': 'Failed to insert conversion',
+    };
+  }
+}
+
+//fetch return name
+Future<Map<String, dynamic>?> fetchSatuanHierarchyById(String satuanId) async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  String id_gudang = dataStorage.read('id_gudang');
+  final url =
+      'http://localhost:3000/barang/conversions/$id_cabang/$id_gudang/$satuanId';
+
+  try {
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else if (response.statusCode == 404) {
+      print('No conversions found.');
+      return null;
+    } else {
+      print('Failed to load satuan: ${response.reasonPhrase}');
+      return null;
+    }
+  } catch (error) {
+    print('Error fetching satuan hierarchy: $error');
+    return null;
+  }
+}
+
+//fetch return ID
+Future<List<Map<String, dynamic>>> fetchUnitConversionsWithId(
+    String sourceSatuanId, BuildContext context) async {
+  final dataStorage = GetStorage();
+  String idCabang = dataStorage.read('id_cabang');
+  String idGudang = dataStorage.read('id_gudang');
+
+  // Define the URL with the provided parameters
+  final url =
+      'http://localhost:3000/barang/conversionsID/$idCabang/$idGudang/$sourceSatuanId';
+
+  try {
+    final response = await http.get(Uri.parse(url));
+
+    // Check the status code
+    if (response.statusCode == 200) {
+      // Parse the JSON response
+      final Map<String, dynamic> jsonData = json.decode(response.body);
+
+      // Check if the response contains data
+      if (jsonData['success'] == true && jsonData.containsKey('data')) {
+        List<dynamic> data = jsonData['data'];
+        return List<Map<String, dynamic>>.from(data);
+      } else {
+        showToast(context, 'No conversions found');
+        return [];
+      }
+    } else {
+      showToast(context,
+          'Failed to fetch conversions. HTTP Error: ${response.statusCode}');
+      return [];
+    }
+  } catch (error) {
+    showToast(context, 'Error: $error');
+    print('Error fetching unit conversions: $error');
+    return [];
+  }
+}
+
+//fetch conversion by target satuan
+Future<Map<String, dynamic>?> fetchConversionByTarget(
+    String idBarang, String sourceSatuanId, String targetSatuanId) async {
+  final dataStorage = GetStorage();
+  String idCabang = dataStorage.read('id_cabang');
+  String idGudang = dataStorage.read('id_gudang');
+  final String baseUrl =
+      "http://localhost:3000/barang/conversionByTarget/$idCabang/$idGudang/$idBarang/$sourceSatuanId/$targetSatuanId";
+
+  try {
+    // Send the GET request
+    final response = await http.get(Uri.parse(baseUrl));
+
+    // Check if the response status code is 200 (OK)
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      return data["data"]; // Return the conversion data
+    } else if (response.statusCode == 404) {
+      print("Conversion not found");
+      return null;
+    } else {
+      print("Failed to fetch conversion: ${response.statusCode}");
+      return null;
+    }
+  } catch (error) {
+    print("Error fetching conversion: $error");
     return null;
   }
 }
