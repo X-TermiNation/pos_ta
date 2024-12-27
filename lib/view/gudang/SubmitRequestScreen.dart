@@ -192,8 +192,7 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   return Padding(
-                    padding:
-                        const EdgeInsets.only(bottom: 16.0), // Add spacing here
+                    padding: const EdgeInsets.only(bottom: 16.0),
                     child: Row(
                       children: [
                         // Barang Dropdown
@@ -217,9 +216,7 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
                                 .where((item) =>
                                     !items
                                         .any((e) => e["item"] == item["_id"]) ||
-                                    item["_id"] ==
-                                        items[index]
-                                            ["item"]) // Allow current value
+                                    item["_id"] == items[index]["item"])
                                 .map((item) {
                               return DropdownMenuItem<String>(
                                 value: item["_id"] as String,
@@ -253,7 +250,7 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
                                               satuan["nama_satuan"] as String),
                                         ))
                                     .toList()
-                                : [], // Fallback to an empty list
+                                : [],
                             decoration: InputDecoration(
                               labelText: "Satuan",
                               border: OutlineInputBorder(),
@@ -261,59 +258,90 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
                           ),
                         ),
                         SizedBox(width: 10),
-                        // Jumlah Input
-                        Expanded(
-                          child: TextFormField(
-                            controller: items[index]
-                                ["controller"], // Use the controller
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: "Jumlah",
-                              border: OutlineInputBorder(),
+                        // Column for Stock Tersedia and Jumlah TextFormField
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Stock Tersedia Text
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Text(
+                                "Stock Tersedia: ${(() {
+                                  var selectedSatuan = items[index]
+                                          ["satuanOptions"]
+                                      ?.where((opt) =>
+                                          opt["_id"] == items[index]["satuan"])
+                                      .toList();
+                                  if (selectedSatuan != null &&
+                                      selectedSatuan.isNotEmpty) {
+                                    return selectedSatuan[0]["jumlah_satuan"] ??
+                                        0;
+                                  } else {
+                                    return 0; // Default to 0 if no matching item is found
+                                  }
+                                })()}",
+                                style: TextStyle(
+                                    fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
                             ),
-                            onFieldSubmitted: (value) {
-                              final input =
-                                  int.tryParse(value) ?? 0; // Parse the input
-                              final satuan = items[index]["satuan"];
-                              final satuanData =
-                                  items[index]["satuanOptions"]?.firstWhere(
-                                (opt) => opt["_id"] == satuan,
-                                orElse: () => {} as Map<String,
-                                    dynamic>, // Cast to Map<String, dynamic>
-                              );
+                            // Jumlah TextFormField
+                            SizedBox(
+                              width:
+                                  150, // Adjust the width as needed to align with dropdowns
+                              child: TextFormField(
+                                controller: items[index]
+                                    ["controller"], // Use the controller
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: "Jumlah",
+                                  border: OutlineInputBorder(),
+                                ),
+                                onFieldSubmitted: (value) {
+                                  final input = int.tryParse(value) ??
+                                      0; // Parse the input
+                                  final satuan = items[index]["satuan"];
+                                  final satuanData =
+                                      items[index]["satuanOptions"]?.firstWhere(
+                                    (opt) => opt["_id"] == satuan,
+                                    orElse: () => {} as Map<String,
+                                        dynamic>, // Cast to Map<String, dynamic>
+                                  );
 
-                              final maxJumlah =
-                                  satuanData != null && satuanData.isNotEmpty
+                                  final maxJumlah = satuanData != null &&
+                                          satuanData.isNotEmpty
                                       ? satuanData["jumlah_satuan"] ?? 0
                                       : 0;
 
-                              if (input < 0 || input > maxJumlah) {
-                                // Invalid input
-                                setState(() {
-                                  items[index]["quantity"] =
-                                      0; // Reset quantity to 0
-                                  items[index]["controller"].text =
-                                      "0"; // Update controller to 0
-                                });
+                                  if (input < 0 || input > maxJumlah) {
+                                    // Invalid input
+                                    setState(() {
+                                      items[index]["quantity"] =
+                                          0; // Reset quantity to 0
+                                      items[index]["controller"].text =
+                                          "0"; // Update controller to 0
+                                    });
 
-                                // Show an error message
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text(
-                                          "Jumlah harus antara 0 dan $maxJumlah")),
-                                );
-                              } else {
-                                // Valid input
-                                setState(() {
-                                  items[index]["quantity"] = input;
-                                });
-                              }
-                            },
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                          ),
+                                    // Show an error message
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              "Jumlah harus antara 0 dan $maxJumlah")),
+                                    );
+                                  } else {
+                                    // Valid input
+                                    setState(() {
+                                      items[index]["quantity"] = input;
+                                    });
+                                  }
+                                },
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
+                        SizedBox(width: 10),
                         // Remove Button
                         IconButton(
                           icon: Icon(Icons.remove_circle, color: Colors.red),
@@ -325,6 +353,7 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
                 },
               ),
             ),
+
             ElevatedButton.icon(
               onPressed: addItem,
               icon: Icon(Icons.add),

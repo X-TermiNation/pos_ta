@@ -940,7 +940,7 @@ Future<Map<String, dynamic>?> insertMutasiBarang(
           'Failed to insert MutasiBarang. Status code: ${response.statusCode}');
       print('Response body: ${response.body}');
       throw Exception(
-          'Barang Tidak ada atau Error Terjadi! Status code: ${response.statusCode}');
+          'Barang Atau Satuan Tidak ada atau Error Terjadi! Status code: ${response.statusCode}');
     }
   } catch (e) {
     print('Error inserting MutasiBarang: $e');

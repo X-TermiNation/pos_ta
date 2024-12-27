@@ -1665,9 +1665,6 @@ class _GudangMenuState extends State<GudangMenu> {
                                     ConversionRate = 0;
                                   }
                                 },
-                                decoration: InputDecoration(
-                                  labelText: 'Select Satuan From',
-                                ),
                               ),
                               // Stock information and other details
                               if (selectedSatuanFrom != null) ...[
@@ -2681,6 +2678,7 @@ class _GudangMenuState extends State<GudangMenu> {
                 child: Scaffold(
                   appBar: AppBar(
                     title: Text("Mutasi Barang"),
+                    automaticallyImplyLeading: false,
                     bottom: TabBar(
                       tabs: [
                         Tab(text: "Request Transfer"),
@@ -3301,6 +3299,8 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                                                 cabangConfirmData
                                                         ?.first['alamat'] ??
                                                     'Unknown';
+                                            final kodeSJ =
+                                                mutasiBarang['Kode_SJ'];
                                             String formattedDate = '';
                                             if (mutasiBarang[
                                                     'tanggal_konfirmasi'] !=
@@ -3343,6 +3343,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                                                           dynamic>>.from(
                                                   mutasiBarang['Items']),
                                               date: formattedDate,
+                                              kodeSJ: kodeSJ,
                                             );
 
                                             // Show success message

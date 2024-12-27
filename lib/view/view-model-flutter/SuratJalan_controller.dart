@@ -2,16 +2,16 @@ import 'dart:io';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 
-Future<void> generateSuratJalanPDF({
-  required String cabangRequest,
-  required String telpRequest,
-  required String alamatRequest,
-  required String cabangConfirm,
-  required String telpConfirm,
-  required String alamatConfirm,
-  required List<Map<String, dynamic>> items,
-  required String date, // Adding date as parameter
-}) async {
+Future<void> generateSuratJalanPDF(
+    {required String cabangRequest,
+    required String telpRequest,
+    required String alamatRequest,
+    required String cabangConfirm,
+    required String telpConfirm,
+    required String alamatConfirm,
+    required List<Map<String, dynamic>> items,
+    required String date, // Adding date as parameter
+    required String kodeSJ}) async {
   try {
     // Create a PDF document
     final pdf = pw.Document();
@@ -30,11 +30,20 @@ Future<void> generateSuratJalanPDF({
               ),
               pw.SizedBox(height: 20),
 
+              //surat jalan section
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.start,
+                children: [
+                  pw.Text("Kode: $kodeSJ", style: pw.TextStyle(fontSize: 12)),
+                ],
+              ),
+              pw.SizedBox(height: 20),
+
               // Date Section
               pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.end,
+                mainAxisAlignment: pw.MainAxisAlignment.start,
                 children: [
-                  pw.Text("Tanggal: $date", style: pw.TextStyle(fontSize: 18)),
+                  pw.Text("Tanggal: $date", style: pw.TextStyle(fontSize: 12)),
                 ],
               ),
               pw.SizedBox(height: 20),
@@ -43,17 +52,6 @@ Future<void> generateSuratJalanPDF({
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  // TO (Cabang Request)
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text("TO:",
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text("Cabang: $cabangRequest"),
-                      pw.Text("No Telp: $telpRequest"),
-                      pw.Text("Alamat: $alamatRequest"),
-                    ],
-                  ),
                   // FROM (Cabang Confirmed)
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -63,6 +61,17 @@ Future<void> generateSuratJalanPDF({
                       pw.Text("Cabang: $cabangConfirm"),
                       pw.Text("No Telp: $telpConfirm"),
                       pw.Text("Alamat: $alamatConfirm"),
+                    ],
+                  ),
+                  // TO (Cabang Request)
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text("TO:",
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text("Cabang: $cabangRequest"),
+                      pw.Text("No Telp: $telpRequest"),
+                      pw.Text("Alamat: $alamatRequest"),
                     ],
                   ),
                 ],
