@@ -28,7 +28,7 @@ bool _isEditUser = false;
 late String? edit_selectedvalueKategori;
 //untuk update barang
 String temp_id_update = "";
-bool noExp = false;
+bool isExp = false;
 String satuan_idbarang = "";
 String base_satuan_id = "";
 String nama_satuan_initial_spc = "No Satuan";
@@ -46,9 +46,9 @@ class _GudangMenuState extends State<GudangMenu> {
   TextEditingController nama_barang = TextEditingController();
   TextEditingController nama_kategori = TextEditingController();
   TextEditingController nama_jenis = TextEditingController();
+  TextEditingController initial_insert_date_detail = TextEditingController();
+  TextEditingController last_insert_date_detail = TextEditingController();
   TextEditingController edit_nama_barang = TextEditingController();
-  TextEditingController edit_expdate_barang = TextEditingController();
-  TextEditingController edit_insertdate_barang = TextEditingController();
   TextEditingController edit_nama_kategorijenis = TextEditingController();
   TextEditingController nama_satuan = TextEditingController();
   TextEditingController harga_satuan = TextEditingController();
@@ -117,6 +117,7 @@ class _GudangMenuState extends State<GudangMenu> {
         'harga_satuan': 0.0,
         'selectedBarang': null,
         'selectedSatuan': null,
+        'exp_date': null,
         'satuanList': [], // Satuan list specific to this item
       });
     });
@@ -169,6 +170,16 @@ class _GudangMenuState extends State<GudangMenu> {
     } catch (e) {
       showToast(context, 'Failed to fetch satuan data: $e');
     }
+  }
+
+  //untuk alert kadaluarsa
+  List<Map<String, dynamic>> expiringBatches = [];
+
+  Future<void> _loadExpiringBatches() async {
+    final batches = await fetchExpiringBatches();
+    setState(() {
+      expiringBatches = batches;
+    });
   }
 
   //konversi barang
@@ -598,6 +609,7 @@ class _GudangMenuState extends State<GudangMenu> {
     getlowstocksatuan(context);
     fetchBarangStock();
     loadSuppliers();
+    _loadExpiringBatches();
   }
 
   List<Map<String, dynamic>> _searchResults = [];
@@ -609,24 +621,6 @@ class _GudangMenuState extends State<GudangMenu> {
               data['nama_barang'].toLowerCase().contains(query.toLowerCase()))
           .toList();
     });
-  }
-
-  //datepicker tambah barang
-  DateTime selectedDate = DateTime.now();
-  final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
   }
 
   String generateKodeAktivitas(
@@ -653,9 +647,10 @@ class _GudangMenuState extends State<GudangMenu> {
       final String idBarang = item['ID_barang'];
       final String idSatuan = item['ID_satuan'];
       final int jumlahSatuan = item['jumlah'];
+      final DateTime? exp_date = item['exp_date'];
 
-      updatejumlahSatuan(
-          idBarang, idSatuan, jumlahSatuan, kodeAktivitas, action, context);
+      updatejumlahSatuanTambah(idBarang, idSatuan, jumlahSatuan, exp_date,
+          kodeAktivitas, action, context);
     }
 
     // Clear the list of items after submission
@@ -680,7 +675,16 @@ class _GudangMenuState extends State<GudangMenu> {
       "alamat": _addressController.text,
     };
     await addSupplier(supplierData);
+    await loadSuppliers();
     print("Supplier Data: $supplierData");
+  }
+
+  String formatToWIBDetail(String expDate) {
+    DateTime parsedDate = DateTime.parse(expDate);
+    DateTime wibDate = parsedDate.add(const Duration(hours: 7));
+    String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(wibDate);
+
+    return formattedDate;
   }
 
   @override
@@ -818,7 +822,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                                       ?.toString()
                                                       .toLowerCase() ??
                                                   '',
-                                              map['insert_date']
+                                              map['initial_insert_date']
                                                       ?.toString()
                                                       .toLowerCase() ??
                                                   '',
@@ -841,6 +845,43 @@ class _GudangMenuState extends State<GudangMenu> {
                                                 GestureDetector(
                                                   onTap: () {
                                                     setState(() {
+                                                      // Handle 'initial_insert_date'
+                                                      DateTime utcTimeInitial =
+                                                          DateTime.parse(map[
+                                                                  'initial_insert_date'])
+                                                              .toUtc();
+                                                      DateTime wibTimeInitial =
+                                                          utcTimeInitial.add(
+                                                              Duration(
+                                                                  hours: 7));
+                                                      initial_insert_date_detail
+                                                          .text = DateFormat(
+                                                              'yyyy-MM-dd')
+                                                          .format(
+                                                              wibTimeInitial)
+                                                          .toString();
+
+                                                      // Handle 'last_insert_date', fallback to '-'
+                                                      if (map['last_insert_date'] !=
+                                                          null) {
+                                                        DateTime utcTimelast =
+                                                            DateTime.parse(map[
+                                                                    'last_insert_date'])
+                                                                .toUtc();
+                                                        DateTime wibTimelast =
+                                                            utcTimelast.add(
+                                                                Duration(
+                                                                    hours: 7));
+                                                        last_insert_date_detail
+                                                            .text = DateFormat(
+                                                                'yyyy-MM-dd')
+                                                            .format(wibTimelast)
+                                                            .toString();
+                                                      } else {
+                                                        last_insert_date_detail
+                                                            .text = "-";
+                                                      }
+
                                                       detailbarang_ID =
                                                           map['_id'];
                                                       edit_nama_barang.text =
@@ -852,13 +893,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                                       edit_nama_kategorijenis
                                                               .text =
                                                           "$jenisBarang / $kategoriBarang";
-                                                      edit_expdate_barang.text =
-                                                          map['exp_date']
-                                                              .toString();
-                                                      edit_insertdate_barang
-                                                              .text =
-                                                          map['insert_date']
-                                                              .toString();
+
                                                       _isEditUser = true;
                                                       temp_id_update =
                                                           map['_id'];
@@ -877,16 +912,9 @@ class _GudangMenuState extends State<GudangMenu> {
                                                 style: TextStyle(fontSize: 16),
                                               )),
                                               DataCell(Text(
-                                                map['exp_date'] != null
-                                                    ? map['exp_date']
-                                                        .toString()
-                                                        .substring(0, 10)
-                                                    : "-",
-                                                style: TextStyle(fontSize: 16),
-                                              )),
-                                              DataCell(Text(
-                                                map['insert_date'] != null
-                                                    ? map['insert_date']
+                                                map['initial_insert_date'] !=
+                                                        null
+                                                    ? map['initial_insert_date']
                                                         .toString()
                                                         .substring(0, 10)
                                                     : "-",
@@ -954,10 +982,8 @@ class _GudangMenuState extends State<GudangMenu> {
                                                       label: Text(
                                                           'Jenis/Kategori')),
                                                   DataColumn(
-                                                      label: Text('Exp Date')),
-                                                  DataColumn(
-                                                      label:
-                                                          Text('Insert Date')),
+                                                      label: Text(
+                                                          'Initial Insert Date')),
                                                   DataColumn(
                                                       label:
                                                           Text('Hapus Barang')),
@@ -1044,17 +1070,17 @@ class _GudangMenuState extends State<GudangMenu> {
                             ),
                             SizedBox(height: 16.0),
                             Text(
-                              "Jenis/Kategori Barang: ${edit_nama_kategorijenis.text}",
+                              "Jenis/Kategori : ${edit_nama_kategorijenis.text}",
                               style: TextStyle(fontSize: 18),
                             ),
                             SizedBox(height: 16.0),
                             Text(
-                              "Expire Date: ${edit_expdate_barang.text.isNotEmpty && edit_expdate_barang.text.length >= 10 ? edit_expdate_barang.text.substring(0, 10) : "-"}",
+                              "First Time Insert Date : ${initial_insert_date_detail.text}",
                               style: TextStyle(fontSize: 18),
                             ),
                             SizedBox(height: 16.0),
                             Text(
-                              "Insert Date : ${edit_insertdate_barang.text.isNotEmpty ? edit_insertdate_barang.text.substring(0, 10) : "-"}",
+                              "Last Time Updated Date : ${last_insert_date_detail.text}",
                               style: TextStyle(fontSize: 18),
                             ),
                             SizedBox(height: 20.0),
@@ -1114,6 +1140,14 @@ class _GudangMenuState extends State<GudangMenu> {
                                 style: TextStyle(fontSize: 18),
                               ),
                               SizedBox(height: 10),
+                              selectedSatuan!['exp_date'] != null
+                                  ? Text(
+                                      "Expire Date: ${formatToWIBDetail(selectedSatuan!['exp_date'].toString())}",
+                                      style: TextStyle(fontSize: 18),
+                                    )
+                                  : Text("Expire Date: No Expire Date",
+                                      style: TextStyle(fontSize: 18)),
+                              SizedBox(height: 10),
                               Text(
                                 "Jumlah Stock Satuan: ${selectedSatuan!['jumlah_satuan']}",
                                 style: TextStyle(fontSize: 18),
@@ -1121,11 +1155,6 @@ class _GudangMenuState extends State<GudangMenu> {
                               SizedBox(height: 10),
                               Text(
                                 "Harga Satuan: Rp.${NumberFormat('#,###.00', 'id_ID').format(selectedSatuan!['harga_satuan'] ?? 0.0)}",
-                                style: TextStyle(fontSize: 18),
-                              ),
-                              SizedBox(height: 10),
-                              Text(
-                                "Isi Satuan : ${selectedSatuan!['isi_satuan']}",
                                 style: TextStyle(fontSize: 18),
                               ),
                             ],
@@ -1211,7 +1240,14 @@ class _GudangMenuState extends State<GudangMenu> {
                             builder: (context, snapshot) {
                               if (snapshot.connectionState ==
                                   ConnectionState.waiting) {
-                                return CircularProgressIndicator();
+                                return Center(
+                                  child: SizedBox(
+                                    width:
+                                        24, // Adjust size of CircularProgressIndicator
+                                    height: 24,
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
                               } else if (snapshot.hasError) {
                                 return Text('Error: ${snapshot.error}');
                               } else if (snapshot.hasData &&
@@ -1278,61 +1314,29 @@ class _GudangMenuState extends State<GudangMenu> {
                     SizedBox(height: 16),
                     Divider(),
                     SizedBox(height: 8),
-                    Text(
-                      'Selected Date:',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      _dateFormat.format(selectedDate),
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    // Text(
+                    //   'Selected Date:',
+                    //   style:
+                    //       TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    // ),
+                    // SizedBox(height: 8),
+                    // Text(
+                    //   _dateFormat.format(selectedDate),
+                    //   style: TextStyle(fontSize: 16),
+                    // ),
                     SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('No Expiration Date'),
-                            Checkbox(
-                              value: noExp,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  noExp = value ?? false;
-                                  print(noExp);
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                        SizedBox(width: 20),
-                        InkWell(
-                          onTap: () => _selectDate(context),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.blueAccent.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.blueAccent),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.calendar_today,
-                                    color: Colors.blueAccent),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Select Date',
-                                  style: TextStyle(color: Colors.blueAccent),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                    SwitchListTile(
+                      title: Text('Expiration Date:'),
+                      value: isExp,
+                      onChanged: (bool value) {
+                        setState(() {
+                          isExp = value;
+                        });
+                      },
+                      activeColor: Colors.green,
+                      inactiveThumbColor: Colors.grey,
                     ),
+
                     SizedBox(height: 16),
                     Text(
                       "Upload Gambar Barang:",
@@ -1435,14 +1439,9 @@ class _GudangMenuState extends State<GudangMenu> {
                     Center(
                       child: FilledButton(
                         onPressed: () async {
-                          String formattedDateString =
-                              _dateFormat.format(selectedDate);
-                          DateTime insertedDate =
-                              _dateFormat.parse(formattedDateString);
                           int base_number = 1;
                           addbarang(
-                              insertedDate,
-                              noExp,
+                              isExp,
                               nama_barang.text,
                               katakategori,
                               nama_satuan_initial.text,
@@ -1455,7 +1454,7 @@ class _GudangMenuState extends State<GudangMenu> {
                             onUserLogin();
                             fetchDataAndUseInJsonString();
                             fetchData();
-                            noExp = false;
+                            isExp = false;
                             nama_barang.text = "";
                             nama_satuan_initial.text = "";
                             harga_satuan_initial.text = "";
@@ -2161,172 +2160,228 @@ class _GudangMenuState extends State<GudangMenu> {
                         color: Colors.grey[900],
                         padding: EdgeInsets.all(16),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Center(
-                                  child: Text(
-                                    'Stock Alert',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            // Stock Alert Title
+                            Text(
+                              'Stock Alert',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                             SizedBox(height: 16),
-                            Table(
-                              border: TableBorder.all(),
-                              columnWidths: {
-                                0: FlexColumnWidth(2),
-                                1: FlexColumnWidth(2),
-                                2: FlexColumnWidth(1),
-                                3: FlexColumnWidth(1),
-                                4: FlexColumnWidth(1),
-                              },
-                              children: [
-                                TableRow(
-                                  decoration:
-                                      BoxDecoration(color: Colors.blue[300]),
-                                  children: [
-                                    TableCell(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Text(
-                                          'Nama Barang',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                    TableCell(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Text(
-                                          'Nama Satuan',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                    TableCell(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Text(
-                                          'Jumlah Stok',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                    // TableCell(
-                                    //   child: Padding(
-                                    //     padding: EdgeInsets.all(8.0),
-                                    //     child: Text(
-                                    //       'Re-Stock',
-                                    //       style: TextStyle(
-                                    //           fontWeight: FontWeight.bold),
-                                    //     ),
-                                    //   ),
-                                    // ),
-                                    // TableCell(
-                                    //   child: Padding(
-                                    //     padding: EdgeInsets.all(8.0),
-                                    //     child: Text(
-                                    //       'Delete',
-                                    //       style: TextStyle(
-                                    //           fontWeight: FontWeight.bold),
-                                    //     ),
-                                    //   ),
-                                    // ),
-                                  ],
-                                ),
-                                ...snapshot.data!.map((data) {
-                                  return TableRow(
+
+                            // Scrollable Table
+                            Expanded(
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(minWidth: 600),
+                                  child: Table(
+                                    border: TableBorder.all(),
+                                    columnWidths: {
+                                      0: FlexColumnWidth(2),
+                                      1: FlexColumnWidth(2),
+                                      2: FlexColumnWidth(1),
+                                    },
                                     children: [
-                                      TableCell(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: Text(data['nama_barang']),
-                                        ),
+                                      TableRow(
+                                        decoration: BoxDecoration(
+                                            color: Colors.blue[300]),
+                                        children: [
+                                          TableCell(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                'Nama Barang',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                          ),
+                                          TableCell(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                'Nama Satuan',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                          ),
+                                          TableCell(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                'Jumlah Stok',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      TableCell(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: Text(data['nama_satuan']),
-                                        ),
-                                      ),
-                                      TableCell(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: Text(
-                                              data['jumlah_satuan'].toString()),
-                                        ),
-                                      ),
-                                      // TableCell(
-                                      //   child: Padding(
-                                      //     padding: EdgeInsets.all(8.0),
-                                      //     child: ElevatedButton(
-                                      //       onPressed: () {
-                                      //         showQuantityDialog(
-                                      //           data['id_barang'].toString(),
-                                      //           data['id_satuan'].toString(),
-                                      //           context,
-                                      //         );
-                                      //         setState(() {});
-                                      //       },
-                                      //       style: ElevatedButton.styleFrom(
-                                      //         backgroundColor: Colors.purple,
-                                      //         textStyle: TextStyle(
-                                      //             color: Colors.white),
-                                      //       ),
-                                      //       child: Text(
-                                      //         'Re-Stock',
-                                      //         style: TextStyle(
-                                      //           fontSize: 12,
-                                      //           color: Colors.black,
-                                      //           fontWeight: FontWeight.bold,
-                                      //         ),
-                                      //       ),
-                                      //     ),
-                                      //   ),
-                                      // ),
-                                      // TableCell(
-                                      //   child: Padding(
-                                      //     padding: EdgeInsets.all(8.0),
-                                      //     child: ElevatedButton(
-                                      //       onPressed: () {
-                                      //         confirmDeletion(
-                                      //           context,
-                                      //           data['id_barang'].toString(),
-                                      //           data['id_satuan'].toString(),
-                                      //           data['nama_satuan'],
-                                      //           data['nama_barang'],
-                                      //         );
-                                      //       },
-                                      //       style: ElevatedButton.styleFrom(
-                                      //         backgroundColor: Colors.purple,
-                                      //         textStyle: TextStyle(
-                                      //             color: Colors.white),
-                                      //       ),
-                                      //       child: Text(
-                                      //         'Delete',
-                                      //         style: TextStyle(
-                                      //           fontSize: 12,
-                                      //           color: Colors.black,
-                                      //           fontWeight: FontWeight.bold,
-                                      //         ),
-                                      //       ),
-                                      //     ),
-                                      //   ),
-                                      // ),
+                                      ...snapshot.data!.map((data) {
+                                        return TableRow(
+                                          children: [
+                                            TableCell(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                  data['nama_barang'],
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ),
+                                            ),
+                                            TableCell(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                  data['nama_satuan'],
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ),
+                                            ),
+                                            TableCell(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                  data['jumlah_satuan']
+                                                      .toString(),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
                                     ],
-                                  );
-                                }).toList(),
-                              ],
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: 32),
+
+                            // Expiration Alert Title
+                            Text(
+                              'Expiration Alert',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 16),
+
+                            // Placeholder Expiration Alert Table
+                            Expanded(
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(minWidth: 600),
+                                  child: Table(
+                                    border: TableBorder.all(),
+                                    columnWidths: {
+                                      0: FlexColumnWidth(2),
+                                      1: FlexColumnWidth(2),
+                                      2: FlexColumnWidth(1),
+                                    },
+                                    children: [
+                                      TableRow(
+                                        decoration: BoxDecoration(
+                                            color: Colors.blue[300]),
+                                        children: [
+                                          TableCell(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                'Nama Barang',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                          ),
+                                          TableCell(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                'Tanggal Kadaluarsa',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                          ),
+                                          TableCell(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                'Jumlah Stok',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      ...expiringBatches.map(
+                                        (batch) => TableRow(
+                                          children: [
+                                            TableCell(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                    batch['barang_nama'] ?? '',
+                                                    textAlign:
+                                                        TextAlign.center),
+                                              ),
+                                            ),
+                                            TableCell(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                  batch['tanggal_exp'] != null
+                                                      ? DateFormat('yyyy-MM-dd')
+                                                          .format(DateTime
+                                                              .parse(batch[
+                                                                  'tanggal_exp']))
+                                                      : '',
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ),
+                                            ),
+                                            TableCell(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                  batch['jumlah_stok']
+                                                          ?.toString() ??
+                                                      '',
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -2469,17 +2524,18 @@ class _GudangMenuState extends State<GudangMenu> {
                                   // Satuan Dropdown
                                   DropdownButtonFormField<Map<String, dynamic>>(
                                     value: item['selectedSatuan'],
-                                    items: item['satuanList'].map<
-                                        DropdownMenuItem<Map<String, dynamic>>>(
-                                      (satuan) {
-                                        return DropdownMenuItem<
-                                            Map<String, dynamic>>(
-                                          value: satuan,
-                                          child: Text(satuan['nama_satuan'] ??
-                                              'Unknown'),
-                                        );
-                                      },
-                                    ).toList(),
+                                    items: item['satuanList']
+                                        .map<
+                                                DropdownMenuItem<
+                                                    Map<String, dynamic>>>(
+                                            (satuan) => DropdownMenuItem<
+                                                    Map<String, dynamic>>(
+                                                  value: satuan,
+                                                  child: Text(
+                                                      satuan['nama_satuan'] ??
+                                                          'Unknown'),
+                                                ))
+                                        .toList(),
                                     onChanged: (newSatuan) {
                                       setState(() {
                                         item['selectedSatuan'] = newSatuan;
@@ -2507,6 +2563,90 @@ class _GudangMenuState extends State<GudangMenu> {
                                   ),
                                   SizedBox(height: 8),
 
+                                  // Tanggal Kedaluwarsa
+                                  itemsStock[index]['selectedBarang'] != null &&
+                                          itemsStock[index]['selectedBarang']
+                                                  ['isKadaluarsa'] ==
+                                              true
+                                      ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    "Pilih Tanggal Kedaluwarsa:",
+                                                    style:
+                                                        TextStyle(fontSize: 14),
+                                                  ),
+                                                  SizedBox(
+                                                      width:
+                                                          8), // Spasi kecil antara teks
+                                                  Text(
+                                                    itemsStock[index]
+                                                                ['exp_date'] !=
+                                                            null
+                                                        ? DateFormat(
+                                                                'yyyy-MM-dd HH:mm')
+                                                            .format(itemsStock[
+                                                                    index]
+                                                                ['exp_date'])
+                                                        : "-",
+                                                    style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.white),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: Icon(Icons.calendar_today,
+                                                  color: Colors.blue),
+                                              onPressed: () async {
+                                                // Step 1: Show the date picker
+                                                final selectedDate =
+                                                    await showDatePicker(
+                                                  context: context,
+                                                  initialDate: DateTime.now(),
+                                                  firstDate: DateTime.now(),
+                                                  lastDate: DateTime(2100),
+                                                );
+
+                                                if (selectedDate != null) {
+                                                  // Step 2: Show the time picker
+                                                  final selectedTime =
+                                                      await showTimePicker(
+                                                    context: context,
+                                                    initialTime:
+                                                        TimeOfDay.now(),
+                                                  );
+
+                                                  if (selectedTime != null) {
+                                                    // Step 3: Combine the date and time
+                                                    DateTime combinedDateTime =
+                                                        DateTime(
+                                                      selectedDate.year,
+                                                      selectedDate.month,
+                                                      selectedDate.day,
+                                                      selectedTime.hour,
+                                                      selectedTime.minute,
+                                                    );
+
+                                                    // Update the `exp_date` field
+                                                    _updateItem(
+                                                        index,
+                                                        'exp_date',
+                                                        combinedDateTime);
+                                                    setState(() {});
+                                                  }
+                                                }
+                                              },
+                                            ),
+                                          ],
+                                        )
+                                      : SizedBox(),
+                                  SizedBox(height: 8),
                                   // Delete Item Button
                                   IconButton(
                                     icon: Icon(Icons.close, color: Colors.red),
@@ -2642,7 +2782,7 @@ class _GudangMenuState extends State<GudangMenu> {
                   ),
                   SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_supplierNameController.text.isNotEmpty &&
                           _contactController.text.isNotEmpty &&
                           _addressController.text.isNotEmpty) {
@@ -2716,8 +2856,6 @@ class _GudangMenuState extends State<GudangMenu> {
           onUpdated: () {
             setState(() {
               edit_nama_barang.text = "";
-              edit_expdate_barang.text = "";
-              edit_insertdate_barang.text = "";
               _isEditUser = false;
               temp_id_update = "";
               onUserLogin();
@@ -2728,104 +2866,104 @@ class _GudangMenuState extends State<GudangMenu> {
     );
   }
 
-  void showQuantityDialog(
-      String id_barang, String id_satuan, BuildContext context) {
-    int quantity = 1;
+  // void showQuantityDialog(
+  //     String id_barang, String id_satuan, BuildContext context) {
+  //   int quantity = 1;
 
-    showDialog(
-      context: context,
-      barrierDismissible:
-          false, // Prevents closing the dialog by tapping outside
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Update Quantity'),
-          content: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Quantity:'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.remove),
-                        onPressed: () {
-                          setState(() {
-                            if (quantity > 1) {
-                              quantity--;
-                            }
-                          });
-                        },
-                      ),
-                      Text(quantity.toString()),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: () {
-                          setState(() {
-                            quantity++;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  TextFormField(
-                    controller: id_supplier_stock_alert,
-                    decoration: InputDecoration(
-                      labelText: 'ID Supplier Stock',
-                      labelStyle: TextStyle(color: Colors.white),
-                      filled: true,
-                      fillColor: Colors.black,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.white),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide:
-                            BorderSide(color: Colors.blueAccent, width: 2),
-                      ),
-                    ),
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  SizedBox(height: 16.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () async {
-                          if (id_supplier_stock_alert.text.isNotEmpty) {
-                            // Handle the confirm action
-                            final kodeAktivitas = generateKodeAktivitas(
-                                id_supplier_stock_alert.text, 'MSK');
-                            updatejumlahSatuan(id_barang, id_satuan, quantity,
-                                kodeAktivitas, "tambah", context);
-                            await getlowstocksatuan(context);
-                            Navigator.of(context).pop();
-                            setState(() {});
-                          } else {
-                            CustomToast(
-                                message: "ID Supplier tidak boleh kosong");
-                          }
-                        },
-                        child: Text('Confirm Stock'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text('Cancel'),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible:
+  //         false, // Prevents closing the dialog by tapping outside
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text('Update Quantity'),
+  //         content: StatefulBuilder(
+  //           builder: (BuildContext context, StateSetter setState) {
+  //             return Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 Text('Quantity:'),
+  //                 Row(
+  //                   mainAxisAlignment: MainAxisAlignment.center,
+  //                   children: [
+  //                     IconButton(
+  //                       icon: Icon(Icons.remove),
+  //                       onPressed: () {
+  //                         setState(() {
+  //                           if (quantity > 1) {
+  //                             quantity--;
+  //                           }
+  //                         });
+  //                       },
+  //                     ),
+  //                     Text(quantity.toString()),
+  //                     IconButton(
+  //                       icon: Icon(Icons.add),
+  //                       onPressed: () {
+  //                         setState(() {
+  //                           quantity++;
+  //                         });
+  //                       },
+  //                     ),
+  //                   ],
+  //                 ),
+  //                 TextFormField(
+  //                   controller: id_supplier_stock_alert,
+  //                   decoration: InputDecoration(
+  //                     labelText: 'ID Supplier Stock',
+  //                     labelStyle: TextStyle(color: Colors.white),
+  //                     filled: true,
+  //                     fillColor: Colors.black,
+  //                     border: OutlineInputBorder(
+  //                       borderRadius: BorderRadius.circular(8),
+  //                       borderSide: BorderSide(color: Colors.white),
+  //                     ),
+  //                     focusedBorder: OutlineInputBorder(
+  //                       borderRadius: BorderRadius.circular(8),
+  //                       borderSide:
+  //                           BorderSide(color: Colors.blueAccent, width: 2),
+  //                     ),
+  //                   ),
+  //                   style: TextStyle(color: Colors.white),
+  //                 ),
+  //                 SizedBox(height: 16.0),
+  //                 Row(
+  //                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //                   children: [
+  //                     ElevatedButton(
+  //                       onPressed: () async {
+  //                         if (id_supplier_stock_alert.text.isNotEmpty) {
+  //                           // Handle the confirm action
+  //                           final kodeAktivitas = generateKodeAktivitas(
+  //                               id_supplier_stock_alert.text, 'MSK');
+  //                           updatejumlahSatuan(id_barang, id_satuan, quantity,
+  //                               kodeAktivitas, "tambah", context);
+  //                           await getlowstocksatuan(context);
+  //                           Navigator.of(context).pop();
+  //                           setState(() {});
+  //                         } else {
+  //                           CustomToast(
+  //                               message: "ID Supplier tidak boleh kosong");
+  //                         }
+  //                       },
+  //                       child: Text('Confirm Stock'),
+  //                     ),
+  //                     ElevatedButton(
+  //                       onPressed: () {
+  //                         Navigator.of(context).pop();
+  //                       },
+  //                       child: Text('Cancel'),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             );
+  //           },
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   void confirmDeletion(BuildContext context, String id_barang, String id_satuan,
       String nama_satuan, String nama_barang) async {
@@ -3201,8 +3339,6 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
         return Colors.black;
     }
   }
-
-  // Existing methods like formatToWIB, getNamaCabang, getStatusColor remain untouched
 
   @override
   Widget build(BuildContext context) {

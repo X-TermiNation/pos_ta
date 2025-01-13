@@ -34,8 +34,7 @@ Future<Map<String, dynamic>?> searchItemByID(String idBarang) async {
 
 //tambah barang
 void addbarang(
-  DateTime insertedDate,
-  bool noExp,
+  bool isExp,
   String nama_barang,
   String katakategori,
   String nama_satuan,
@@ -58,7 +57,7 @@ void addbarang(
   String id_cabang = dataStorage.read('id_cabang');
 
   try {
-    String? expDateString;
+    // String? expDateString;
     String? creationDateString;
     getdatagudang();
     String id_gudangs = dataStorage.read('id_gudang');
@@ -67,14 +66,6 @@ void addbarang(
         'http://localhost:3000/barang/getjenisfromkategori/$katakategori');
     final datajenis = await http.get(requestjenis);
     final jenis = json.decode(datajenis.body);
-
-    if (!noExp) {
-      insertedDate = insertedDate.add(Duration(days: 1));
-      expDateString = insertedDate.toIso8601String();
-    } else {
-      expDateString = '';
-    }
-
     DateTime creationDate = DateTime.now();
     creationDateString = creationDate.toIso8601String();
 
@@ -82,8 +73,8 @@ void addbarang(
       'nama_barang': nama_barang,
       'jenis_barang': jenis["data"]["nama_jenis"].toString(),
       'kategori_barang': katakategori,
-      'insert_date': creationDateString,
-      'exp_date': expDateString,
+      'initial_insert_date': creationDateString,
+      'isExp': isExp,
     };
 
     final url = 'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
@@ -165,7 +156,6 @@ Future<List<Map<String, dynamic>>> getBarang() async {
 //get barang mutasi
 Future<List<Map<String, dynamic>>> getBarangMutasi(
     String? idcabang, String idgudang) async {
-  final dataStorage = GetStorage();
   final request =
       Uri.parse('http://localhost:3000/barang/baranglist/$idgudang/$idcabang');
   final response = await http.get(request);
@@ -508,39 +498,113 @@ Future<void> deletesatuan(
   }
 }
 
-//update stock satuan
-void updatejumlahSatuan(
-  String id_barang,
-  String id_satuan,
-  int jumlah_satuan,
+//update stock satuan(tambah)
+void updatejumlahSatuanTambah(
+  String idBarang,
+  String idSatuan,
+  int jumlahSatuan,
+  DateTime? expDate,
   String kodeAktivitas,
   String action,
   BuildContext context,
 ) async {
   try {
-    if (kodeAktivitas != "" && action == 'tambah') {
-      // Insert re-stock history before updating stock quantity
+    // Periksa apakah barang kadaluarsa
+    final barangData = await searchItemByID(idBarang);
+    if (barangData == null) {
+      showToast(context, "Barang tidak ditemukan");
+      return;
+    }
+
+    final isKadaluarsa = barangData['isKadaluarsa'] ?? false;
+
+    if (isKadaluarsa && expDate != null) {
+      // Tambahkan ke batch jika kadaluarsa
+      final dataStorage = GetStorage();
+      String id_cabang = dataStorage.read('id_cabang');
+      String idgudang = dataStorage.read('id_gudang');
+      await addItemBatch(
+          idCabang: id_cabang,
+          idGudang: idgudang,
+          barangId: idBarang,
+          satuanId: idSatuan,
+          jumlahStok: jumlahSatuan,
+          tanggalExp: expDate.toIso8601String());
+    }
+
+    if (kodeAktivitas.isNotEmpty && action == 'tambah') {
+      // Insert riwayat stok sebelum update
       await insertHistoryStok(
-        id_barang: id_barang,
-        satuan_id: id_satuan,
+        id_barang: idBarang,
+        satuan_id: idSatuan,
         tanggal_pengisian: DateTime.now(),
-        jumlah_input: jumlah_satuan,
+        jumlah_input: jumlahSatuan,
         jenis_aktivitas: "Masuk",
         Kode_Aktivitas: kodeAktivitas,
         id_cabang: GetStorage().read("id_cabang"),
       );
     }
 
-    // Update stock quantity
+    // Update jumlah satuan
     final satuanUpdatedata = {
-      'jumlah_satuan': jumlah_satuan,
+      'jumlah_satuan': jumlahSatuan,
       'action': action,
     };
-    final dataStorage = GetStorage();
-    final id_cabang = dataStorage.read("id_cabang");
-    String id_gudangs = dataStorage.read('id_gudang');
+    final idCabang = GetStorage().read("id_cabang");
+    final idGudang = GetStorage().read('id_gudang');
     final url =
-        'http://localhost:3000/barang/editjumlahsatuan/$id_barang/$id_cabang/$id_gudangs/$id_satuan';
+        'http://localhost:3000/barang/editjumlahsatuan/$idBarang/$idCabang/$idGudang/$idSatuan';
+
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(satuanUpdatedata),
+    );
+
+    if (response.statusCode == 200) {
+      print('Berhasil menambah data');
+    } else {
+      showToast(context, "Gagal menambahkan data");
+      print('HTTP Error: ${response.statusCode}');
+    }
+  } catch (error) {
+    showToast(context, "Error: $error");
+    print('Exception during HTTP request: $error');
+  }
+}
+
+//update jumlah (kurang)
+void updatejumlahSatuanKurang(
+  String idBarang,
+  String idSatuan,
+  int jumlahSatuan,
+  String kodeAktivitas,
+  String action,
+  BuildContext context,
+) async {
+  try {
+    if (kodeAktivitas.isNotEmpty && action == 'tambah') {
+      // Insert riwayat stok sebelum update
+      await insertHistoryStok(
+        id_barang: idBarang,
+        satuan_id: idSatuan,
+        tanggal_pengisian: DateTime.now(),
+        jumlah_input: jumlahSatuan,
+        jenis_aktivitas: "Masuk",
+        Kode_Aktivitas: kodeAktivitas,
+        id_cabang: GetStorage().read("id_cabang"),
+      );
+    }
+
+    // Update jumlah satuan
+    final satuanUpdatedata = {
+      'jumlah_satuan': jumlahSatuan,
+      'action': action,
+    };
+    final idCabang = GetStorage().read("id_cabang");
+    final idGudang = GetStorage().read('id_gudang');
+    final url =
+        'http://localhost:3000/barang/editjumlahsatuan/$idBarang/$idCabang/$idGudang/$idSatuan';
 
     final response = await http.put(
       Uri.parse(url),
@@ -1216,19 +1280,15 @@ Future<List<Map<String, dynamic>>> fetchUnitConversionsWithId(
   String idCabang = dataStorage.read('id_cabang');
   String idGudang = dataStorage.read('id_gudang');
 
-  // Define the URL with the provided parameters
   final url =
       'http://localhost:3000/barang/conversionsID/$idCabang/$idGudang/$sourceSatuanId';
 
   try {
     final response = await http.get(Uri.parse(url));
 
-    // Check the status code
     if (response.statusCode == 200) {
-      // Parse the JSON response
       final Map<String, dynamic> jsonData = json.decode(response.body);
 
-      // Check if the response contains data
       if (jsonData['success'] == true && jsonData.containsKey('data')) {
         List<dynamic> data = jsonData['data'];
         return List<Map<String, dynamic>>.from(data);
@@ -1258,13 +1318,11 @@ Future<Map<String, dynamic>?> fetchConversionByTarget(
       "http://localhost:3000/barang/conversionByTarget/$idCabang/$idGudang/$idBarang/$sourceSatuanId/$targetSatuanId";
 
   try {
-    // Send the GET request
     final response = await http.get(Uri.parse(baseUrl));
 
-    // Check if the response status code is 200 (OK)
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
-      return data["data"]; // Return the conversion data
+      return data["data"];
     } else if (response.statusCode == 404) {
       print("Conversion not found");
       return null;
@@ -1275,5 +1333,129 @@ Future<Map<String, dynamic>?> fetchConversionByTarget(
   } catch (error) {
     print("Error fetching conversion: $error");
     return null;
+  }
+}
+
+Future<Map<String, dynamic>> addItemBatch({
+  required String idCabang,
+  required String idGudang,
+  required String barangId,
+  required String satuanId,
+  required int jumlahStok,
+  required String tanggalExp,
+}) async {
+  final String url = 'http://localhost:3000/barang/addItemBatch';
+
+  try {
+    final Map<String, dynamic> body = {
+      'id_cabang': idCabang,
+      'id_gudang': idGudang,
+      'barangId': barangId,
+      'satuanId': satuanId,
+      'jumlahStok': jumlahStok,
+      'tanggalExp': tanggalExp,
+    };
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: headers,
+      body: json.encode(body),
+    );
+    await getClosestBatch(
+        idCabang: idCabang,
+        idGudang: idGudang,
+        barangId: barangId,
+        satuanId: satuanId);
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      return data;
+    } else {
+      return {
+        'success': false,
+        'message':
+            'Failed to add item batch: ${response.statusCode}, ${response.body}',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Error: $e',
+    };
+  }
+}
+
+Future<Map<String, dynamic>> getClosestBatch({
+  required String idCabang,
+  required String idGudang,
+  required String barangId,
+  required String satuanId,
+}) async {
+  final String url = 'http://localhost:3000/barang/closestBatch';
+
+  try {
+    final Uri uri = Uri.parse(url).replace(queryParameters: {
+      'id_cabang': idCabang,
+      'id_gudang': idGudang,
+      'barangId': barangId,
+      'satuanId': satuanId,
+    });
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+
+      if (data['success'] == true) {
+        return {
+          'success': true,
+          'message': data['message'],
+          'data': data['data'], // Closest batch data
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'],
+        };
+      }
+    } else {
+      return {
+        'success': false,
+        'message': 'Server returned status code ${response.statusCode}',
+      };
+    }
+  } catch (error) {
+    return {
+      'success': false,
+      'message': 'An error occurred: $error',
+    };
+  }
+}
+
+//fetch batch expired in 30 days
+Future<List<Map<String, dynamic>>> fetchExpiringBatches() async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  String id_gudang = dataStorage.read('id_gudang');
+  final String url =
+      'http://localhost:3000/barang/expiringBatches/$id_cabang/$id_gudang';
+
+  try {
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return List<Map<String, dynamic>>.from(data['data']);
+    } else {
+      final errorResponse = json.decode(response.body);
+      print('Error: ${errorResponse['message']}');
+      return [];
+    }
+  } catch (e) {
+    print('Error occurred: $e');
+    return [];
   }
 }
