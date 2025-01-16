@@ -99,14 +99,14 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
                   MaterialPageRoute(builder: (context) => loginscreen()),
                   (Route<dynamic> route) => false,
                 );
-                // Close the dialog
+                
               },
               child: Text('Ya'),
             ),
             TextButton(
               onPressed: () {
                 log_out = false;
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop(); 
               },
               child: Text('Tidak'),
             ),

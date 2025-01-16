@@ -1313,17 +1313,6 @@ class _GudangMenuState extends State<GudangMenu> {
                         )),
                     SizedBox(height: 16),
                     Divider(),
-                    SizedBox(height: 8),
-                    // Text(
-                    //   'Selected Date:',
-                    //   style:
-                    //       TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    // ),
-                    // SizedBox(height: 8),
-                    // Text(
-                    //   _dateFormat.format(selectedDate),
-                    //   style: TextStyle(fontSize: 16),
-                    // ),
                     SizedBox(height: 16),
                     SwitchListTile(
                       title: Text('Expiration Date:'),
@@ -1336,7 +1325,6 @@ class _GudangMenuState extends State<GudangMenu> {
                       activeColor: Colors.green,
                       inactiveThumbColor: Colors.grey,
                     ),
-
                     SizedBox(height: 16),
                     Text(
                       "Upload Gambar Barang:",
@@ -1450,9 +1438,12 @@ class _GudangMenuState extends State<GudangMenu> {
                               harga_satuan_initial.text,
                               context,
                               selectedImage);
+                          await fetchDataAndUseInJsonString();
+                          await getlowstocksatuan(context);
+                          await loadSuppliers();
+                          await _loadExpiringBatches();
+                          await fetchBarangStock();
                           setState(() {
-                            onUserLogin();
-                            fetchDataAndUseInJsonString();
                             fetchData();
                             isExp = false;
                             nama_barang.text = "";
@@ -1460,7 +1451,6 @@ class _GudangMenuState extends State<GudangMenu> {
                             harga_satuan_initial.text = "";
                             id_supplier_insert.text = "";
                             selectedImage = null;
-                            fetchBarangStock();
                           });
                         },
                         style: FilledButton.styleFrom(
@@ -1979,12 +1969,6 @@ class _GudangMenuState extends State<GudangMenu> {
                           child: ListView.builder(
                             itemCount: _searchResults.length,
                             itemBuilder: (context, index) {
-                              String expDate =
-                                  _searchResults[index]['exp_date'] != null
-                                      ? _searchResults[index]['exp_date']
-                                          .toString()
-                                          .substring(0, 10)
-                                      : "-";
                               return ListTile(
                                 title: Text(
                                   _searchResults[index]['nama_barang'],
@@ -1992,7 +1976,6 @@ class _GudangMenuState extends State<GudangMenu> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                subtitle: Text('Expire Date: $expDate'),
                                 onTap: () async {
                                   _searchController.text = _searchResults[index]
                                           ['nama_barang']
@@ -2294,6 +2277,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                       0: FlexColumnWidth(2),
                                       1: FlexColumnWidth(2),
                                       2: FlexColumnWidth(1),
+                                      3: FlexColumnWidth(1),
                                     },
                                     children: [
                                       TableRow(
@@ -2305,6 +2289,18 @@ class _GudangMenuState extends State<GudangMenu> {
                                               padding: EdgeInsets.all(8.0),
                                               child: Text(
                                                 'Nama Barang',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                          ),
+                                          TableCell(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                'Nama Satuan',
                                                 textAlign: TextAlign.center,
                                                 style: TextStyle(
                                                     fontWeight:
@@ -2346,6 +2342,15 @@ class _GudangMenuState extends State<GudangMenu> {
                                                 padding: EdgeInsets.all(8.0),
                                                 child: Text(
                                                     batch['barang_nama'] ?? '',
+                                                    textAlign:
+                                                        TextAlign.center),
+                                              ),
+                                            ),
+                                            TableCell(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                    batch['satuan_nama'] ?? '',
                                                     textAlign:
                                                         TextAlign.center),
                                               ),
@@ -2865,105 +2870,6 @@ class _GudangMenuState extends State<GudangMenu> {
       },
     );
   }
-
-  // void showQuantityDialog(
-  //     String id_barang, String id_satuan, BuildContext context) {
-  //   int quantity = 1;
-
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible:
-  //         false, // Prevents closing the dialog by tapping outside
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: Text('Update Quantity'),
-  //         content: StatefulBuilder(
-  //           builder: (BuildContext context, StateSetter setState) {
-  //             return Column(
-  //               mainAxisSize: MainAxisSize.min,
-  //               children: [
-  //                 Text('Quantity:'),
-  //                 Row(
-  //                   mainAxisAlignment: MainAxisAlignment.center,
-  //                   children: [
-  //                     IconButton(
-  //                       icon: Icon(Icons.remove),
-  //                       onPressed: () {
-  //                         setState(() {
-  //                           if (quantity > 1) {
-  //                             quantity--;
-  //                           }
-  //                         });
-  //                       },
-  //                     ),
-  //                     Text(quantity.toString()),
-  //                     IconButton(
-  //                       icon: Icon(Icons.add),
-  //                       onPressed: () {
-  //                         setState(() {
-  //                           quantity++;
-  //                         });
-  //                       },
-  //                     ),
-  //                   ],
-  //                 ),
-  //                 TextFormField(
-  //                   controller: id_supplier_stock_alert,
-  //                   decoration: InputDecoration(
-  //                     labelText: 'ID Supplier Stock',
-  //                     labelStyle: TextStyle(color: Colors.white),
-  //                     filled: true,
-  //                     fillColor: Colors.black,
-  //                     border: OutlineInputBorder(
-  //                       borderRadius: BorderRadius.circular(8),
-  //                       borderSide: BorderSide(color: Colors.white),
-  //                     ),
-  //                     focusedBorder: OutlineInputBorder(
-  //                       borderRadius: BorderRadius.circular(8),
-  //                       borderSide:
-  //                           BorderSide(color: Colors.blueAccent, width: 2),
-  //                     ),
-  //                   ),
-  //                   style: TextStyle(color: Colors.white),
-  //                 ),
-  //                 SizedBox(height: 16.0),
-  //                 Row(
-  //                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //                   children: [
-  //                     ElevatedButton(
-  //                       onPressed: () async {
-  //                         if (id_supplier_stock_alert.text.isNotEmpty) {
-  //                           // Handle the confirm action
-  //                           final kodeAktivitas = generateKodeAktivitas(
-  //                               id_supplier_stock_alert.text, 'MSK');
-  //                           updatejumlahSatuan(id_barang, id_satuan, quantity,
-  //                               kodeAktivitas, "tambah", context);
-  //                           await getlowstocksatuan(context);
-  //                           Navigator.of(context).pop();
-  //                           setState(() {});
-  //                         } else {
-  //                           CustomToast(
-  //                               message: "ID Supplier tidak boleh kosong");
-  //                         }
-  //                       },
-  //                       child: Text('Confirm Stock'),
-  //                     ),
-  //                     ElevatedButton(
-  //                       onPressed: () {
-  //                         Navigator.of(context).pop();
-  //                       },
-  //                       child: Text('Cancel'),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ],
-  //             );
-  //           },
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
 
   void confirmDeletion(BuildContext context, String id_barang, String id_satuan,
       String nama_satuan, String nama_barang) async {

@@ -1883,6 +1883,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     ),
                                     onPressed: () {
                                       GetStorage().erase();
+                                      flushCache();
                                       Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(

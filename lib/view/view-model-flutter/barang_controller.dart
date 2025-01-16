@@ -692,6 +692,7 @@ Future<List<Map<String, dynamic>>> getsatuanMutasi(String? id_cabang,
 }
 
 //konversi satuan
+//cek untuk barang kadaluarsa blm ada untuk manage batch
 Future<bool> convertSatuan(
   String id_barang,
   String id_satuanFrom,
@@ -715,6 +716,13 @@ Future<bool> convertSatuan(
         'amountToIncrease': amountToIncrease,
       }),
     );
+    final conversionrate = amountToIncrease / amountToDecrease;
+    await convertBatch(
+        barangId: id_barang,
+        oldSatuanId: id_satuanFrom,
+        newSatuanId: id_satuanTo,
+        conversionRate: conversionrate,
+        transferQty: amountToDecrease);
 
     if (response.statusCode == 200) {
       print('Satuan conversion successful');
@@ -1457,5 +1465,50 @@ Future<List<Map<String, dynamic>>> fetchExpiringBatches() async {
   } catch (e) {
     print('Error occurred: $e');
     return [];
+  }
+}
+
+//convert satuan batch management
+Future<Map<String, dynamic>> convertBatch({
+  required String barangId,
+  required String oldSatuanId,
+  required String newSatuanId,
+  required double conversionRate,
+  required int transferQty,
+}) async {
+  const String apiUrl = "http://localhost:3000/barang/convertBatch";
+
+  try {
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({
+        "barangId": barangId,
+        "oldSatuanId": oldSatuanId,
+        "newSatuanId": newSatuanId,
+        "conversionRate": conversionRate,
+        "transferQty": transferQty,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return {
+        "success": true,
+        "data": jsonDecode(response.body),
+      };
+    } else {
+      return {
+        "success": false,
+        "message":
+            jsonDecode(response.body)["message"] ?? "Failed to convert batch.",
+      };
+    }
+  } catch (error) {
+    return {
+      "success": false,
+      "message": "An error occurred: $error",
+    };
   }
 }
