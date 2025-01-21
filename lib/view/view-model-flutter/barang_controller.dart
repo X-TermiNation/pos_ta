@@ -708,6 +708,22 @@ Future<bool> convertSatuan(
     final url =
         'http://localhost:3000/barang/konversi_satuan/$id_barang/$id_cabang/$id_gudang/$id_satuanFrom/$id_satuanTo';
 
+    final barangInfo = await searchItemByID(id_barang);
+    if (barangInfo == null) {
+      showToast(context, "Error: Barang not found");
+      return false;
+    }
+
+    if (barangInfo['isKadaluarsa'] == true) {
+      final conversionrate = amountToIncrease / amountToDecrease;
+      await convertBatch(
+        barangId: id_barang,
+        oldSatuanId: id_satuanFrom,
+        newSatuanId: id_satuanTo,
+        conversionRate: conversionrate,
+        transferQty: amountToDecrease,
+      );
+    }
     final response = await http.put(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -716,25 +732,17 @@ Future<bool> convertSatuan(
         'amountToIncrease': amountToIncrease,
       }),
     );
-    final conversionrate = amountToIncrease / amountToDecrease;
-    await convertBatch(
-        barangId: id_barang,
-        oldSatuanId: id_satuanFrom,
-        newSatuanId: id_satuanTo,
-        conversionRate: conversionrate,
-        transferQty: amountToDecrease);
 
     if (response.statusCode == 200) {
       print('Satuan conversion successful');
       final Map<String, dynamic> jsonData = json.decode(response.body);
-      // Optionally handle the response data as needed
-      return true; // Indicate success
+      return true;
     } else {
       throw Exception('Failed to convert satuan');
     }
   } catch (error) {
     showToast(context, "Error: $error");
-    return false; // Indicate failure
+    return false;
   }
 }
 

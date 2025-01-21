@@ -2156,71 +2156,34 @@ class _GudangMenuState extends State<GudangMenu> {
                             ),
                             SizedBox(height: 16),
 
-                            // Scrollable Table
+                            // Scrollable Table for Stock Alert
                             Expanded(
                               child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(minWidth: 600),
-                                  child: Table(
-                                    border: TableBorder.all(),
-                                    columnWidths: {
-                                      0: FlexColumnWidth(2),
-                                      1: FlexColumnWidth(2),
-                                      2: FlexColumnWidth(1),
-                                    },
-                                    children: [
-                                      TableRow(
-                                        decoration: BoxDecoration(
-                                            color: Colors.blue[300]),
-                                        children: [
-                                          TableCell(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                'Nama Barang',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                          ),
-                                          TableCell(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                'Nama Satuan',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                          ),
-                                          TableCell(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                'Jumlah Stok',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      ...snapshot.data!.map((data) {
-                                        return TableRow(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(minWidth: 600),
+                                    child: Table(
+                                      border: TableBorder.all(),
+                                      columnWidths: {
+                                        0: FlexColumnWidth(2),
+                                        1: FlexColumnWidth(2),
+                                        2: FlexColumnWidth(1),
+                                      },
+                                      children: [
+                                        TableRow(
+                                          decoration: BoxDecoration(
+                                              color: Colors.blue[300]),
                                           children: [
                                             TableCell(
                                               child: Padding(
                                                 padding: EdgeInsets.all(8.0),
                                                 child: Text(
-                                                  data['nama_barang'],
+                                                  'Nama Barang',
                                                   textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
                                               ),
                                             ),
@@ -2228,8 +2191,11 @@ class _GudangMenuState extends State<GudangMenu> {
                                               child: Padding(
                                                 padding: EdgeInsets.all(8.0),
                                                 child: Text(
-                                                  data['nama_satuan'],
+                                                  'Nama Satuan',
                                                   textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
                                               ),
                                             ),
@@ -2237,22 +2203,58 @@ class _GudangMenuState extends State<GudangMenu> {
                                               child: Padding(
                                                 padding: EdgeInsets.all(8.0),
                                                 child: Text(
-                                                  data['jumlah_satuan']
-                                                      .toString(),
+                                                  'Jumlah Stok',
                                                   textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
                                               ),
                                             ),
                                           ],
-                                        );
-                                      }).toList(),
-                                    ],
+                                        ),
+                                        ...snapshot.data!.map((data) {
+                                          return TableRow(
+                                            children: [
+                                              TableCell(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    data['nama_barang'],
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                              TableCell(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    data['nama_satuan'],
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                              TableCell(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    data['jumlah_satuan']
+                                                        .toString(),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
 
-                            SizedBox(height: 32),
+                            SizedBox(height: 16),
 
                             // Expiration Alert Title
                             Text(
@@ -2265,107 +2267,35 @@ class _GudangMenuState extends State<GudangMenu> {
                             ),
                             SizedBox(height: 16),
 
-                            // Placeholder Expiration Alert Table
+                            // Scrollable Table for Expiration Alert
                             Expanded(
                               child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(minWidth: 600),
-                                  child: Table(
-                                    border: TableBorder.all(),
-                                    columnWidths: {
-                                      0: FlexColumnWidth(2),
-                                      1: FlexColumnWidth(2),
-                                      2: FlexColumnWidth(1),
-                                      3: FlexColumnWidth(1),
-                                    },
-                                    children: [
-                                      TableRow(
-                                        decoration: BoxDecoration(
-                                            color: Colors.blue[300]),
-                                        children: [
-                                          TableCell(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                'Nama Barang',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                          ),
-                                          TableCell(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                'Nama Satuan',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                          ),
-                                          TableCell(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                'Tanggal Kadaluarsa',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                          ),
-                                          TableCell(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                'Jumlah Stok',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      ...expiringBatches.map(
-                                        (batch) => TableRow(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(minWidth: 600),
+                                    child: Table(
+                                      border: TableBorder.all(),
+                                      columnWidths: {
+                                        0: FlexColumnWidth(2),
+                                        1: FlexColumnWidth(2),
+                                        2: FlexColumnWidth(1),
+                                        3: FlexColumnWidth(1),
+                                      },
+                                      children: [
+                                        TableRow(
+                                          decoration: BoxDecoration(
+                                              color: Colors.blue[300]),
                                           children: [
                                             TableCell(
                                               child: Padding(
                                                 padding: EdgeInsets.all(8.0),
                                                 child: Text(
-                                                    batch['barang_nama'] ?? '',
-                                                    textAlign:
-                                                        TextAlign.center),
-                                              ),
-                                            ),
-                                            TableCell(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text(
-                                                    batch['satuan_nama'] ?? '',
-                                                    textAlign:
-                                                        TextAlign.center),
-                                              ),
-                                            ),
-                                            TableCell(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  batch['tanggal_exp'] != null
-                                                      ? DateFormat('yyyy-MM-dd')
-                                                          .format(DateTime
-                                                              .parse(batch[
-                                                                  'tanggal_exp']))
-                                                      : '',
+                                                  'Nama Barang',
                                                   textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
                                               ),
                                             ),
@@ -2373,17 +2303,92 @@ class _GudangMenuState extends State<GudangMenu> {
                                               child: Padding(
                                                 padding: EdgeInsets.all(8.0),
                                                 child: Text(
-                                                  batch['jumlah_stok']
-                                                          ?.toString() ??
-                                                      '',
+                                                  'Nama Satuan',
                                                   textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                            ),
+                                            TableCell(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                  'Tanggal Kadaluarsa',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                            ),
+                                            TableCell(
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                  'Jumlah Stok',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
                                               ),
                                             ),
                                           ],
                                         ),
-                                      ),
-                                    ],
+                                        ...expiringBatches.map((batch) {
+                                          return TableRow(
+                                            children: [
+                                              TableCell(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    batch['barang_nama'] ?? '',
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                              TableCell(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    batch['satuan_nama'] ?? '',
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                              TableCell(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    batch['tanggal_exp'] != null
+                                                        ? DateFormat(
+                                                                'yyyy-MM-dd')
+                                                            .format(DateTime
+                                                                .parse(batch[
+                                                                    'tanggal_exp']))
+                                                        : '',
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                              TableCell(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    batch['jumlah_stok']
+                                                            ?.toString() ??
+                                                        '',
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
