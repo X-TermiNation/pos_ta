@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:ta_pos/view/loginpage/login_owner.dart';
+import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/startup_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/cabang_controller.dart';
@@ -26,195 +26,84 @@ class _managecabangState extends State<managecabang> {
   TextEditingController lname = TextEditingController();
   TextEditingController alamat = TextEditingController();
   TextEditingController no_telp_manager = TextEditingController();
-  List<Map<String, dynamic>> datacabang = [];
-  int _currentPage = 0;
-  final int _itemsPerPage = 3;
 
   @override
   void initState() {
     super.initState();
-    fetchdatacabang();
-  }
-
-  Future<void> fetchdatacabang() async {
-    try {
-      List<Map<String, dynamic>> fetchedData = await getallcabang();
-      setState(() {
-        datacabang = fetchedData;
-      });
-    } catch (e) {
-      print('fetch cabang error:$e');
-    }
   }
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    final startIndex = _currentPage * _itemsPerPage;
-    final endIndex = (startIndex + _itemsPerPage < datacabang.length)
-        ? startIndex + _itemsPerPage
-        : datacabang.length;
-    final paginatedData = datacabang.sublist(startIndex, endIndex);
     return Scaffold(
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header Section
+          // Insert Section
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            child: Text(
-              "Daftar Cabang",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          // Data Table Section
-          Align(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columns: const <DataColumn>[
-                  DataColumn(label: Text('Nama Cabang')),
-                  DataColumn(label: Text('Alamat')),
-                  DataColumn(label: Text('No Telp')),
-                  DataColumn(label: Text('Hapus Cabang')),
-                ],
-                rows: paginatedData.map<DataRow>((map) {
-                  return DataRow(cells: [
-                    DataCell(Text(map['nama_cabang'])),
-                    DataCell(Text(map['alamat'])),
-                    DataCell(Text(map['no_telp'])),
-                    DataCell(
-                      Visibility(
-                        visible: map['role'] != 'Manager',
-                        child: ElevatedButton(
-                          onPressed: () {
-                            print("ini data id hapus: ${map['_id']}");
-                            try {
-                              setState(() {
-                                deletecabang(map['_id'], context);
-                                fetchdatacabang();
-                                getallcabang();
-                              });
-                            } catch (e) {
-                              print("gagal delete: $e");
-                            }
-                          },
-                          child: Text(
-                            'Delete',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+            padding: EdgeInsets.only(top: 20),
+            child: switchmode
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 20, bottom: 10),
+                        child: Text("Buat Akun Manager",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                      ..._buildManagerForm(),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 20, bottom: 10),
+                        child: Text("Tambah Cabang Baru",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                      ..._buildBranchForm(),
+                      SizedBox(height: 30),
+                      Padding(
+                        padding: EdgeInsets.only(left: 20),
+                        child: Text(
+                            "Pastikan data benar karena saat menekan tombol, data akan langsung tersimpan!",
+                            style: TextStyle(color: Colors.red)),
+                      ),
+                      SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Padding(
+                          padding: EdgeInsets.only(right: 20),
+                          child: Tooltip(
+                            message: "Cancel Insert",
+                            child: FilledButton(
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => DaftarCabang()));
+                              },
+                              child: Icon(Icons.arrow_back,
+                                  color: Colors.black, size: 25),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                shape: CircleBorder(),
+                                padding: EdgeInsets.all(10),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ]);
-                }).toList(),
-              ),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back),
-                  onPressed: _currentPage > 0
-                      ? () {
-                          setState(() {
-                            _currentPage--;
-                          });
-                        }
-                      : null,
-                ),
-                Text('Page ${_currentPage + 1}'),
-                IconButton(
-                  icon: Icon(Icons.arrow_forward),
-                  onPressed:
-                      (_currentPage + 1) * _itemsPerPage < datacabang.length
-                          ? () {
-                              setState(() {
-                                _currentPage++;
-                              });
-                            }
-                          : null,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 16.0),
-          // Conditional Content
-          switchmode
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.only(left: 20, bottom: 10),
-                      child: Text("Buat Akun Manager",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                    ..._buildManagerForm(),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.only(left: 20, bottom: 10),
-                      child: Text("Tambah Cabang Baru",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                    ..._buildBranchForm(),
-                    SizedBox(height: 30),
-                    Padding(
-                      padding: EdgeInsets.only(left: 20),
-                      child: Text(
-                          "Pastikan data benar karena saat menekan tombol, data akan langsung tersimpan!",
-                          style: TextStyle(color: Colors.red)),
-                    ),
-                    SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Padding(
-                        padding: EdgeInsets.only(right: 20),
-                        child: FilledButton(
-                          onPressed: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => login_owner()));
-                          },
-                          child: Icon(Icons.logout_rounded,
-                              color: Colors.black, size: 25),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            shape: CircleBorder(),
-                            padding: EdgeInsets.all(10),
-                          ),
-                        ),
-                      ),
-                    )
-                  ],
-                ),
+                      )
+                    ],
+                  ),
+          )
         ],
       ),
     );

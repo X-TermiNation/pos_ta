@@ -1,5 +1,6 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/manager/DeliveryHistory.dart';
 import 'package:ta_pos/view/view-model-flutter/transaksi_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
@@ -1552,7 +1553,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => managecabang()));
+                                      builder: (context) => DaftarCabang()));
                             },
                             child: Text('Manage Cabang')),
                       ElevatedButton(
