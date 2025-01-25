@@ -717,6 +717,7 @@ Future<bool> convertSatuan(
     if (barangInfo['isKadaluarsa'] == true) {
       final conversionrate = amountToIncrease / amountToDecrease;
       await convertBatch(
+        cabangId: id_cabang,
         barangId: id_barang,
         oldSatuanId: id_satuanFrom,
         newSatuanId: id_satuanTo,
@@ -1150,15 +1151,9 @@ Future<void> updateStatusToDelivered(String mutasiBarangId) async {
             "Missing fields in item: idBarangRequest: $idBarangRequest, satuanIdRequest: $satuanIdRequest, jumlahInput: $jumlahInput");
         throw Exception("Missing required fields in MutasiItems");
       }
-
-      // Generate unique activity codes
-      // Get the current time in UTC
       final DateTime nowUtc = DateTime.now().toUtc();
-
-      // Convert to WIB (UTC+7)
+      // Convert to WIB
       final DateTime nowWib = nowUtc.add(Duration(hours: 7));
-
-      // Format date and time separately
       final String dateWib =
           "${nowWib.year}${nowWib.month.toString().padLeft(2, '0')}${nowWib.day.toString().padLeft(2, '0')}";
       final String timeWib =
@@ -1191,6 +1186,20 @@ Future<void> updateStatusToDelivered(String mutasiBarangId) async {
         Kode_Aktivitas: kodeAktivitasConfirm,
         id_cabang: mutasiData['id_cabang_confirm'],
       );
+      //check kadaluarsa
+      var barang = await searchItemByID(idBarangRequest);
+      if (barang != null && barang['isKadaluarsa'] == true) {
+        //mutasi batch manage
+        await MutasiBatch(
+          senderCabangId: mutasiData['id_cabang_confirm'],
+          receiverCabangId: mutasiData['id_cabang_request'],
+          barangIdSender: item['id_barang_cabang_confirm'],
+          barangIdReceiver: idBarangRequest,
+          satuanIdSender: item['id_satuan_cabang_confirm'],
+          satuanIdReceiver: satuanIdRequest,
+          transferQty: jumlahInput,
+        );
+      }
     }
 
     // Update status to delivered
@@ -1478,6 +1487,7 @@ Future<List<Map<String, dynamic>>> fetchExpiringBatches() async {
 
 //convert satuan batch management
 Future<Map<String, dynamic>> convertBatch({
+  required String cabangId,
   required String barangId,
   required String oldSatuanId,
   required String newSatuanId,
@@ -1493,6 +1503,7 @@ Future<Map<String, dynamic>> convertBatch({
         "Content-Type": "application/json",
       },
       body: jsonEncode({
+        "cabang_id": cabangId,
         "barangId": barangId,
         "oldSatuanId": oldSatuanId,
         "newSatuanId": newSatuanId,
@@ -1517,6 +1528,62 @@ Future<Map<String, dynamic>> convertBatch({
     return {
       "success": false,
       "message": "An error occurred: $error",
+    };
+  }
+}
+
+Future<Map<String, dynamic>> MutasiBatch({
+  required String senderCabangId,
+  required String receiverCabangId,
+  required String barangIdSender,
+  required String barangIdReceiver,
+  required String satuanIdSender,
+  required String satuanIdReceiver,
+  required int transferQty,
+}) async {
+  const String baseUrl = "http://localhost:3000/barang/mutasiBatch";
+
+  try {
+    // Construct the request body
+    final Map<String, dynamic> requestBody = {
+      "senderCabangId": senderCabangId,
+      "receiverCabangId": receiverCabangId,
+      "barangIdSender": barangIdSender,
+      "barangIdReceiver": barangIdReceiver,
+      "satuanIdSender": satuanIdSender,
+      "satuanIdReceiver": satuanIdReceiver,
+      "transferQty": transferQty,
+    };
+
+    // Make the POST request
+    final response = await http.post(
+      Uri.parse(baseUrl),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(requestBody),
+    );
+
+    // Check if the response is successful
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return {
+        "success": true,
+        "message": data["message"],
+        "details": data["details"],
+      };
+    } else {
+      final errorData = jsonDecode(response.body);
+      return {
+        "success": false,
+        "message": errorData["message"] ?? "Unknown error occurred.",
+      };
+    }
+  } catch (e) {
+    // Handle any exceptions
+    return {
+      "success": false,
+      "message": "Failed to call API: ${e.toString()}",
     };
   }
 }

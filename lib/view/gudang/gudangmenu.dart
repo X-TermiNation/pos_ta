@@ -13,7 +13,6 @@ import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/cabang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
-import 'package:ta_pos/view/view-model-flutter/SuratJalan_controller.dart';
 import 'package:ta_pos/view/gudang/stockConversionHistory.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
@@ -66,11 +65,10 @@ class _GudangMenuState extends State<GudangMenu> {
   List<Map<String, dynamic>> suppliers = [];
   Map<String, dynamic> selectedSupplierData = {};
 
-  void onUserLogin() {
+  void onBarangRefresh() async {
+    await fetchDataAndUseInJsonString();
     setState(() {
       barangdata = Future.value([]);
-    });
-    setState(() {
       barangdata = getBarang();
       print(barangdata);
     });
@@ -599,7 +597,7 @@ class _GudangMenuState extends State<GudangMenu> {
   @override
   void initState() {
     super.initState();
-    onUserLogin();
+    onBarangRefresh();
     getFirstKategoriId().then((value) => edit_selectedvalueKategori);
     getKategori();
     fetchData();
@@ -925,7 +923,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                                   onPressed: () {
                                                     deletebarang(map['_id']);
                                                     setState(() {
-                                                      onUserLogin();
+                                                      onBarangRefresh();
                                                     });
                                                   },
                                                   style:
@@ -1445,6 +1443,7 @@ class _GudangMenuState extends State<GudangMenu> {
                           await fetchBarangStock();
                           setState(() {
                             fetchData();
+                            onBarangRefresh();
                             isExp = false;
                             nama_barang.text = "";
                             nama_satuan_initial.text = "";
@@ -2136,9 +2135,8 @@ class _GudangMenuState extends State<GudangMenu> {
                       return Center(child: CircularProgressIndicator());
                     } else if (snapshot.hasError) {
                       return Center(child: Text('Error: ${snapshot.error}'));
-                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return Center(child: Text('No low stock satuan found'));
                     } else {
+                      final stockAlertData = snapshot.data ?? [];
                       return Container(
                         color: Colors.grey[900],
                         padding: EdgeInsets.all(16),
@@ -2158,100 +2156,123 @@ class _GudangMenuState extends State<GudangMenu> {
 
                             // Scrollable Table for Stock Alert
                             Expanded(
-                              child: SingleChildScrollView(
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(minWidth: 600),
-                                    child: Table(
-                                      border: TableBorder.all(),
-                                      columnWidths: {
-                                        0: FlexColumnWidth(2),
-                                        1: FlexColumnWidth(2),
-                                        2: FlexColumnWidth(1),
-                                      },
-                                      children: [
-                                        TableRow(
-                                          decoration: BoxDecoration(
-                                              color: Colors.blue[300]),
-                                          children: [
-                                            TableCell(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  'Nama Barang',
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ),
-                                            ),
-                                            TableCell(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  'Nama Satuan',
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ),
-                                            ),
-                                            TableCell(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  'Jumlah Stok',
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        ...snapshot.data!.map((data) {
-                                          return TableRow(
+                              child: stockAlertData.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        'No low stock available',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    )
+                                  : SingleChildScrollView(
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: ConstrainedBox(
+                                          constraints:
+                                              BoxConstraints(minWidth: 600),
+                                          child: Table(
+                                            border: TableBorder.all(),
+                                            columnWidths: {
+                                              0: FlexColumnWidth(2),
+                                              1: FlexColumnWidth(2),
+                                              2: FlexColumnWidth(1),
+                                            },
                                             children: [
-                                              TableCell(
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    data['nama_barang'],
-                                                    textAlign: TextAlign.center,
+                                              TableRow(
+                                                decoration: BoxDecoration(
+                                                    color: Colors.blue[300]),
+                                                children: [
+                                                  TableCell(
+                                                    child: Padding(
+                                                      padding:
+                                                          EdgeInsets.all(8.0),
+                                                      child: Text(
+                                                        'Nama Barang',
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
-                                              ),
-                                              TableCell(
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    data['nama_satuan'],
-                                                    textAlign: TextAlign.center,
+                                                  TableCell(
+                                                    child: Padding(
+                                                      padding:
+                                                          EdgeInsets.all(8.0),
+                                                      child: Text(
+                                                        'Nama Satuan',
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
-                                              ),
-                                              TableCell(
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    data['jumlah_satuan']
-                                                        .toString(),
-                                                    textAlign: TextAlign.center,
+                                                  TableCell(
+                                                    child: Padding(
+                                                      padding:
+                                                          EdgeInsets.all(8.0),
+                                                      child: Text(
+                                                        'Jumlah Stok',
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
+                                                ],
                                               ),
+                                              ...stockAlertData.map((data) {
+                                                return TableRow(
+                                                  children: [
+                                                    TableCell(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.all(8.0),
+                                                        child: Text(
+                                                          data['nama_barang'],
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    TableCell(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.all(8.0),
+                                                        child: Text(
+                                                          data['nama_satuan'],
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    TableCell(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.all(8.0),
+                                                        child: Text(
+                                                          data['jumlah_satuan']
+                                                              .toString(),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              }).toList(),
                                             ],
-                                          );
-                                        }).toList(),
-                                      ],
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              ),
                             ),
 
                             SizedBox(height: 16),
@@ -2269,130 +2290,181 @@ class _GudangMenuState extends State<GudangMenu> {
 
                             // Scrollable Table for Expiration Alert
                             Expanded(
-                              child: SingleChildScrollView(
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(minWidth: 600),
-                                    child: Table(
-                                      border: TableBorder.all(),
-                                      columnWidths: {
-                                        0: FlexColumnWidth(2),
-                                        1: FlexColumnWidth(2),
-                                        2: FlexColumnWidth(1),
-                                        3: FlexColumnWidth(1),
-                                      },
-                                      children: [
-                                        TableRow(
-                                          decoration: BoxDecoration(
-                                              color: Colors.blue[300]),
-                                          children: [
-                                            TableCell(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  'Nama Barang',
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ),
-                                            ),
-                                            TableCell(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  'Nama Satuan',
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ),
-                                            ),
-                                            TableCell(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  'Tanggal Kadaluarsa',
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ),
-                                            ),
-                                            TableCell(
-                                              child: Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  'Jumlah Stok',
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        ...expiringBatches.map((batch) {
-                                          return TableRow(
+                              child: FutureBuilder<List<Map<String, dynamic>>>(
+                                future: fetchExpiringBatches(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Center(
+                                        child: CircularProgressIndicator());
+                                  } else if (snapshot.hasError) {
+                                    return Center(
+                                      child: Text(
+                                        'Error: ${snapshot.error}',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    );
+                                  } else if (!snapshot.hasData ||
+                                      snapshot.data!.isEmpty) {
+                                    return Center(
+                                      child: Text(
+                                        'No expiration item within 30 days',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    );
+                                  } else {
+                                    final expiringBatches = snapshot.data!;
+                                    return SingleChildScrollView(
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: ConstrainedBox(
+                                          constraints:
+                                              BoxConstraints(minWidth: 600),
+                                          child: Table(
+                                            border: TableBorder.all(),
+                                            columnWidths: {
+                                              0: FlexColumnWidth(2),
+                                              1: FlexColumnWidth(2),
+                                              2: FlexColumnWidth(1),
+                                              3: FlexColumnWidth(1),
+                                            },
                                             children: [
-                                              TableCell(
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    batch['barang_nama'] ?? '',
-                                                    textAlign: TextAlign.center,
+                                              TableRow(
+                                                decoration: BoxDecoration(
+                                                    color: Colors.blue[300]),
+                                                children: [
+                                                  TableCell(
+                                                    child: Padding(
+                                                      padding:
+                                                          EdgeInsets.all(8.0),
+                                                      child: Text(
+                                                        'Nama Barang',
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
-                                              ),
-                                              TableCell(
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    batch['satuan_nama'] ?? '',
-                                                    textAlign: TextAlign.center,
+                                                  TableCell(
+                                                    child: Padding(
+                                                      padding:
+                                                          EdgeInsets.all(8.0),
+                                                      child: Text(
+                                                        'Nama Satuan',
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
-                                              ),
-                                              TableCell(
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    batch['tanggal_exp'] != null
-                                                        ? DateFormat(
-                                                                'yyyy-MM-dd')
-                                                            .format(DateTime
-                                                                .parse(batch[
-                                                                    'tanggal_exp']))
-                                                        : '',
-                                                    textAlign: TextAlign.center,
+                                                  TableCell(
+                                                    child: Padding(
+                                                      padding:
+                                                          EdgeInsets.all(8.0),
+                                                      child: Text(
+                                                        'Tanggal Kadaluarsa',
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
-                                              ),
-                                              TableCell(
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    batch['jumlah_stok']
-                                                            ?.toString() ??
-                                                        '',
-                                                    textAlign: TextAlign.center,
+                                                  TableCell(
+                                                    child: Padding(
+                                                      padding:
+                                                          EdgeInsets.all(8.0),
+                                                      child: Text(
+                                                        'Jumlah Stok',
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
+                                                ],
                                               ),
+                                              ...expiringBatches.map((batch) {
+                                                return TableRow(
+                                                  children: [
+                                                    TableCell(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.all(8.0),
+                                                        child: Text(
+                                                          batch['barang_nama'] ??
+                                                              '',
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    TableCell(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.all(8.0),
+                                                        child: Text(
+                                                          batch['satuan_nama'] ??
+                                                              '',
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    TableCell(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.all(8.0),
+                                                        child: Text(
+                                                          batch['tanggal_exp'] !=
+                                                                  null
+                                                              ? DateFormat(
+                                                                      'yyyy-MM-dd')
+                                                                  .format(DateTime
+                                                                      .parse(batch[
+                                                                          'tanggal_exp']))
+                                                              : '',
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    TableCell(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.all(8.0),
+                                                        child: Text(
+                                                          batch['jumlah_stok']
+                                                                  ?.toString() ??
+                                                              '',
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              }).toList(),
                                             ],
-                                          );
-                                        }).toList(),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
                               ),
-                            ),
+                            )
                           ],
                         ),
                       );
@@ -2674,11 +2746,12 @@ class _GudangMenuState extends State<GudangMenu> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           if (ReStock_InvoiceNumber.text.isNotEmpty &&
                               itemsStock.length != 0) {
                             updateMultipleItems(itemsStock, selectedSupplierId,
                                 ReStock_InvoiceNumber.text, 'tambah', context);
+                            await getlowstocksatuan(context);
                             setState(() {
                               itemsStock.clear();
                               ReStock_InvoiceNumber.clear();
@@ -2868,7 +2941,7 @@ class _GudangMenuState extends State<GudangMenu> {
               edit_nama_barang.text = "";
               _isEditUser = false;
               temp_id_update = "";
-              onUserLogin();
+              onBarangRefresh();
             });
           },
         );
@@ -3717,6 +3790,8 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                                       onPressed: () async {
                                         await updateStatusToDelivered(
                                             id_mutasi);
+                                        await getlowstocksatuan(context);
+                                        await fetchExpiringBatches();
                                       },
                                       child: Text("Konfirmasi Barang Diambil"),
                                     ),
