@@ -67,6 +67,7 @@ class _GudangMenuState extends State<GudangMenu> {
 
   void onBarangRefresh() async {
     await fetchDataAndUseInJsonString();
+    await fetchExpiringBatches();
     setState(() {
       barangdata = Future.value([]);
       barangdata = getBarang();
@@ -854,7 +855,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                                                   hours: 7));
                                                       initial_insert_date_detail
                                                           .text = DateFormat(
-                                                              'yyyy-MM-dd')
+                                                              'yyyy-MM-dd HH:mm')
                                                           .format(
                                                               wibTimeInitial)
                                                           .toString();
@@ -872,7 +873,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                                                     hours: 7));
                                                         last_insert_date_detail
                                                             .text = DateFormat(
-                                                                'yyyy-MM-dd')
+                                                                'yyyy-MM-dd HH:mm')
                                                             .format(wibTimelast)
                                                             .toString();
                                                       } else {
@@ -1034,13 +1035,13 @@ class _GudangMenuState extends State<GudangMenu> {
                             SizedBox(height: 20.0),
                             Text(
                               "Barang ID:",
-                              style: TextStyle(fontSize: 18),
+                              style: TextStyle(fontSize: 15),
                             ),
                             Row(
                               children: [
                                 Text(
                                   "$detailbarang_ID",
-                                  style: TextStyle(fontSize: 18),
+                                  style: TextStyle(fontSize: 15),
                                 ),
                                 SizedBox(width: 8.0),
                                 detailbarang_ID != ""
@@ -1064,27 +1065,27 @@ class _GudangMenuState extends State<GudangMenu> {
                             SizedBox(height: 16.0),
                             Text(
                               "Nama Barang : ${edit_nama_barang.text}",
-                              style: TextStyle(fontSize: 18),
+                              style: TextStyle(fontSize: 15),
                             ),
                             SizedBox(height: 16.0),
                             Text(
                               "Jenis/Kategori : ${edit_nama_kategorijenis.text}",
-                              style: TextStyle(fontSize: 18),
+                              style: TextStyle(fontSize: 15),
                             ),
                             SizedBox(height: 16.0),
                             Text(
                               "First Time Insert Date : ${initial_insert_date_detail.text}",
-                              style: TextStyle(fontSize: 18),
+                              style: TextStyle(fontSize: 15),
                             ),
                             SizedBox(height: 16.0),
                             Text(
                               "Last Time Updated Date : ${last_insert_date_detail.text}",
-                              style: TextStyle(fontSize: 18),
+                              style: TextStyle(fontSize: 15),
                             ),
                             SizedBox(height: 20.0),
                             Text(
                               "Satuan:",
-                              style: TextStyle(fontSize: 18),
+                              style: TextStyle(fontSize: 15),
                             ),
                             DropdownButton<Map<String, dynamic>>(
                               value: selectedSatuan,
@@ -1106,7 +1107,7 @@ class _GudangMenuState extends State<GudangMenu> {
                             if (selectedSatuan != null) ...[
                               Text(
                                 "ID Satuan: ",
-                                style: TextStyle(fontSize: 18),
+                                style: TextStyle(fontSize: 15),
                               ),
                               Column(
                                 mainAxisAlignment: MainAxisAlignment.start,
@@ -1135,26 +1136,36 @@ class _GudangMenuState extends State<GudangMenu> {
                               SizedBox(height: 10),
                               Text(
                                 "Nama Satuan: ${selectedSatuan!['nama_satuan']}",
-                                style: TextStyle(fontSize: 18),
+                                style: TextStyle(fontSize: 15),
                               ),
                               SizedBox(height: 10),
                               selectedSatuan!['exp_date'] != null
                                   ? Text(
                                       "Expire Date: ${formatToWIBDetail(selectedSatuan!['exp_date'].toString())}",
-                                      style: TextStyle(fontSize: 18),
+                                      style: TextStyle(fontSize: 15),
                                     )
                                   : Text("Expire Date: No Expire Date",
-                                      style: TextStyle(fontSize: 18)),
+                                      style: TextStyle(fontSize: 15)),
                               SizedBox(height: 10),
                               Text(
                                 "Jumlah Stock Satuan: ${selectedSatuan!['jumlah_satuan']}",
-                                style: TextStyle(fontSize: 18),
+                                style: TextStyle(fontSize: 15),
                               ),
                               SizedBox(height: 10),
                               Text(
                                 "Harga Satuan: Rp.${NumberFormat('#,###.00', 'id_ID').format(selectedSatuan!['harga_satuan'] ?? 0.0)}",
-                                style: TextStyle(fontSize: 18),
+                                style: TextStyle(fontSize: 15),
                               ),
+                              SizedBox(
+                                height: 10,
+                              ),
+                              selectedSatuan!['last_insert_date'] != null
+                                  ? Text(
+                                      "Last Modified: ${formatToWIBDetail(selectedSatuan!['exp_date'].toString())}",
+                                      style: TextStyle(fontSize: 15),
+                                    )
+                                  : Text("Last Modified: No Date Registered",
+                                      style: TextStyle(fontSize: 15)),
                             ],
                             Spacer(),
                             ElevatedButton(
@@ -3589,6 +3600,43 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
     });
   }
 
+  //untuk konfirmasi tab bagian delivered status
+  void showInfoDialog(BuildContext context, Map<String, dynamic> transfer) {
+    final String requestTime = formatToWIB(transfer['tanggal_request']);
+    final String confirmTime = transfer['tanggal_konfirmasi'] != null
+        ? formatToWIB(transfer['tanggal_konfirmasi'])
+        : 'Not Confirmed';
+    final String deliveredTime = transfer['tanggal_diambil'] != null
+        ? formatToWIB(transfer['tanggal_diambil'])
+        : 'Not Delivered';
+    final String kodeSJ = transfer['Kode_SJ'] ?? 'N/A';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delivery Info'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Waktu Request: $requestTime"),
+              Text("Waktu Konfirmasi: $confirmTime"),
+              Text("Waktu Diambil: $deliveredTime"),
+              Text("Kode Surat Jalan: $kodeSJ"),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -3737,6 +3785,7 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                             ),
                           ],
                           rows: data.map((transfer) {
+                            print("Barang Mutasi: $transfer");
                             final String tanggalRequest =
                                 formatToWIB(transfer['tanggal_request']);
                             final String cabang = transfer['id_cabang_request'];
@@ -3791,6 +3840,8 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                                         await updateStatusToDelivered(
                                             id_mutasi);
                                         await getlowstocksatuan(context);
+
+                                        //tidak berfungsi harus dituang
                                         await fetchExpiringBatches();
                                       },
                                       child: Text("Konfirmasi Barang Diambil"),
@@ -3802,11 +3853,20 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                                           style: TextStyle(color: Colors.red)),
                                     ),
                                   if (status == 'delivered')
-                                    Padding(
-                                      padding: EdgeInsets.only(left: 70),
-                                      child: Text("Delivered",
-                                          style:
-                                              TextStyle(color: Colors.green)),
+                                    Row(
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.only(left: 70),
+                                          child: Text("Delivered",
+                                              style: TextStyle(
+                                                  color: Colors.green)),
+                                        ),
+                                        IconButton(
+                                          icon: Icon(Icons.info_outline),
+                                          onPressed: () =>
+                                              showInfoDialog(context, transfer),
+                                        ),
+                                      ],
                                     ),
                                 ],
                               )),

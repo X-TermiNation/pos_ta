@@ -724,6 +724,17 @@ Future<bool> convertSatuan(
         conversionRate: conversionrate,
         transferQty: amountToDecrease,
       );
+      //update closest batch
+      await getClosestBatch(
+          idCabang: id_cabang,
+          idGudang: id_gudang,
+          barangId: id_barang,
+          satuanId: id_satuanFrom);
+      await getClosestBatch(
+          idCabang: id_cabang,
+          idGudang: id_gudang,
+          barangId: id_barang,
+          satuanId: id_satuanTo);
     }
     final response = await http.put(
       Uri.parse(url),
@@ -1113,6 +1124,7 @@ Future<void> updateStatusToDenied(String mutasiBarangId) async {
   }
 }
 
+//set status to delivered mutasi
 Future<void> updateStatusToDelivered(String mutasiBarangId) async {
   final String updateUrl =
       'http://localhost:3000/barang/MutasiChangeDelivered/$mutasiBarangId';
@@ -1187,7 +1199,7 @@ Future<void> updateStatusToDelivered(String mutasiBarangId) async {
         id_cabang: mutasiData['id_cabang_confirm'],
       );
       //check kadaluarsa
-      var barang = await searchItemByID(idBarangRequest);
+      var barang = await searchItemByID(item['id_barang_cabang_confirm']);
       if (barang != null && barang['isKadaluarsa'] == true) {
         //mutasi batch manage
         await MutasiBatch(
@@ -1199,6 +1211,22 @@ Future<void> updateStatusToDelivered(String mutasiBarangId) async {
           satuanIdReceiver: satuanIdRequest,
           transferQty: jumlahInput,
         );
+        String senderGudang =
+            await getIdGudang(mutasiData['id_cabang_confirm']) ?? "Unknown";
+        String ReceiverdGudang =
+            await getIdGudang(mutasiData['id_cabang_request']) ?? "Unknown";
+        //sender/confirm
+        await getClosestBatch(
+            idCabang: mutasiData['id_cabang_confirm'],
+            idGudang: senderGudang,
+            barangId: item['id_barang_cabang_confirm'],
+            satuanId: item['id_satuan_cabang_confirm']);
+        //request/receiver
+        await getClosestBatch(
+            idCabang: mutasiData['id_cabang_request'],
+            idGudang: ReceiverdGudang,
+            barangId: idBarangRequest,
+            satuanId: satuanIdRequest);
       }
     }
 

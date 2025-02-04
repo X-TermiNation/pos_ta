@@ -2,12 +2,12 @@ import 'package:get_storage/get_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/manager/DeliveryHistory.dart';
+import 'package:ta_pos/view/manager/chatWhatsapp.dart';
 import 'package:ta_pos/view/view-model-flutter/transaksi_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view/view-model-flutter/diskon_controller.dart';
 import 'package:ta_pos/view/gudang/gudangmenu.dart';
-import 'package:ta_pos/view/cabang/managecabang.dart';
 import 'package:ta_pos/view/manager/CustomTab.dart';
 import 'package:ta_pos/view/manager/content_view.dart';
 import 'package:flutter/services.dart';
@@ -317,11 +317,6 @@ class _ManagerMenuState extends State<ManagerMenu>
           child: Container(color: Colors.green, width: 100, height: 100),
         )),
     ContentView(
-        tab: CustomTab(title: 'Mutasi Barang'),
-        content: Center(
-          child: Container(color: Colors.blue, width: 100, height: 100),
-        )),
-    ContentView(
         tab: CustomTab(title: 'Atur Pegawai'),
         content: Center(
           child: Container(color: Colors.green, width: 100, height: 100),
@@ -332,7 +327,7 @@ class _ManagerMenuState extends State<ManagerMenu>
           child: Container(color: Colors.green, width: 100, height: 100),
         )),
     ContentView(
-        tab: CustomTab(title: 'WhatsApp Bisnis'),
+        tab: CustomTab(title: 'WhatsApp ChatBot'),
         content: Center(
           child: Container(color: Colors.green, width: 100, height: 100),
         )),
@@ -984,11 +979,6 @@ class _ManagerMenuState extends State<ManagerMenu>
             child: Container(color: Colors.green, width: 100, height: 100),
           )),
       ContentView(
-          tab: CustomTab(title: 'Mutasi Barang'),
-          content: Center(
-            child: Container(color: Colors.blue, width: 100, height: 100),
-          )),
-      ContentView(
           tab: CustomTab(title: 'Atur Pegawai'),
           content: SingleChildScrollView(
             child: Column(
@@ -1532,7 +1522,7 @@ class _ManagerMenuState extends State<ManagerMenu>
       ContentView(
           tab: CustomTab(title: 'WhatsApp Bisnis'),
           content: Center(
-            child: Container(color: Colors.green, width: 100, height: 100),
+            child: ChatbotManagerScreen(),
           )),
       ContentView(
           tab: CustomTab(title: 'Pengaturan'),
@@ -1588,6 +1578,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                           child: const Text('Log Out'),
                           onPressed: () {
                             GetStorage().erase();
+                            flushCache();
                             Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -1755,18 +1746,6 @@ class _ManagerMenuState extends State<ManagerMenu>
                               ),
                               SizedBox(height: 20),
                               Tooltip(
-                                message: 'Mutasi Barang',
-                                child: IconButton(
-                                  icon: Icon(
-                                    Icons.warehouse_sharp,
-                                    size: 32,
-                                    color: Colors.blue,
-                                  ),
-                                  onPressed: () => _onItemTapped(7),
-                                ),
-                              ),
-                              SizedBox(height: 20),
-                              Tooltip(
                                 message: 'Manage Pegawai',
                                 child: IconButton(
                                   icon: Icon(
@@ -1804,7 +1783,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           size: 28,
                                           color: Colors.blue,
                                         ),
-                                        onPressed: () => _onItemTapped(8),
+                                        onPressed: () => _onItemTapped(7),
                                       ),
                                     ),
                                     Tooltip(
@@ -1815,7 +1794,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           size: 28,
                                           color: Colors.blue,
                                         ),
-                                        onPressed: () => _onItemTapped(9),
+                                        onPressed: () => _onItemTapped(8),
                                       ),
                                     ),
                                     Container(
@@ -1838,7 +1817,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     size: 32,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onItemTapped(10),
+                                  onPressed: () => _onItemTapped(9),
                                 ),
                               ),
                               SizedBox(height: 20),
@@ -1850,7 +1829,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     size: 32,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onItemTapped(11),
+                                  onPressed: () => _onItemTapped(10),
                                 ),
                               ),
                               SizedBox(height: 20),
@@ -1862,7 +1841,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     size: 32,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onItemTapped(12),
+                                  onPressed: () => _onItemTapped(11),
                                 ),
                               ),
                               SizedBox(height: 20),
