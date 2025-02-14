@@ -53,7 +53,7 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
     }
   }
 
-  Future<void> deleteQuestion(String questionId) async {
+  Future<void> deleteQuestionFunc(String questionId) async {
     await deleteQuestion(questionId);
     setState(() {
       selectedQuestionId = null;
@@ -61,13 +61,18 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
     fetchQuestions(); // Refresh list
   }
 
-  Future<void> deleteAnswer(String questionId, String answerId) async {
-    await deleteAnswer(questionId, answerId);
-    fetchQuestions(); // Refresh list
+  Future<void> deleteAnswerFunc(String questionId, String answerId) async {
+    bool success = await deleteAnswer(questionId, answerId);
+    if (success) {
+      await fetchQuestions();
+      setState(() {});
+    } else {
+      print("Failed to delete answer.");
+    }
   }
 
   Future<void> updateNextQuestionForAnswer(
-      String answerId, String? newQuestionId) async {
+      String selectedQuestionId, String answerId, String? newQuestionId) async {
     if (selectedQuestionId == null) return;
     bool success =
         await updateNextQuestion(selectedQuestionId!, answerId, newQuestionId!);
@@ -110,7 +115,7 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
                     onTap: () => setState(() => selectedQuestionId = q['_id']),
                     trailing: IconButton(
                       icon: Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => deleteQuestion(q['_id']),
+                      onPressed: () => deleteQuestionFunc(q['_id']),
                     ),
                   );
                 },
@@ -157,33 +162,33 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
                     var answer = answers[index];
 
                     return ListTile(
-                      title: Text(
-                          '${index + 1}. ${answer['answerText']}'), // ✅ Correct key
+                      title: Text('${index + 1}. ${answer['answerText']}'),
                       subtitle: DropdownButton<String?>(
                         hint: const Text('Select Next Question'),
-                        value: answer['nextQuestionID']
-                            as String?, // ✅ Use correct key
+                        value: answer['nextQuestionID'] as String?,
                         items: [
                           const DropdownMenuItem<String?>(
                               value: null, child: Text('None')),
                           ...questions
-                              .where((q) =>
-                                  q['_id'] !=
-                                  selectedQuestionId) // ✅ Filter out current question
+                              .where((q) => q['_id'] != selectedQuestionId)
                               .map((q) => DropdownMenuItem<String?>(
                                     value: q['_id'],
-                                    child: Text(
-                                        q['questionText']), // ✅ Correct key
+                                    child: Text(q['questionText']),
                                   ))
                               .toList(),
                         ],
-                        onChanged: (newValue) => updateNextQuestionForAnswer(
-                            answer['_id'], newValue),
+                        onChanged: (newValue) async {
+                          setState(() {
+                            answer['nextQuestionID'] = newValue;
+                          });
+                          await updateNextQuestionForAnswer(
+                              selectedQuestionId!, answer['_id'], newValue);
+                        },
                       ),
                       trailing: IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () =>
-                            deleteAnswer(selectedQuestionId!, answer['_id']),
+                        onPressed: () => deleteAnswerFunc(
+                            selectedQuestionId!, answer['_id']),
                       ),
                     );
                   },

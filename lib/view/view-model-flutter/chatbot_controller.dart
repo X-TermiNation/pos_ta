@@ -155,7 +155,13 @@ Future<bool> deleteAnswer(String questionID, String answerID) async {
   try {
     final response = await http.delete(url);
 
-    return response.statusCode == 200;
+    if (response.statusCode == 200) {
+      print("Answer deleted successfully.");
+      return true;
+    } else {
+      print("Failed to delete answer: ${response.body}");
+      return false;
+    }
   } catch (e) {
     print("Error deleting answer: $e");
     return false;
