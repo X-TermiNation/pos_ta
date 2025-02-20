@@ -85,7 +85,6 @@ Future<bool> updateNextQuestion(
   String id_cabang = dataStorage.read('id_cabang');
   final url =
       Uri.parse("http://localhost:3000/chatbot/answer/update-next-question");
-
   try {
     final response = await http.put(
       url,
@@ -169,7 +168,7 @@ Future<bool> deleteAnswer(String questionID, String answerID) async {
 }
 
 // Get all questions for a cabang
-Future<List<dynamic>> getAllQuestions() async {
+Future<Map<String, dynamic>?> getAllQuestions() async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
@@ -181,20 +180,19 @@ Future<List<dynamic>> getAllQuestions() async {
     if (response.statusCode == 200) {
       final decodedResponse = jsonDecode(response.body);
 
-      if (decodedResponse is Map<String, dynamic> &&
-          decodedResponse.containsKey('questions')) {
-        return decodedResponse['questions'] as List<dynamic>;
+      if (decodedResponse is Map<String, dynamic>) {
+        return decodedResponse; // Return the entire response including firstQuestionID
       } else {
         print("Unexpected response format: $decodedResponse");
-        return [];
+        return null;
       }
     } else {
       print("Failed to get questions: ${response.body}");
-      return [];
+      return null;
     }
   } catch (e) {
     print("Error getting questions: $e");
-    return [];
+    return null;
   }
 }
 

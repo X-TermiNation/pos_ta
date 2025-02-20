@@ -14,6 +14,7 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
 
   List<Map<String, dynamic>> questions = [];
   String? selectedQuestionId;
+  String? firstQuestionId; // Variable to hold the first question ID
 
   @override
   void initState() {
@@ -22,10 +23,15 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
   }
 
   Future<void> fetchQuestions() async {
-    var fetchedQuestions = await getAllQuestions();
-    if (fetchedQuestions != null && fetchedQuestions is List) {
+    var chatbotData = await getAllQuestions();
+
+    if (chatbotData != null && chatbotData['success'] == true) {
       setState(() {
-        questions = List<Map<String, dynamic>>.from(fetchedQuestions);
+        questions =
+            List<Map<String, dynamic>>.from(chatbotData['questions'] ?? []);
+
+        // Assign firstQuestionID directly from API response
+        firstQuestionId = chatbotData['firstQuestionID'];
       });
     }
   }
@@ -72,11 +78,24 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
   }
 
   Future<void> updateNextQuestionForAnswer(
-      String selectedQuestionId, String answerId, String? newQuestionId) async {
-    if (selectedQuestionId == null) return;
+      String selectedQuestionId, String answerId, String newQuestionId) async {
+    if (selectedQuestionId.isEmpty) return; // Prevent empty ID
     bool success =
-        await updateNextQuestion(selectedQuestionId!, answerId, newQuestionId!);
-    if (success) fetchQuestions(); // Refresh list
+        await updateNextQuestion(selectedQuestionId, answerId, newQuestionId);
+    if (success) fetchQuestions(); // Refresh UI
+  }
+
+  // Function to update the first question ID in the database
+  Future<void> setFirstQuestion(String questionId) async {
+    if (firstQuestionId == questionId) return; // Prevent unnecessary updates
+
+    bool success =
+        await updateFirstQuestionID(questionId); // Call API to update
+    if (success) {
+      setState(() {
+        firstQuestionId = questionId; // Update UI immediately
+      });
+    }
   }
 
   @override
@@ -107,15 +126,34 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
                 itemCount: questions.length,
                 itemBuilder: (context, index) {
                   var q = questions[index];
+                  bool isFirstQuestion = firstQuestionId == q['_id'];
+
                   return ListTile(
-                    title: Text('${index + 1}. ${q['questionText']}'), // FIXED
+                    title: Text('${index + 1}. ${q['questionText']}'),
                     tileColor: selectedQuestionId == q['_id']
                         ? Colors.grey[500]
                         : null,
                     onTap: () => setState(() => selectedQuestionId = q['_id']),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => deleteQuestionFunc(q['_id']),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            firstQuestionId == q['_id']
+                                ? Icons.star
+                                : Icons.star_border,
+                            color: firstQuestionId == q['_id']
+                                ? Colors.amber
+                                : null,
+                          ),
+                          onPressed: () => setFirstQuestion(
+                              q['_id']), // Call function on click
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => deleteQuestionFunc(q['_id']),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -164,27 +202,40 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
                     return ListTile(
                       title: Text('${index + 1}. ${answer['answerText']}'),
                       subtitle: DropdownButton<String?>(
-                        hint: const Text('Select Next Question'),
-                        value: answer['nextQuestionID'] as String?,
-                        items: [
-                          const DropdownMenuItem<String?>(
-                              value: null, child: Text('None')),
-                          ...questions
-                              .where((q) => q['_id'] != selectedQuestionId)
-                              .map((q) => DropdownMenuItem<String?>(
-                                    value: q['_id'],
-                                    child: Text(q['questionText']),
-                                  ))
-                              .toList(),
-                        ],
-                        onChanged: (newValue) async {
-                          setState(() {
-                            answer['nextQuestionID'] = newValue;
-                          });
-                          await updateNextQuestionForAnswer(
-                              selectedQuestionId!, answer['_id'], newValue);
-                        },
-                      ),
+                          hint: const Text('Select Next Question'),
+                          value: answer['nextQuestionID'] as String?,
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: "null",
+                              child: Text('None'),
+                            ),
+                            const DropdownMenuItem<String?>(
+                              value: '-',
+                              child: Text('Admin'),
+                            ),
+                            ...questions
+                                .where((q) =>
+                                    q['_id'] !=
+                                    selectedQuestionId) // Exclude the parent question
+                                .map((q) => DropdownMenuItem<String?>(
+                                      value: q['_id'],
+                                      child: Text(q['questionText']),
+                                    ))
+                                .toList(),
+                          ],
+                          onChanged: (String? newValue) async {
+                            setState(() {
+                              answer['nextQuestionID'] =
+                                  newValue; // Allowing null
+                            });
+
+                            if (selectedQuestionId != null) {
+                              await updateNextQuestionForAnswer(
+                                  selectedQuestionId!,
+                                  answer['_id'],
+                                  newValue!);
+                            }
+                          }),
                       trailing: IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
                         onPressed: () => deleteAnswerFunc(
