@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:ta_pos/view/view-model-flutter/chatbot_controller.dart';
+import 'package:ta_pos/view-model-flutter/chatbot_controller.dart';
 
 class ChatbotManagerScreen extends StatefulWidget {
   @override

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ta_pos/view/view-model-flutter/startup_controller.dart';
+import 'package:ta_pos/view-model-flutter/startup_controller.dart';
 import 'package:flutter/services.dart';
 
 class daftar_owner2 extends StatefulWidget {

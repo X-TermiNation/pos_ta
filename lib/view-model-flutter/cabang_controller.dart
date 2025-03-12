@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ta_pos/view/view-model-flutter/models_flutter/user_model.dart';
-import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
+import 'package:ta_pos/view-model-flutter/models_flutter/user_model.dart';
+import 'package:ta_pos/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';

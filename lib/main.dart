@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/loginpage/login.dart';
-import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
+import 'package:ta_pos/view-model-flutter/user_controller.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {

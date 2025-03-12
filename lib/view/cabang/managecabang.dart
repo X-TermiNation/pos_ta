@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
-import 'package:ta_pos/view/view-model-flutter/startup_controller.dart';
-import 'package:ta_pos/view/view-model-flutter/cabang_controller.dart';
+import 'package:ta_pos/view-model-flutter/startup_controller.dart';
+import 'package:ta_pos/view-model-flutter/cabang_controller.dart';
 
 bool switchmode = false;
 

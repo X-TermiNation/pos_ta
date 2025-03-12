@@ -5,7 +5,7 @@ import 'dart:async';
 import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
-import 'package:ta_pos/view/view-model-flutter/gudang_controller.dart';
+import 'package:ta_pos/view-model-flutter/gudang_controller.dart';
 
 //cari barang dari id
 Future<Map<String, dynamic>?> searchItemByID(String idBarang) async {

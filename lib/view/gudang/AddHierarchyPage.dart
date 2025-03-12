@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:ta_pos/view/view-model-flutter/barang_controller.dart'; // Ensure this import exists
+import 'package:ta_pos/view-model-flutter/barang_controller.dart'; // Ensure this import exists
 
 class AddHierarchyPage extends StatefulWidget {
   @override

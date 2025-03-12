@@ -6,7 +6,7 @@ import 'package:ta_pos/view/owner/ownermenu.dart';
 // import 'dart:async';
 //import 'package:ta_pos/view/startup/daftar_owner.dart';
 // import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
-import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
+import 'package:ta_pos/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 
 class login_owner extends StatefulWidget {

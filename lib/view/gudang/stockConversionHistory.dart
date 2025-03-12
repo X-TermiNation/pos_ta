@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
+import 'package:ta_pos/view-model-flutter/barang_controller.dart';
 
 String convertToWIB(String utcDateTimeString) {
   DateTime utcDateTime = DateTime.parse(utcDateTimeString);

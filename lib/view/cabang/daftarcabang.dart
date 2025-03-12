@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view/cabang/managecabang.dart';
 import 'package:ta_pos/view/loginpage/login_owner.dart';
-import 'package:ta_pos/view/view-model-flutter/cabang_controller.dart';
+import 'package:ta_pos/view-model-flutter/cabang_controller.dart';
 
 class DaftarCabang extends StatefulWidget {
   const DaftarCabang({super.key});

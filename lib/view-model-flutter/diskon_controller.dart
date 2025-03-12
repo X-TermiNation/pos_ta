@@ -80,6 +80,7 @@ Future<void> tambahdiskon(
       'persentase_diskon': persentase_diskon,
       'start_date': DateStringStart,
       'end_date': DateStringEnd,
+      'isActive': true,
     };
 
     if (nama_diskon != "" && persentase_diskon != "") {
@@ -161,4 +162,27 @@ void deletediskon(String id) async {
     print('Error deleting data. Status code: ${response.statusCode}');
   }
   await getDiskon();
+}
+
+//toggle diskon status
+Future<void> toggleDiskonStatus(String idDiskon) async {
+  final dataStorage = GetStorage();
+  String id_cabangs = dataStorage.read('id_cabang');
+  final String url =
+      'http://localhost:3000/barang/toggleDiskon/$idDiskon/$id_cabangs';
+  try {
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print('Status diskon berhasil diubah: ${data['data']}');
+    } else {
+      print('Gagal mengubah status diskon: ${response.body}');
+    }
+  } catch (error) {
+    print('Terjadi kesalahan: $error');
+  }
 }

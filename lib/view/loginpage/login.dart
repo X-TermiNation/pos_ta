@@ -4,8 +4,8 @@ import 'package:ta_pos/view/loginpage/login_owner.dart';
 import 'package:ta_pos/view/manager/managermenu.dart';
 import 'dart:async';
 import 'package:ta_pos/view/startup/daftar_owner.dart';
-import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
-import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
+import 'package:ta_pos/view-model-flutter/barang_controller.dart';
+import 'package:ta_pos/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 
 String emailstr = "";
@@ -88,7 +88,7 @@ class _loginscreen_state extends State<loginscreen> {
           ? CircularProgressIndicator()
           : SingleChildScrollView(
               child: Container(
-                width: 400, // Set the width to your desired value
+                width: 400,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(

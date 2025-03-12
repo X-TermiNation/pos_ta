@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/manager/DeliveryHistory.dart';
 import 'package:ta_pos/view/manager/chatWhatsapp.dart';
-import 'package:ta_pos/view/view-model-flutter/transaksi_controller.dart';
-import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
-import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
-import 'package:ta_pos/view/view-model-flutter/diskon_controller.dart';
+import 'package:ta_pos/view-model-flutter/transaksi_controller.dart';
+import 'package:ta_pos/view-model-flutter/user_controller.dart';
+import 'package:ta_pos/view-model-flutter/barang_controller.dart';
+import 'package:ta_pos/view-model-flutter/diskon_controller.dart';
 import 'package:ta_pos/view/gudang/gudangmenu.dart';
 import 'package:ta_pos/view/manager/CustomTab.dart';
 import 'package:ta_pos/view/manager/content_view.dart';
@@ -62,15 +62,17 @@ class _ManagerMenuState extends State<ManagerMenu>
   List<Map<String, dynamic>> databarang = [];
   bool selectAll = false;
   //func list diskon
-  void fetchDiskon() {
-    diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
-    diskondata.then((data) {
+  void fetchDiskon() async {
+    var data = await getDiskon();
+    if (data != null) {
       setState(() {
         _diskonData = data;
-        _currentPagediskon = 0; // Reset to the first page
-        _updatePaginationDiskon(); // Update the data displayed based on the current page
+        _currentPagediskon = 0;
+        _updatePaginationDiskon();
       });
-    });
+    } else {
+      print("Failed to fetch diskon data!");
+    }
   }
 
   void _updatePaginationDiskon() {
@@ -546,89 +548,118 @@ class _ManagerMenuState extends State<ManagerMenu>
                 SizedBox(height: 20),
                 Expanded(
                   child: _filteredDiskon.isEmpty
-                      ? Center(
-                          child: CircularProgressIndicator(),
-                        )
+                      ? Center(child: CircularProgressIndicator())
                       : Padding(
                           padding: EdgeInsets.only(left: 20, right: 20),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: SizedBox(
-                              width: MediaQuery.of(context).size.width,
-                              child: DataTable(
-                                headingRowColor: MaterialStateColor.resolveWith(
-                                  (states) =>
-                                      Theme.of(context).colorScheme.primary,
-                                ),
-                                columnSpacing: 20,
-                                dataRowColor: MaterialStateColor.resolveWith(
-                                  (states) =>
-                                      Theme.of(context).colorScheme.surface,
-                                ),
-                                dataTextStyle: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 16,
-                                ),
-                                headingTextStyle: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                columns: const <DataColumn>[
-                                  DataColumn(label: Text('Nama Diskon')),
-                                  DataColumn(label: Text('Persentase Diskon')),
-                                  DataColumn(label: Text('Tanggal Mulai')),
-                                  DataColumn(label: Text('Tanggal Berakhir')),
-                                  DataColumn(label: Text('Hapus Diskon')),
-                                ],
-                                rows: _filteredDiskon.map<DataRow>((map) {
-                                  var percentage =
-                                      map['persentase_diskon'].toString();
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(
-                                          Text(map['nama_diskon'].toString())),
-                                      DataCell(Text("$percentage %")),
-                                      DataCell(
-                                        Text(map['start_date']
-                                            .toString()
-                                            .substring(0, 10)),
-                                      ),
-                                      DataCell(
-                                        Text(map['end_date']
-                                            .toString()
-                                            .substring(0, 10)),
-                                      ),
-                                      DataCell(
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 8),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              return SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minWidth: constraints.maxWidth,
+                                  ),
+                                  child: DataTable(
+                                    headingRowColor:
+                                        MaterialStateColor.resolveWith(
+                                      (states) =>
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                                    columnSpacing: 20,
+                                    dataRowColor:
+                                        MaterialStateColor.resolveWith(
+                                      (states) =>
+                                          Theme.of(context).colorScheme.surface,
+                                    ),
+                                    dataTextStyle: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                      fontSize: 16,
+                                    ),
+                                    headingTextStyle: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    columns: const <DataColumn>[
+                                      DataColumn(label: Text('Nama Diskon')),
+                                      DataColumn(
+                                          label: Text('Persentase Diskon')),
+                                      DataColumn(label: Text('Tanggal Mulai')),
+                                      DataColumn(
+                                          label: Text('Tanggal Berakhir')),
+                                      DataColumn(label: Text('Status Aktif')),
+                                      DataColumn(label: Text('Hapus Diskon')),
+                                    ],
+                                    rows: _filteredDiskon.map<DataRow>((map) {
+                                      var percentage =
+                                          map['persentase_diskon'].toString();
+
+                                      return DataRow(
+                                        cells: [
+                                          DataCell(Text(
+                                              map['nama_diskon'].toString())),
+                                          DataCell(Text("$percentage %")),
+                                          DataCell(
+                                            Text(map['start_date']
+                                                .toString()
+                                                .substring(0, 10)),
+                                          ),
+                                          DataCell(
+                                            Text(map['end_date']
+                                                .toString()
+                                                .substring(0, 10)),
+                                          ),
+                                          DataCell(
+                                            Switch(
+                                              value: map['isActive'],
+                                              onChanged: (bool newValue) async {
+                                                await toggleDiskonStatus(
+                                                    map['_id']);
+                                                setState(() {
+                                                  fetchDiskon();
+                                                });
+                                              },
+                                              activeColor: Colors.green,
+                                              inactiveThumbColor: Colors.red,
                                             ),
                                           ),
-                                          onPressed: () async {
-                                            deletediskon(map['_id']);
-                                            fetchDiskon();
-                                          },
-                                          child: Text(
-                                            'Delete',
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.white),
+                                          DataCell(
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              onPressed: () async {
+                                                deletediskon(map['_id']);
+                                                setState(() {
+                                                  fetchDiskon();
+                                                });
+                                              },
+                                              child: Text(
+                                                'Delete',
+                                                style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.white),
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                }).toList(),
-                              ),
-                            ),
+                                        ],
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                 ),

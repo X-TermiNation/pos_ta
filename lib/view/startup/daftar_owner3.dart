@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ta_pos/view/view-model-flutter/startup_controller.dart';
+import 'package:ta_pos/view-model-flutter/startup_controller.dart';
 
 class daftar_owner3 extends StatefulWidget {
   const daftar_owner3({super.key});

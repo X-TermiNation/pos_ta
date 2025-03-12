@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:ta_pos/view/view-model-flutter/transaksi_controller.dart';
+import 'package:ta_pos/view-model-flutter/transaksi_controller.dart';
 import 'package:intl/intl.dart';
 
 class DeliveryHistoryScreen extends StatefulWidget {

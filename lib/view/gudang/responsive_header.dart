@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/loginpage/login.dart';
-import 'package:ta_pos/view/view-model-flutter/user_controller.dart';
+import 'package:ta_pos/view-model-flutter/user_controller.dart';
 
 class ResponsiveSideMenu extends StatefulWidget {
   final List<Widget> containers;
@@ -99,14 +99,13 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
                   MaterialPageRoute(builder: (context) => loginscreen()),
                   (Route<dynamic> route) => false,
                 );
-                
               },
               child: Text('Ya'),
             ),
             TextButton(
               onPressed: () {
                 log_out = false;
-                Navigator.of(context).pop(); 
+                Navigator.of(context).pop();
               },
               child: Text('Tidak'),
             ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
-import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
+import 'package:ta_pos/view-model-flutter/barang_controller.dart';
 import 'package:get_storage/get_storage.dart';
 
 class HistoryStockPage extends StatefulWidget {

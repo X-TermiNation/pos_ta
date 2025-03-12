@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ta_pos/view/view-model-flutter/barang_controller.dart';
-import 'package:ta_pos/view/view-model-flutter/cabang_controller.dart';
+import 'package:ta_pos/view-model-flutter/barang_controller.dart';
+import 'package:ta_pos/view-model-flutter/cabang_controller.dart';
 import 'package:get_storage/get_storage.dart';
 
 class SubmitRequestScreen extends StatefulWidget {
