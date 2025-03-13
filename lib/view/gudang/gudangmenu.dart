@@ -139,11 +139,9 @@ class _GudangMenuState extends State<GudangMenu> {
 
   Future<void> fetchBarangStock() async {
     try {
-      // Fetch barang data
-      var data = await getBarang();
+      var data = await getBarang(); // Fetch updated data
       setState(() {
-        barangListStock = List<Map<String, dynamic>>.from(
-            data); // assuming data is a List<Map<String, dynamic>>
+        barangListStock = List<Map<String, dynamic>>.from(data);
       });
     } catch (e) {
       showToast(context, 'Failed to fetch barang data: $e');
@@ -1447,11 +1445,11 @@ class _GudangMenuState extends State<GudangMenu> {
                               harga_satuan_initial.text,
                               context,
                               selectedImage);
+                          await fetchBarangStock();
                           await fetchDataAndUseInJsonString();
                           await getlowstocksatuan(context);
                           await loadSuppliers();
                           await _loadExpiringBatches();
-                          await fetchBarangStock();
                           setState(() {
                             fetchData();
                             onBarangRefresh();
@@ -2575,6 +2573,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                   // Barang Selection
                                   TypeAheadField<Map<String, dynamic>>(
                                     suggestionsCallback: (pattern) async {
+                                      await fetchBarangStock();
                                       return barangListStock
                                           .where((barang) =>
                                               barang['nama_barang']
@@ -2758,8 +2757,30 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                       ElevatedButton(
                         onPressed: () async {
+                          // Check if all expired items have an exp_date
+                          bool allExpDatesSet = itemsStock.every((item) {
+                            if (item['selectedBarang'] != null &&
+                                item['selectedBarang']['isKadaluarsa'] ==
+                                    true) {
+                              return item['exp_date'] != null;
+                            }
+                            return true;
+                          });
+
+                          if (!allExpDatesSet) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Pastikan semua barang kadaluarsa memiliki tanggal kedaluwarsa!'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          // check invoice number is filled and there are items
                           if (ReStock_InvoiceNumber.text.isNotEmpty &&
-                              itemsStock.length != 0) {
+                              itemsStock.isNotEmpty) {
                             updateMultipleItems(itemsStock, selectedSupplierId,
                                 ReStock_InvoiceNumber.text, 'tambah', context);
                             await getlowstocksatuan(context);
