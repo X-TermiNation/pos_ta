@@ -948,14 +948,17 @@ Future<List<dynamic>> fetchHistoryStokByCabang(String idCabang) async {
 Future<Map<String, dynamic>> addInvoiceToSupplier({
   required String supplierId,
   required String invoiceNumber,
+  required List<Map<String, dynamic>> items, // Added items parameter
 }) async {
   final url = Uri.parse(
-      'http://localhost:3000/barang/addSupplierInvoice'); // Update with your actual URL if different
+      'http://localhost:3000/barang/addSupplierInvoice'); // Adjust if needed
+
   try {
     // Prepare the request body
     final body = jsonEncode({
       'supplierId': supplierId,
       'invoiceNumber': invoiceNumber,
+      'items': items, // Include items list in the request body
     });
 
     // Send the POST request

@@ -117,7 +117,9 @@ class _GudangMenuState extends State<GudangMenu> {
         'selectedBarang': null,
         'selectedSatuan': null,
         'exp_date': null,
-        'satuanList': [], // Satuan list specific to this item
+        'satuanList': [],
+        'jumlahController': TextEditingController(),
+        'hargaController': TextEditingController(),
       });
     });
   }
@@ -653,7 +655,7 @@ class _GudangMenuState extends State<GudangMenu> {
     // Clear the list of items after submission
     items.clear();
     await addInvoiceToSupplier(
-        supplierId: id_supplier, invoiceNumber: sumberTransaksi);
+        supplierId: id_supplier, invoiceNumber: sumberTransaksi, items: items);
   }
 
   //function and data type for supplier type
@@ -2641,16 +2643,44 @@ class _GudangMenuState extends State<GudangMenu> {
                                   ),
                                   SizedBox(height: 8),
 
+                                  //harga satuan
                                   // Jumlah Input
                                   TextFormField(
+                                    controller: itemsStock[index]
+                                        ['hargaController']
+                                      ..text = itemsStock[index]['harga_satuan']
+                                          .toString(),
+                                    decoration: InputDecoration(
+                                      labelText: 'Harga Unit',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly
+                                    ],
+                                    onChanged: (value) {
+                                      _updateItem(index, 'harga_satuan',
+                                          value.isEmpty ? 0 : int.parse(value));
+                                    },
+                                  ),
+
+                                  // Jumlah Input
+                                  TextFormField(
+                                    controller: itemsStock[index]
+                                        ['jumlahController']
+                                      ..text = itemsStock[index]['jumlah']
+                                          .toString(),
                                     decoration: InputDecoration(
                                       labelText: 'Jumlah',
                                       border: OutlineInputBorder(),
                                     ),
                                     keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly
+                                    ],
                                     onChanged: (value) {
                                       _updateItem(index, 'jumlah',
-                                          int.tryParse(value) ?? 0);
+                                          value.isEmpty ? 0 : int.parse(value));
                                     },
                                   ),
                                   SizedBox(height: 8),
@@ -3259,6 +3289,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
   @override
   void initState() {
     super.initState();
+
     fetchDataRequest = fetchData();
   }
 
