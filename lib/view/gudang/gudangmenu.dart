@@ -106,6 +106,11 @@ class _GudangMenuState extends State<GudangMenu> {
   Map<String, dynamic>? selectedBarangStock;
   Map<String, dynamic>? selectedSatuanStock;
   TextEditingController manual_restock_namabarang = TextEditingController();
+  List<TextEditingController> jumlahControllers = [];
+  List<TextEditingController> hargaControllers = [];
+
+  final currencyFormatter =
+      NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   void _addItem() {
     setState(() {
@@ -118,9 +123,11 @@ class _GudangMenuState extends State<GudangMenu> {
         'selectedSatuan': null,
         'exp_date': null,
         'satuanList': [],
-        'jumlahController': TextEditingController(),
-        'hargaController': TextEditingController(),
       });
+
+      // Add controllers separately
+      jumlahControllers.add(TextEditingController());
+      hargaControllers.add(TextEditingController());
     });
   }
 
@@ -653,9 +660,9 @@ class _GudangMenuState extends State<GudangMenu> {
     }
 
     // Clear the list of items after submission
-    items.clear();
     await addInvoiceToSupplier(
         supplierId: id_supplier, invoiceNumber: sumberTransaksi, items: items);
+    items.clear();
   }
 
   //function and data type for supplier type
@@ -2642,14 +2649,9 @@ class _GudangMenuState extends State<GudangMenu> {
                                     ),
                                   ),
                                   SizedBox(height: 8),
-
-                                  //harga satuan
-                                  // Jumlah Input
                                   TextFormField(
-                                    controller: itemsStock[index]
-                                        ['hargaController']
-                                      ..text = itemsStock[index]['harga_satuan']
-                                          .toString(),
+                                    controller: hargaControllers[
+                                        index], // Uses separate controller
                                     decoration: InputDecoration(
                                       labelText: 'Harga Unit',
                                       border: OutlineInputBorder(),
@@ -2659,17 +2661,28 @@ class _GudangMenuState extends State<GudangMenu> {
                                       FilteringTextInputFormatter.digitsOnly
                                     ],
                                     onChanged: (value) {
-                                      _updateItem(index, 'harga_satuan',
-                                          value.isEmpty ? 0 : int.parse(value));
+                                      int newValue =
+                                          value.isEmpty ? 0 : int.parse(value);
+                                      _updateItem(
+                                          index, 'harga_satuan', newValue);
+
+                                      // Update the controller with formatted IDR (UI only)
+                                      hargaControllers[index].text =
+                                          currencyFormatter.format(newValue);
+                                      hargaControllers[index].selection =
+                                          TextSelection.fromPosition(
+                                        TextPosition(
+                                            offset: hargaControllers[index]
+                                                .text
+                                                .length),
+                                      );
                                     },
                                   ),
 
                                   // Jumlah Input
                                   TextFormField(
-                                    controller: itemsStock[index]
-                                        ['jumlahController']
-                                      ..text = itemsStock[index]['jumlah']
-                                          .toString(),
+                                    controller: jumlahControllers[
+                                        index], // Uses separate controller
                                     decoration: InputDecoration(
                                       labelText: 'Jumlah',
                                       border: OutlineInputBorder(),
@@ -2774,6 +2787,13 @@ class _GudangMenuState extends State<GudangMenu> {
                                     icon: Icon(Icons.close, color: Colors.red),
                                     onPressed: () {
                                       setState(() {
+                                        // Dispose the controllers before removing
+                                        jumlahControllers[index].dispose();
+                                        hargaControllers[index].dispose();
+
+                                        // Remove from lists
+                                        jumlahControllers.removeAt(index);
+                                        hargaControllers.removeAt(index);
                                         itemsStock.removeAt(index);
                                       });
                                     },

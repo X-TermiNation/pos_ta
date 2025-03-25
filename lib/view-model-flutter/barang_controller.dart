@@ -948,18 +948,31 @@ Future<List<dynamic>> fetchHistoryStokByCabang(String idCabang) async {
 Future<Map<String, dynamic>> addInvoiceToSupplier({
   required String supplierId,
   required String invoiceNumber,
-  required List<Map<String, dynamic>> items, // Added items parameter
+  required List<Map<String, dynamic>> items,
 }) async {
   final url = Uri.parse(
       'http://localhost:3000/barang/addSupplierInvoice'); // Adjust if needed
 
   try {
+    // Convert DateTime fields in items, if any
+    List<Map<String, dynamic>> formattedItems = items.map((item) {
+      return item.map((key, value) {
+        if (value is DateTime) {
+          return MapEntry(
+              key, value.toIso8601String()); // Convert DateTime to string
+        }
+        return MapEntry(key, value);
+      });
+    }).toList();
+
     // Prepare the request body
     final body = jsonEncode({
       'supplierId': supplierId,
       'invoiceNumber': invoiceNumber,
-      'items': items, // Include items list in the request body
+      'items': formattedItems, // Send formatted items
     });
+
+    print("Sending request to $url with body: $body");
 
     // Send the POST request
     final response = await http.post(
@@ -967,6 +980,8 @@ Future<Map<String, dynamic>> addInvoiceToSupplier({
       headers: {'Content-Type': 'application/json'},
       body: body,
     );
+
+    print("Response received: ${response.statusCode} - ${response.body}");
 
     // Parse the response
     if (response.statusCode == 200) {
@@ -980,6 +995,7 @@ Future<Map<String, dynamic>> addInvoiceToSupplier({
       };
     }
   } catch (e) {
+    print("Error sending request: $e");
     return {'success': false, 'message': 'An error occurred: $e'};
   }
 }
