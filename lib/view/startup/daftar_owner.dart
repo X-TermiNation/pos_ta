@@ -120,7 +120,7 @@ class _daftar_owner_State extends State<daftar_owner> {
                 ),
                 SizedBox(height: 30),
                 Text(
-                  'Pastikan Data yang diinput benar!',
+                  'Pastikan Data yang diinput benar! Dimohon tidak keluar App selama proses ini!',
                   style: TextStyle(
                     color: Colors.red,
                     fontSize: 16,
@@ -128,37 +128,45 @@ class _daftar_owner_State extends State<daftar_owner> {
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _isValidEmail
-                      ? () {
-                          tambahOwner(
-                            email.text.toString(),
-                            pass.text.toString(),
-                            FnameOwner.text.toString(),
-                            LnameOwner.text.toString(),
-                            context,
-                          );
-                          email.clear();
-                          pass.clear();
-                          FnameOwner.clear();
-                          LnameOwner.clear();
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    backgroundColor: _isValidEmail
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.grey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center, // Centers the button
+                  mainAxisSize:
+                      MainAxisSize.min, // Prevents full-width stretching
+                  children: [
+                    ElevatedButton(
+                      onPressed: _isValidEmail
+                          ? () {
+                              tambahOwner(
+                                email.text.toString(),
+                                pass.text.toString(),
+                                FnameOwner.text.toString(),
+                                LnameOwner.text.toString(),
+                                context,
+                              );
+                              email.clear();
+                              pass.clear();
+                              FnameOwner.clear();
+                              LnameOwner.clear();
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(200, 50), // Set fixed width
+                        padding: EdgeInsets.symmetric(vertical: 15),
+                        backgroundColor: _isValidEmail
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        "Submit",
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
-                    elevation: 5,
-                  ),
-                  child: Text(
-                    "Next",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
+                  ],
+                )
               ],
             ),
           ),
@@ -184,12 +192,8 @@ class _daftar_owner_State extends State<daftar_owner> {
         fillColor: Theme.of(context).colorScheme.background,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide.none,
         ),
         labelText: label,
-        labelStyle: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-        ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
           borderSide: BorderSide(

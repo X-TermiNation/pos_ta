@@ -33,7 +33,7 @@ class _daftar_owner2_State extends State<daftar_owner2> {
             borderRadius: BorderRadius.circular(12.0),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               Center(
@@ -115,7 +115,7 @@ class _daftar_owner2_State extends State<daftar_owner2> {
               ),
               SizedBox(height: 30),
               Text(
-                'Pastikan Data yang diinput benar!',
+                'Pastikan Data yang diinput benar! Dimohon tidak keluar App selama proses ini!',
                 style: TextStyle(
                   color: Colors.red,
                   fontSize: 16,
@@ -123,27 +123,39 @@ class _daftar_owner2_State extends State<daftar_owner2> {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 20),
-              Center(
-                child: FilledButton(
-                  onPressed: () {
-                    nambahcabangngudang(nama_cabang.text, alamat_cabang.text,
-                        no_telp.text, alamat_gudang.text, context);
-                    setState(() {
-                      alamat_cabang.text = "";
-                      no_telp.text = "";
-                      alamat_gudang.text = "";
-                      nama_cabang.text = "";
-                    });
-                  },
-                  style: FilledButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+              Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.center, // Center the button
+                mainAxisSize: MainAxisSize.min, // Prevent stretching full width
+                children: [
+                  FilledButton(
+                    onPressed: () {
+                      nambahcabangngudang(
+                        nama_cabang.text,
+                        alamat_cabang.text,
+                        no_telp.text,
+                        alamat_gudang.text,
+                        context,
+                      );
+                      setState(() {
+                        alamat_cabang.text = "";
+                        no_telp.text = "";
+                        alamat_gudang.text = "";
+                        nama_cabang.text = "";
+                      });
+                    },
+                    style: FilledButton.styleFrom(
+                      minimumSize: Size(200, 50), // Fixed width and height
+                      padding: EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
                     ),
+                    child:
+                        Text("Submit", style: TextStyle(color: Colors.white)),
                   ),
-                  child: Text("Next", style: TextStyle(color: Colors.white)),
-                ),
-              ),
+                ],
+              )
             ],
           ),
         ),

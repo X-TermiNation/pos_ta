@@ -224,44 +224,48 @@ class _ManagerMenuState extends State<ManagerMenu>
 
   // Function to initialize the WebSocket connection for tracking
   void _initializeWebSocket() {
+    if (!mounted) return;
+
     setState(() {
       isWebSocketConnected = false; // Reset connection status
     });
 
-    // Set up WebSocket connection
     channel = WebSocketChannel.connect(
-      Uri.parse('ws://localhost:8080/ws'), // WebSocket server URL
+      Uri.parse('ws://localhost:8080/ws'),
     );
 
-    // Listen for location updates from the WebSocket server
-    channel.stream.listen((message) {
-      // Parse the incoming message
-      Map<String, dynamic> data = jsonDecode(message);
+    channel.stream.listen(
+      (message) {
+        if (!mounted) return;
+        Map<String, dynamic> data = jsonDecode(message);
 
-      // Check if the message contains latitude and longitude
-      if (data.containsKey('latitude') &&
-          data.containsKey('longitude') &&
-          data.containsKey('id_transaksi')) {
+        if (data.containsKey('latitude') &&
+            data.containsKey('longitude') &&
+            data.containsKey('id_transaksi')) {
+          setState(() {
+            isWebSocketConnected = true;
+            _courierPosition = LatLng(data['latitude'], data['longitude']);
+            id_transaksi = data['id_transaksi'];
+          });
+        }
+      },
+      onError: (error) {
+        print('WebSocket error: $error');
+        if (!mounted) return;
         setState(() {
-          isWebSocketConnected =
-              true; // WebSocket is active when data is received
-          _courierPosition = LatLng(data['latitude'], data['longitude']);
-          id_transaksi = data['id_transaksi'];
+          isWebSocketConnected = false;
         });
-      }
-    }, onError: (error) {
-      print('WebSocket error: $error');
-      setState(() {
-        isWebSocketConnected = false;
-      });
-    }, onDone: () {
-      print('WebSocket connection closed.');
-      setState(() {
-        isWebSocketConnected = false; // WebSocket is inactive when closed
-        id_transaksi = "";
-        _deliveryData = null;
-      });
-    });
+      },
+      onDone: () {
+        print('WebSocket connection closed.');
+        if (!mounted) return;
+        setState(() {
+          isWebSocketConnected = false;
+          id_transaksi = "";
+          _deliveryData = null;
+        });
+      },
+    );
   }
 
   @override
@@ -285,6 +289,7 @@ class _ManagerMenuState extends State<ManagerMenu>
     if (id_transaksi != "") {
       final deliveryData = await showDeliveryByTransID(id_transaksi, context);
       if (deliveryData != null) {
+        if (!mounted) return;
         setState(() {
           _deliveryData = deliveryData;
         });
@@ -516,56 +521,66 @@ class _ManagerMenuState extends State<ManagerMenu>
         tab: CustomTab(title: 'Daftar Diskon'),
         content: Center(
           child: Container(
-            width: double.infinity,
-            color: Theme.of(context).colorScheme.background,
+            width: 900,
+            height: 850,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.grey, // warna border
+                width: 1, // ketebalan border
+              ),
+              borderRadius: BorderRadius.circular(8), // optional
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: 20),
+                SizedBox(height: 12),
                 Text(
                   'Daftar Diskon',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onBackground,
-                    fontSize: 24,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 12),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
                     controller: _searchController,
                     onChanged: onSearch,
                     decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.all(10),
                       labelText: 'Search Diskon',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       prefixIcon: Icon(Icons.search),
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 12),
                 Expanded(
                   child: _filteredDiskon.isEmpty
                       ? Center(child: CircularProgressIndicator())
                       : Padding(
-                          padding: EdgeInsets.only(left: 20, right: 20),
+                          padding: EdgeInsets.symmetric(horizontal: 16),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               return SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: ConstrainedBox(
                                   constraints: BoxConstraints(
-                                    minWidth: constraints.maxWidth,
-                                  ),
+                                      minWidth: constraints.maxWidth),
                                   child: DataTable(
+                                    headingRowHeight: 56,
+                                    dividerThickness: 1,
                                     headingRowColor:
                                         MaterialStateColor.resolveWith(
                                       (states) =>
                                           Theme.of(context).colorScheme.primary,
                                     ),
-                                    columnSpacing: 20,
+                                    columnSpacing: 16,
                                     dataRowColor:
                                         MaterialStateColor.resolveWith(
                                       (states) =>
@@ -575,68 +590,57 @@ class _ManagerMenuState extends State<ManagerMenu>
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurface,
-                                      fontSize: 16,
+                                      fontSize: 14,
                                     ),
                                     headingTextStyle: TextStyle(
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onPrimary,
-                                      fontSize: 16,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                     ),
-                                    columns: const <DataColumn>[
+                                    columns: const [
                                       DataColumn(label: Text('Nama Diskon')),
-                                      DataColumn(
-                                          label: Text('Persentase Diskon')),
-                                      DataColumn(label: Text('Tanggal Mulai')),
-                                      DataColumn(
-                                          label: Text('Tanggal Berakhir')),
-                                      DataColumn(label: Text('Status Aktif')),
-                                      DataColumn(label: Text('Hapus Diskon')),
+                                      DataColumn(label: Text('Persentase')),
+                                      DataColumn(label: Text('Mulai')),
+                                      DataColumn(label: Text('Berakhir')),
+                                      DataColumn(label: Text('Aktif')),
+                                      DataColumn(label: Text('Hapus')),
                                     ],
                                     rows: _filteredDiskon.map<DataRow>((map) {
-                                      var percentage =
-                                          map['persentase_diskon'].toString();
-
                                       return DataRow(
                                         cells: [
+                                          DataCell(Text(map['nama_diskon'])),
                                           DataCell(Text(
-                                              map['nama_diskon'].toString())),
-                                          DataCell(Text("$percentage %")),
-                                          DataCell(
-                                            Text(map['start_date']
-                                                .toString()
-                                                .substring(0, 10)),
-                                          ),
-                                          DataCell(
-                                            Text(map['end_date']
-                                                .toString()
-                                                .substring(0, 10)),
-                                          ),
-                                          DataCell(
-                                            Switch(
-                                              value: map['isActive'],
-                                              onChanged: (bool newValue) async {
-                                                await toggleDiskonStatus(
-                                                    map['_id']);
-                                                setState(() {
-                                                  fetchDiskon();
-                                                });
-                                              },
-                                              activeColor: Colors.green,
-                                              inactiveThumbColor: Colors.red,
-                                            ),
-                                          ),
+                                              "${map['persentase_diskon']} %")),
+                                          DataCell(Text(map['start_date']
+                                              .toString()
+                                              .substring(0, 10))),
+                                          DataCell(Text(map['end_date']
+                                              .toString()
+                                              .substring(0, 10))),
+                                          DataCell(Switch(
+                                            value: map['isActive'],
+                                            onChanged: (val) async {
+                                              await toggleDiskonStatus(
+                                                  map['_id']);
+                                              setState(() {
+                                                fetchDiskon();
+                                              });
+                                            },
+                                            activeColor: Colors.green,
+                                            inactiveThumbColor: Colors.red,
+                                          )),
                                           DataCell(
                                             ElevatedButton(
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: Colors.red,
                                                 padding: EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 8),
+                                                    horizontal: 10,
+                                                    vertical: 6),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
-                                                      BorderRadius.circular(8),
+                                                      BorderRadius.circular(6),
                                                 ),
                                               ),
                                               onPressed: () async {
@@ -648,7 +652,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                               child: Text(
                                                 'Delete',
                                                 style: TextStyle(
-                                                    fontSize: 14,
+                                                    fontSize: 12,
                                                     color: Colors.white),
                                               ),
                                             ),
@@ -664,12 +668,10 @@ class _ManagerMenuState extends State<ManagerMenu>
                         ),
                 ),
                 Padding(
-                  padding: EdgeInsets.only(bottom: 20),
+                  padding: EdgeInsets.only(bottom: 12, top: 6),
                   child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceVariant, // For contrast with the table
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    color: Theme.of(context).colorScheme.surfaceVariant,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -678,9 +680,9 @@ class _ManagerMenuState extends State<ManagerMenu>
                             backgroundColor:
                                 Theme.of(context).colorScheme.primary,
                             padding: EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
+                                horizontal: 16, vertical: 8),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           onPressed: _currentPagediskon > 0
@@ -691,13 +693,14 @@ class _ManagerMenuState extends State<ManagerMenu>
                                   });
                                 }
                               : null,
-                          icon: Icon(Icons.arrow_back_ios, size: 16),
-                          label: Text("Previous"),
+                          icon: Icon(Icons.arrow_back_ios, size: 14),
+                          label:
+                              Text("Previous", style: TextStyle(fontSize: 14)),
                         ),
                         Text(
                           "Page ${_currentPagediskon + 1} of ${(_diskonData.length / _rowsPerPagediskon).ceil()}",
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
@@ -706,9 +709,9 @@ class _ManagerMenuState extends State<ManagerMenu>
                             backgroundColor:
                                 Theme.of(context).colorScheme.primary,
                             padding: EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
+                                horizontal: 16, vertical: 8),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           onPressed:
@@ -721,13 +724,13 @@ class _ManagerMenuState extends State<ManagerMenu>
                                       });
                                     }
                                   : null,
-                          icon: Icon(Icons.arrow_forward_ios, size: 16),
-                          label: Text("Next"),
+                          icon: Icon(Icons.arrow_forward_ios, size: 14),
+                          label: Text("Next", style: TextStyle(fontSize: 14)),
                         ),
                       ],
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -735,256 +738,259 @@ class _ManagerMenuState extends State<ManagerMenu>
       ),
       ContentView(
         tab: CustomTab(title: 'Atur Diskon'),
-        content: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Text("Atur Diskon"),
-                ),
-                SizedBox(height: 20),
-                TextFormField(
-                  controller: nama_diskon,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Field tidak boleh kosong';
-                    }
-                    return null;
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Nama Diskon',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.discount),
-                  ),
-                ),
-                SizedBox(height: 16),
-                TextFormField(
-                  controller: persentase_diskon,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Field tidak boleh kosong';
-                    }
-                    return null;
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Persentase Diskon (%)',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.percent),
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
-                ),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        content: Center(
+          child: Container(
+            width: 900,
+            height: 800,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey, width: 2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Column(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Selected Date Start:',
-                              style: TextStyle(fontSize: 14)),
-                          InkWell(
-                            onTap: () => _selectDateStart(context),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Text(
+                                "Tambah Diskon",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                            TextFormField(
+                              controller: nama_diskon,
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                      ? 'Field tidak boleh kosong'
+                                      : null,
+                              decoration: InputDecoration(
+                                labelText: 'Nama Diskon',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.discount),
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            TextFormField(
+                              controller: persentase_diskon,
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                      ? 'Field tidak boleh kosong'
+                                      : null,
+                              decoration: InputDecoration(
+                                labelText: 'Persentase Diskon (%)',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.percent),
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Tanggal Mulai'),
+                                      InkWell(
+                                        onTap: () => _selectDateStart(context),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            border:
+                                                Border.all(color: Colors.grey),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.calendar_today),
+                                              SizedBox(width: 8),
+                                              Text(_dateFormat
+                                                  .format(selectedDateStart)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Tanggal Berakhir'),
+                                      InkWell(
+                                        onTap: () => _selectDateEnd(context),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            border:
+                                                Border.all(color: Colors.grey),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.calendar_today),
+                                              SizedBox(width: 8),
+                                              Text(_dateFormat
+                                                  .format(selectedDateEnd)),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            TextField(
+                              onChanged: (value) => filterSearchResults(value),
+                              decoration: InputDecoration(
+                                labelText: 'Cari Barang',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.search),
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectAll = !selectAll;
+                                  toggleSelectAll(selectAll);
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: selectAll
+                                      ? Colors.blueAccent
+                                      : Colors.grey[300],
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Select All',
+                                      style: TextStyle(
+                                        color: selectAll
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                    Icon(
+                                      selectAll
+                                          ? Icons.check_box
+                                          : Icons.check_box_outline_blank,
+                                      color: selectAll
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            Container(
+                              height: 180,
                               decoration: BoxDecoration(
                                 border: Border.all(color: Colors.grey),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.calendar_today),
-                                  SizedBox(width: 8),
-                                  Text(_dateFormat.format(selectedDateStart)),
-                                ],
-                              ),
+                              child: databarang.isEmpty
+                                  ? Center(child: CircularProgressIndicator())
+                                  : ListView.builder(
+                                      itemCount: filteredBarang.length,
+                                      itemBuilder: (context, index) {
+                                        return CheckboxListTile(
+                                          title: Text(filteredBarang[index]
+                                                  ['nama_barang']
+                                              .toString()),
+                                          value: isCheckedList[index],
+                                          onChanged: (value) {
+                                            setState(() {
+                                              isCheckedList[index] = value!;
+                                              selectAll =
+                                                  isCheckedList.every((e) => e);
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Selected Date End:',
-                              style: TextStyle(fontSize: 14)),
-                          InkWell(
-                            onTap: () => _selectDateEnd(context),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.calendar_today),
-                                  SizedBox(width: 8),
-                                  Text(_dateFormat.format(selectedDateEnd)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                    SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final start = _dateFormat
+                            .parse(_dateFormat.format(selectedDateStart))
+                            .add(Duration(days: 1))
+                            .toIso8601String();
+                        final end = _dateFormat
+                            .parse(_dateFormat.format(selectedDateEnd))
+                            .add(Duration(days: 1))
+                            .toIso8601String();
+
+                        await tambahdiskon(
+                          nama_diskon.text,
+                          persentase_diskon.text,
+                          start,
+                          end,
+                          isCheckedList,
+                          databarang,
+                          context,
+                        );
+
+                        nama_diskon.clear();
+                        persentase_diskon.clear();
+                        selectedDateStart = DateTime.now();
+                        selectedDateEnd = DateTime.now();
+                        isCheckedList =
+                            List<bool>.filled(databarang.length, false);
+
+                        setState(() {
+                          fetchDiskon();
+                        });
+                      },
+                      label: Text("Tambah Diskon",
+                          style: TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ],
-                ),
-                SizedBox(height: 16),
-                TextField(
-                  onChanged: (value) => filterSearchResults(value),
-                  decoration: InputDecoration(
-                    labelText: 'Cari Barang',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                ),
-                SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectAll = !selectAll;
-                      toggleSelectAll(selectAll);
-                    });
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: selectAll ? Colors.blueAccent : Colors.grey,
-                      border: Border.all(color: Colors.grey, width: 1.0),
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 6,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Select All',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              color: selectAll
-                                  ? Colors.white
-                                  : Colors
-                                      .black, // Change text color based on active state
-                            ),
-                          ),
-                          Icon(
-                            selectAll
-                                ? Icons.check_box
-                                : Icons
-                                    .check_box_outline_blank, // Change icon based on active state
-                            color: selectAll ? Colors.white : Colors.black,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16),
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey, width: 1.0),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: databarang.isEmpty
-                      ? Center(child: CircularProgressIndicator())
-                      : ListView.builder(
-                          itemCount: filteredBarang.length,
-                          itemBuilder: (context, index) {
-                            return CheckboxListTile(
-                              title: Text(filteredBarang[index]['nama_barang']
-                                  .toString()),
-                              value: isCheckedList[index],
-                              onChanged: (value) {
-                                setState(() {
-                                  isCheckedList[index] = value!;
-                                  if (value == false) {
-                                    selectAll = false;
-                                  } else if (isCheckedList
-                                      .every((checked) => checked)) {
-                                    selectAll = true;
-                                  }
-                                });
-                              },
-                            );
-                          },
-                        ),
-                ),
-                SizedBox(height: 16),
-                Center(
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      String formattedDateStringStart =
-                          _dateFormat.format(selectedDateStart);
-                      DateTime insertedDateStart =
-                          _dateFormat.parse(formattedDateStringStart);
-                      insertedDateStart =
-                          insertedDateStart.add(Duration(days: 1));
-                      String DateStringStart =
-                          insertedDateStart.toIso8601String();
-
-                      String formattedDateStringEnd =
-                          _dateFormat.format(selectedDateEnd);
-                      DateTime insertedDateEnd =
-                          _dateFormat.parse(formattedDateStringEnd);
-                      insertedDateEnd = insertedDateEnd.add(Duration(days: 1));
-                      String DateStringEnd = insertedDateEnd.toIso8601String();
-
-                      await tambahdiskon(
-                        nama_diskon.text,
-                        persentase_diskon.text,
-                        DateStringStart,
-                        DateStringEnd,
-                        isCheckedList,
-                        databarang,
-                        context,
-                      );
-
-                      nama_diskon.clear();
-                      persentase_diskon.clear();
-                      selectedDateStart = DateTime.now();
-                      selectedDateEnd = DateTime.now();
-                      isCheckedList =
-                          List<bool>.filled(databarang.length, false);
-
-                      setState(() {
-                        fetchDiskon();
-                      });
-                    },
-                    label: Text(
-                      "Tambah Diskon",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                );
+              },
             ),
           ),
         ),
@@ -1010,247 +1016,232 @@ class _ManagerMenuState extends State<ManagerMenu>
             child: Container(color: Colors.green, width: 100, height: 100),
           )),
       ContentView(
-          tab: CustomTab(title: 'Atur Pegawai'),
-          content: SingleChildScrollView(
+        tab: CustomTab(title: 'Atur Pegawai'),
+        content: Center(
+          child: Container(
+            width: 900,
+            height: 850,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: Column(
               children: [
-                Container(
-                  height: MediaQuery.of(context).size.height * 0.9,
-                  width: MediaQuery.of(context).size.width * 0.95,
-                  child: Column(
-                    children: [
-                      SizedBox(height: 20),
-                      Text(
-                        'Daftar Pegawai',
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: Colors.white,
-                        ),
+                SizedBox(height: 12),
+                Text(
+                  'Daftar Pegawai',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onBackground,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextField(
+                    controller: _searchControllerPegawai,
+                    onChanged: (val) {
+                      setState(() {
+                        searchQueryPegawai = val;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.all(10),
+                      labelText: 'Search Pegawai',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      SizedBox(height: 30),
-                      // Search Bar
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: TextField(
-                          controller: _searchControllerPegawai,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.search),
-                            hintText: 'Search Pegawai',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      // Expanded to take up available space
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: FutureBuilder(
-                            future: getUsers(),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData) {
-                                // Filter data based on search term
-                                List<Map<String, dynamic>> filteredDataPegawai =
-                                    snapshot.data!.where((map) {
-                                  final email =
-                                      map['email'].toString().toLowerCase();
-                                  final fname =
-                                      map['fname'].toString().toLowerCase();
-                                  final lname =
-                                      map['lname'].toString().toLowerCase();
-                                  final role =
-                                      map['role'].toString().toLowerCase();
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: FutureBuilder(
+                      future: getUsers(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          List<Map<String, dynamic>> filteredDataPegawai =
+                              snapshot.data!.where((map) {
+                            final email = map['email'].toString().toLowerCase();
+                            final fname = map['fname'].toString().toLowerCase();
+                            final lname = map['lname'].toString().toLowerCase();
+                            final role = map['role'].toString().toLowerCase();
+                            final queryLower = searchQueryPegawai.toLowerCase();
+                            return email.contains(queryLower) ||
+                                fname.contains(queryLower) ||
+                                lname.contains(queryLower) ||
+                                role.contains(queryLower);
+                          }).toList();
 
-                                  final queryLower =
-                                      searchQueryPegawai.toLowerCase();
+                          _filteredDataPegawai =
+                              filteredDataPegawai; // ensure for pagination
 
-                                  return email.contains(queryLower) ||
-                                      fname.contains(queryLower) ||
-                                      lname.contains(queryLower) ||
-                                      role.contains(queryLower);
-                                }).toList();
-
-                                final rows = filteredDataPegawai
-                                    .skip(_currentPagepegawai *
-                                        _rowsPerPagepegawai)
-                                    .take(_rowsPerPagepegawai)
-                                    .map((map) {
-                                  return DataRow(cells: [
-                                    DataCell(
-                                      GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            _showEmployeeDetails(context, map);
-                                          });
+                          final rows = filteredDataPegawai
+                              .skip(_currentPagepegawai * _rowsPerPagepegawai)
+                              .take(_rowsPerPagepegawai)
+                              .map((map) {
+                            return DataRow(cells: [
+                              DataCell(GestureDetector(
+                                onTap: () {
+                                  _showEmployeeDetails(context, map);
+                                },
+                                child: Text(
+                                  map['email'],
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                              )),
+                              DataCell(Text(
+                                "${map['fname']} ${map['lname']}",
+                                style: TextStyle(fontSize: 14),
+                              )),
+                              DataCell(Text(
+                                map['role'],
+                                style: TextStyle(fontSize: 14),
+                              )),
+                              DataCell(
+                                Visibility(
+                                    visible: map['role'] != 'Manager',
+                                    child: Padding(
+                                      padding: EdgeInsets.only(left: 20),
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          try {
+                                            deleteuser(map['_id'], context);
+                                            fetchUser();
+                                            getUsers();
+                                          } catch (e) {
+                                            print("Failed to delete: $e");
+                                          }
                                         },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 6),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                        ),
                                         child: Text(
-                                          map['email'],
+                                          'Delete',
                                           style: TextStyle(
-                                            fontSize: 15,
-                                            color: Colors.white,
-                                          ),
+                                              fontSize: 12,
+                                              color: Colors.white),
                                         ),
-                                      ),
-                                    ),
-                                    DataCell(Text(
-                                      "${map['fname']} ${map['lname']}",
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        color: Colors.white,
                                       ),
                                     )),
-                                    DataCell(Text(
-                                      map['role'],
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        color: Colors.white,
-                                      ),
-                                    )),
-                                    DataCell(
-                                      Visibility(
-                                        visible: map['role'] != 'Manager',
-                                        child: ElevatedButton(
-                                          onPressed: () {
-                                            try {
-                                              setState(() {
-                                                deleteuser(map['_id'], context);
-                                                fetchUser();
-                                                getUsers();
-                                              });
-                                            } catch (e) {
-                                              print("Failed to delete: $e");
-                                            }
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 8),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            'Delete',
-                                            style: TextStyle(
-                                                fontSize: 18,
-                                                color: Colors.white),
-                                          ),
-                                        ),
-                                      ),
+                              ),
+                            ]);
+                          }).toList();
+
+                          return LayoutBuilder(
+                            builder: (context, constraints) {
+                              return SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                      minWidth: constraints.maxWidth),
+                                  child: DataTable(
+                                    headingRowHeight: 56,
+                                    dividerThickness: 1,
+                                    headingRowColor:
+                                        MaterialStateColor.resolveWith(
+                                            (states) => Theme.of(context)
+                                                .colorScheme
+                                                .primary),
+                                    columnSpacing: 16,
+                                    dataRowColor:
+                                        MaterialStateColor.resolveWith(
+                                            (states) => Theme.of(context)
+                                                .colorScheme
+                                                .surface),
+                                    dataTextStyle: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
                                     ),
-                                  ]);
-                                }).toList();
-                                return ListView(
-                                  children: [
-                                    DataTable(
-                                      headingRowColor:
-                                          MaterialStateColor.resolveWith(
-                                        (states) => Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                      columnSpacing: 20,
-                                      dataRowColor:
-                                          MaterialStateColor.resolveWith(
-                                        (states) => Theme.of(context)
-                                            .colorScheme
-                                            .surface,
-                                      ),
-                                      dataTextStyle: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface,
-                                        fontSize: 16,
-                                      ),
-                                      headingTextStyle: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      columns: const <DataColumn>[
-                                        DataColumn(
-                                          label: Text('Email'),
-                                        ),
-                                        DataColumn(
-                                          label: Text('Full Name'),
-                                        ),
-                                        DataColumn(
-                                          label: Text('Role'),
-                                        ),
-                                        DataColumn(
-                                          label: Text('Hapus Pegawai'),
-                                        ),
-                                      ],
-                                      rows: rows,
+                                    headingTextStyle: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                     ),
-                                  ],
-                                );
-                              } else if (snapshot.hasError) {
-                                return Text(
-                                  'Error: ${snapshot.error}',
-                                  style: TextStyle(color: Colors.white),
-                                );
-                              } else {
-                                return Center(
-                                    child: CircularProgressIndicator());
-                              }
+                                    columns: const [
+                                      DataColumn(label: Text('Email')),
+                                      DataColumn(label: Text('Full Name')),
+                                      DataColumn(label: Text('Role')),
+                                      DataColumn(label: Text('Hapus Pegawai')),
+                                    ],
+                                    rows: rows,
+                                  ),
+                                ),
+                              );
                             },
+                          );
+                        } else if (snapshot.hasError) {
+                          return Text('Error: ${snapshot.error}');
+                        } else {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(bottom: 12, top: 6),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: _currentPagepegawai > 0
+                              ? () {
+                                  setState(() {
+                                    _currentPagepegawai--;
+                                  });
+                                }
+                              : null,
+                          icon: Icon(Icons.arrow_back_ios, size: 14),
+                          label:
+                              Text("Previous", style: TextStyle(fontSize: 14)),
+                        ),
+                        Text(
+                          "Page ${_currentPagepegawai + 1} of ${(_filteredDataPegawai.length / _rowsPerPagepegawai).ceil()}",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
-                      ),
-                      SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.only(left: 20),
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.primary,
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 10),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              onPressed: _currentPagepegawai > 0
-                                  ? () {
-                                      setState(() {
-                                        _currentPagepegawai--;
-                                      });
-                                    }
-                                  : null,
-                              icon: Icon(Icons.arrow_back_ios, size: 16),
-                              label: Text("Previous"),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          Text(
-                            "Page ${_currentPagepegawai + 1} of ${(_filteredDataPegawai.length / _rowsPerPagepegawai).ceil()}",
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(right: 20),
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.primary,
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 10),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              onPressed: (_currentPagepegawai + 1) *
-                                          _rowsPerPagepegawai <
+                          onPressed:
+                              (_currentPagepegawai + 1) * _rowsPerPagepegawai <
                                       _filteredDataPegawai.length
                                   ? () {
                                       setState(() {
@@ -1258,224 +1249,245 @@ class _ManagerMenuState extends State<ManagerMenu>
                                       });
                                     }
                                   : null,
-                              icon: Icon(Icons.arrow_forward_ios, size: 16),
-                              label: Text("Next"),
-                            ),
-                          )
-                        ],
-                      ),
-                    ],
+                          icon: Icon(Icons.arrow_forward_ios, size: 14),
+                          label: Text("Next", style: TextStyle(fontSize: 14)),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-          )),
+          ),
+        ),
+      ),
       ContentView(
-          tab: CustomTab(title: 'Tambah Pegawai'),
-          content: Container(
-            color: Colors.black,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      "Tambah Pegawai",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
+        tab: CustomTab(title: 'Tambah Pegawai'),
+        content: Container(
+          color: Colors.black,
+          child: Center(
+            child: Container(
+              width: 800,
+              height: 800,
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white24),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    "Tambah Pegawai",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
-                    SizedBox(height: 32.0),
-                    TextFormField(
-                      controller: email,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                        labelText: 'Enter Email',
-                        labelStyle: TextStyle(color: Colors.grey[300]),
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        prefixIcon: Icon(Icons.email, color: Colors.grey[300]),
-                      ),
-                    ),
-                    SizedBox(height: 16.0),
-                    TextFormField(
-                      controller: pass,
-                      obscureText: !visiblepass,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                        labelText: 'Enter Password',
-                        labelStyle: TextStyle(color: Colors.grey[300]),
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        prefixIcon: Icon(Icons.lock, color: Colors.grey[300]),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            visiblepass
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.grey[300],
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              visiblepass = !visiblepass;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 16.0),
-                    TextFormField(
-                      controller: fname,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                        labelText: 'Enter First Name',
-                        labelStyle: TextStyle(color: Colors.grey[300]),
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        prefixIcon: Icon(Icons.person, color: Colors.grey[300]),
-                      ),
-                    ),
-                    SizedBox(height: 16.0),
-                    TextFormField(
-                      controller: lname,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                        labelText: 'Enter Last Name',
-                        labelStyle: TextStyle(color: Colors.grey[300]),
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        prefixIcon: Icon(Icons.person, color: Colors.grey[300]),
-                      ),
-                    ),
-                    SizedBox(height: 16.0),
-                    TextFormField(
-                      controller: alamat,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                        labelText: 'Enter Address',
-                        labelStyle: TextStyle(color: Colors.grey[300]),
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        prefixIcon:
-                            Icon(Icons.location_on, color: Colors.grey[300]),
-                      ),
-                    ),
-                    SizedBox(height: 16.0),
-                    TextFormField(
-                      controller: no_telp,
-                      keyboardType: TextInputType.phone,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                        labelText: 'Enter Phone Number',
-                        labelStyle: TextStyle(color: Colors.grey[300]),
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        prefixIcon: Icon(Icons.phone, color: Colors.grey[300]),
-                      ),
-                      inputFormatters: <TextInputFormatter>[
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                    ),
-                    SizedBox(height: 16.0),
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[800],
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 32.0),
+                  // Email
+                  TextFormField(
+                    controller: email,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      labelText: 'Enter Email',
+                      labelStyle: TextStyle(color: Colors.grey[300]),
+                      filled: true,
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey[500]!),
                       ),
-                      child: DropdownButton<String>(
-                        value: value,
-                        dropdownColor: Colors.grey[800],
-                        iconEnabledColor: Colors.white,
-                        style: TextStyle(color: Colors.white),
-                        items: roles
-                            .map((item) => DropdownMenuItem(
-                                  value: item,
-                                  child: Text(item),
-                                ))
-                            .toList(),
-                        onChanged: (value) {
+                      prefixIcon: Icon(Icons.email, color: Colors.grey[300]),
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  // Password
+                  TextFormField(
+                    controller: pass,
+                    obscureText: !visiblepass,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      labelText: 'Enter Password',
+                      labelStyle: TextStyle(color: Colors.grey[300]),
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      prefixIcon: Icon(Icons.lock, color: Colors.grey[300]),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          visiblepass ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.grey[300],
+                        ),
+                        onPressed: () {
                           setState(() {
-                            this.value = value.toString();
+                            visiblepass = !visiblepass;
                           });
                         },
-                        underline: SizedBox(),
                       ),
                     ),
-                    SizedBox(height: 32.0),
-                    FilledButton(
-                      onPressed: _isValidEmail
-                          ? () async {
-                              try {
-                                tambahpegawai(
+                  ),
+                  SizedBox(height: 16.0),
+                  // First Name
+                  TextFormField(
+                    controller: fname,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      labelText: 'Enter First Name',
+                      labelStyle: TextStyle(color: Colors.grey[300]),
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      prefixIcon: Icon(Icons.person, color: Colors.grey[300]),
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  // Last Name
+                  TextFormField(
+                    controller: lname,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      labelText: 'Enter Last Name',
+                      labelStyle: TextStyle(color: Colors.grey[300]),
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      prefixIcon: Icon(Icons.person, color: Colors.grey[300]),
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  // Address
+                  TextFormField(
+                    controller: alamat,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      labelText: 'Enter Address',
+                      labelStyle: TextStyle(color: Colors.grey[300]),
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      prefixIcon:
+                          Icon(Icons.location_on, color: Colors.grey[300]),
+                    ),
+                  ),
+                  SizedBox(height: 16.0),
+                  // Phone
+                  TextFormField(
+                    controller: no_telp,
+                    keyboardType: TextInputType.phone,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      labelText: 'Enter Phone Number',
+                      labelStyle: TextStyle(color: Colors.grey[300]),
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      prefixIcon: Icon(Icons.phone, color: Colors.grey[300]),
+                    ),
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  SizedBox(height: 16.0),
+                  // Dropdown Role
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[800],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey[500]!),
+                    ),
+                    child: DropdownButton<String>(
+                      value: value,
+                      dropdownColor: Colors.grey[800],
+                      iconEnabledColor: Colors.white,
+                      style: TextStyle(color: Colors.white),
+                      items: roles
+                          .map((item) => DropdownMenuItem(
+                                value: item,
+                                child: Text(item),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          this.value = value.toString();
+                        });
+                      },
+                      underline: SizedBox(),
+                    ),
+                  ),
+                  SizedBox(height: 32.0),
+                  Spacer(),
+                  Align(
+                    alignment: Alignment
+                        .center, // atau Alignment.center kalau mau di tengah
+                    child: SizedBox(
+                      width: 200, // ubah sesuai kebutuhan, misal 150 atau 180
+                      child: FilledButton(
+                        onPressed: _isValidEmail
+                            ? () async {
+                                try {
+                                  tambahpegawai(
                                     email.text,
                                     pass.text,
                                     fname.text,
                                     lname.text,
                                     alamat.text,
                                     no_telp.text,
-                                    value);
-                                fetchUser();
-                                getUsers();
-                                setState(() {
-                                  showToast(context, 'Berhasil tambah data');
-                                  email.text = "";
-                                  pass.text = "";
-                                  fname.text = "";
-                                  lname.text = "";
-                                  alamat.text = "";
-                                  no_telp.text = "";
-                                  this.value = "Kasir";
-                                });
-                              } catch (e) {
-                                showToast(context, "something went wrong: $e");
+                                    value,
+                                  );
+                                  fetchUser();
+                                  getUsers();
+                                  setState(() {
+                                    showToast(context, 'Berhasil tambah data');
+                                    email.text = "";
+                                    pass.text = "";
+                                    fname.text = "";
+                                    lname.text = "";
+                                    alamat.text = "";
+                                    no_telp.text = "";
+                                    this.value = "Kasir";
+                                  });
+                                } catch (e) {
+                                  showToast(
+                                      context, "something went wrong: $e");
+                                }
                               }
-                            }
-                          : null,
-                      child: Text('Tambah Pegawai'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[400],
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                            : null,
+                        child: Text('Tambah Pegawai'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[400],
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          )),
+          ),
+        ),
+      ),
       ContentView(
         tab: CustomTab(title: 'Tracking Kurir'),
         content: Column(
@@ -1493,10 +1505,14 @@ class _ManagerMenuState extends State<ManagerMenu>
                   icon: Icon(Icons.history),
                   tooltip: 'Delivery History',
                   onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => DeliveryHistoryScreen()));
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => DeliveryHistoryScreen()));
+                      }
+                    });
                   },
                 ),
               ],
@@ -1556,71 +1572,111 @@ class _ManagerMenuState extends State<ManagerMenu>
             child: ChatbotManagerScreen(),
           )),
       ContentView(
-          tab: CustomTab(title: 'Pengaturan'),
-          content: Center(
-            child: Container(
-              color: Colors.black,
-              width: double.maxFinite,
-              alignment: Alignment.center,
-              child: ButtonBar(
-                alignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      if (logOwner)
-                        FilledButton(
-                            onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => DaftarCabang()));
-                            },
-                            child: Text('Manage Cabang')),
-                      ElevatedButton(
-                          child: const Text('Pindah Kasir'),
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text('Information'),
-                                  content: Text(
-                                      'Silahkan Log In Menggunakan App kasir'),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      child: Text('OK'),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          }),
-                      ElevatedButton(
-                          child: const Text('Pindah Gudang'),
-                          onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => GudangMenu()))),
-                      ElevatedButton(
-                          child: const Text('Log Out'),
-                          onPressed: () {
-                            GetStorage().erase();
-                            flushCache();
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => loginscreen()));
-                          }),
-                    ],
-                  )
-                ],
-              ),
+        tab: CustomTab(title: 'Pengaturan'),
+        content: Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            constraints: BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
-          )),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (logOwner) ...[
+                  FilledButton.icon(
+                    icon: Icon(Icons.business),
+                    label: Text('Manage Cabang'),
+                    style: FilledButton.styleFrom(
+                        minimumSize: Size.fromHeight(48)),
+                    onPressed: () {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => DaftarCabang()),
+                          );
+                        }
+                      });
+                    },
+                  ),
+                  SizedBox(height: 16),
+                ],
+                ElevatedButton.icon(
+                  icon: Icon(Icons.point_of_sale),
+                  label: Text('Pindah Kasir'),
+                  style: ElevatedButton.styleFrom(
+                      minimumSize: Size.fromHeight(48)),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: Text('Information'),
+                        content: Text('Silahkan Log In Menggunakan App kasir'),
+                        actions: [
+                          TextButton(
+                            child: Text('OK'),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 16),
+                ElevatedButton.icon(
+                  icon: Icon(Icons.inventory),
+                  label: Text('Pindah Gudang'),
+                  style: ElevatedButton.styleFrom(
+                      minimumSize: Size.fromHeight(48)),
+                  onPressed: () {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => GudangMenu()),
+                        );
+                      }
+                    });
+                  },
+                ),
+                SizedBox(height: 24),
+                Divider(color: Colors.grey[600]),
+                SizedBox(height: 16),
+                OutlinedButton.icon(
+                  icon: Icon(Icons.logout),
+                  label: Text('Log Out'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red[300],
+                    minimumSize: Size.fromHeight(48),
+                    side: BorderSide(color: Colors.red[300]!),
+                  ),
+                  onPressed: () {
+                    GetStorage().erase();
+                    flushCache();
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => loginscreen()),
+                        );
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     ];
     return MaterialApp(
       theme: ThemeData(
@@ -1708,7 +1764,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           ),
                                         ),
                                         Tooltip(
-                                          message: 'Edit Diskon',
+                                          message: 'Tambah Diskon',
                                           child: IconButton(
                                             icon: Icon(
                                               Icons.edit_note_rounded,
@@ -1895,12 +1951,16 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     onPressed: () {
                                       GetStorage().erase();
                                       flushCache();
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => loginscreen(),
-                                        ),
-                                      );
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                        if (mounted) {
+                                          Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      loginscreen()));
+                                        }
+                                      });
                                     },
                                   ),
                                 ),

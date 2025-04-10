@@ -29,30 +29,85 @@ class _loginscreen_state extends State<loginscreen> {
   }
 
   // show pop up owner
-  Future<void> _showPopup() async {
-    return showDialog(
+  Future<Object?> _showPopup() async {
+    return showGeneralDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Daftar Akun Owner'),
-          content: Text('Tekan tombol dibawah untuk membuat akun...'),
-          actions: <Widget>[
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
+      barrierDismissible: false,
+      barrierLabel: "OwnerDialog",
+      transitionDuration: Duration(milliseconds: 300),
+      pageBuilder: (context, anim1, anim2) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 320,
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(5), // Sharp edges
+                boxShadow: [
+                  BoxShadow(color: Colors.black54, blurRadius: 10),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.person_outline, color: Colors.white, size: 50),
+                  SizedBox(height: 10),
+                  Text(
+                    "Daftar Akun Owner",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "Tekan tombol di bawah untuk membuat akun...",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  SizedBox(height: 20),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      minimumSize: Size(double.infinity, 45), // Full width
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(0), // Sharp edges
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) => daftar_owner()));
-                  },
-                  child: Icon(Icons.arrow_forward),
-                ),
-              ],
-            )
-          ],
+                        MaterialPageRoute(builder: (context) => daftar_owner()),
+                      );
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Buat Akun",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(Icons.arrow_forward, color: Colors.black),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return FadeTransition(
+            opacity: anim1, child: child); // Fade-in animation
       },
     );
   }
