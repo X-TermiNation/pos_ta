@@ -65,116 +65,166 @@ class _DaftarCabangState extends State<DaftarCabang> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SingleChildScrollView(
-                child: DataTable(
-                  headingRowColor: MaterialStateProperty.resolveWith(
-                    (states) => Colors.blue,
-                  ),
-                  columns: const <DataColumn>[
-                    DataColumn(
-                      label: Text(
-                        'Nama Cabang',
-                        style: TextStyle(color: Colors.white),
-                      ),
+      body: Center(
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
+              width: 780,
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    height: 320,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    DataColumn(
-                      label: Text(
-                        'Alamat',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'No Telp',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        'Hapus Cabang',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                  rows: paginatedData.map<DataRow>((map) {
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(map['nama_cabang'])),
-                        DataCell(Text(map['alamat'])),
-                        DataCell(Text(map['no_telp'])),
-                        DataCell(
-                          Visibility(
-                            visible: map['role'] != 'Manager',
-                            child: ElevatedButton(
-                              onPressed: () {
-                                print("Hapus cabang ID: ${map['_id']}");
-                                try {
-                                  setState(() {
-                                    deletecabang(map['_id'], context);
-                                    fetchdatacabang();
-                                  });
-                                } catch (e) {
-                                  print("Gagal hapus: $e");
-                                }
-                              },
-                              child: const Text(
-                                'Delete',
-                                style: TextStyle(color: Colors.white),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: ConstrainedBox(
+                            constraints:
+                                BoxConstraints(minWidth: constraints.maxWidth),
+                            child: DataTable(
+                              columnSpacing: 40,
+                              headingRowColor:
+                                  MaterialStateProperty.resolveWith(
+                                (states) => Colors.blueGrey.shade800,
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                              dataRowHeight: 48,
+                              horizontalMargin: 24,
+                              columns: const [
+                                DataColumn(
+                                  label: Text('Nama Cabang',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold)),
                                 ),
-                              ),
+                                DataColumn(
+                                  label: Text('Alamat',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold)),
+                                ),
+                                DataColumn(
+                                  label: Text('No Telp',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold)),
+                                ),
+                                DataColumn(
+                                  label: Text('Hapus Cabang',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                              rows: paginatedData.map<DataRow>((map) {
+                                return DataRow(
+                                  cells: [
+                                    DataCell(Text(map['nama_cabang'],
+                                        style: const TextStyle(
+                                            color: Colors.white))),
+                                    DataCell(Text(map['alamat'],
+                                        style: const TextStyle(
+                                            color: Colors.white70))),
+                                    DataCell(Text(map['no_telp'],
+                                        style: const TextStyle(
+                                            color: Colors.white70))),
+                                    DataCell(
+                                      Visibility(
+                                        visible: map['role'] != 'Manager' &&
+                                            datacabang.length > 1,
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            try {
+                                              setState(() {
+                                                deletecabang(
+                                                    map['_id'], context);
+                                                fetchdatacabang();
+                                              });
+                                            } catch (e) {
+                                              print("Gagal hapus: $e");
+                                            }
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.redAccent,
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 6),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Delete',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
                             ),
                           ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.only(top: 8),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: Colors.white),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon:
+                              const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: _currentPage > 0
+                              ? () {
+                                  setState(() {
+                                    _currentPage--;
+                                  });
+                                }
+                              : null,
+                        ),
+                        Text('Page ${_currentPage + 1}',
+                            style: const TextStyle(color: Colors.white)),
+                        IconButton(
+                          icon: const Icon(Icons.arrow_forward,
+                              color: Colors.white),
+                          onPressed: (_currentPage + 1) * _itemsPerPage <
+                                  datacabang.length
+                              ? () {
+                                  setState(() {
+                                    _currentPage++;
+                                  });
+                                }
+                              : null,
                         ),
                       ],
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _currentPage > 0
-                      ? () {
-                          setState(() {
-                            _currentPage--;
-                          });
-                        }
-                      : null,
-                ),
-                Text('Page ${_currentPage + 1}'),
-                IconButton(
-                  icon: const Icon(Icons.arrow_forward),
-                  onPressed:
-                      (_currentPage + 1) * _itemsPerPage < datacabang.length
-                          ? () {
-                              setState(() {
-                                _currentPage++;
-                              });
-                            }
-                          : null,
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

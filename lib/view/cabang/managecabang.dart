@@ -41,69 +41,253 @@ class _managecabangState extends State<managecabang> {
         children: [
           // Insert Section
           Padding(
-            padding: EdgeInsets.only(top: 20),
-            child: switchmode
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(left: 20, bottom: 10),
-                        child: Text("Buat Akun Manager",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                      ..._buildManagerForm(),
-                    ],
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(left: 20, bottom: 10),
-                        child: Text("Tambah Cabang Baru",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                      ..._buildBranchForm(),
-                      SizedBox(height: 30),
-                      Padding(
-                        padding: EdgeInsets.only(left: 20),
-                        child: Text(
-                            "Pastikan data benar karena saat menekan tombol, data akan langsung tersimpan!",
-                            style: TextStyle(color: Colors.red)),
-                      ),
-                      SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: Padding(
-                          padding: EdgeInsets.only(right: 20),
-                          child: Tooltip(
-                            message: "Cancel Insert",
-                            child: FilledButton(
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => DaftarCabang()));
-                              },
-                              child: Icon(Icons.arrow_back,
-                                  color: Colors.black, size: 25),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                shape: CircleBorder(),
-                                padding: EdgeInsets.all(10),
+              padding: EdgeInsets.only(top: 20),
+              child: switchmode
+                  ? Center(
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 20),
+                        width: 500,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Header with cancel
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  "Buat Akun Manager",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: "Batalkan proses insert",
+                                  child: IconButton(
+                                    icon: const Icon(Icons.close,
+                                        color: Colors.redAccent),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => DaftarCabang(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Manager form fields
+                            ..._buildManagerForm(),
+
+                            const SizedBox(height: 20),
+
+                            // Warning message
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade900.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.redAccent),
+                              ),
+                              child: const Text(
+                                "Pastikan data manager lengkap dan valid sebelum menekan tombol Selesai.",
+                                style: TextStyle(color: Colors.redAccent),
                               ),
                             ),
-                          ),
+
+                            const SizedBox(height: 30),
+
+                            // Submit button
+                            Center(
+                              child: FilledButton.icon(
+                                onPressed: () {
+                                  if (email.text.isNotEmpty ||
+                                      pass.text.isNotEmpty ||
+                                      fname.text.isNotEmpty ||
+                                      lname.text.isNotEmpty ||
+                                      alamat.text.isNotEmpty ||
+                                      no_telp_manager.text.isNotEmpty) {
+                                    tambahmanager_Owner(
+                                      email.text,
+                                      pass.text,
+                                      fname.text,
+                                      lname.text,
+                                      alamat.text,
+                                      no_telp_manager.text,
+                                      context,
+                                    );
+                                    final dataStorage = GetStorage();
+                                    setState(() {
+                                      email.text = "";
+                                      pass.text = "";
+                                      fname.text = "";
+                                      lname.text = "";
+                                      alamat.text = "";
+                                      no_telp_manager.text = "";
+                                      dataStorage.write('switchmode', false);
+                                      switchmode =
+                                          dataStorage.read('switchmode');
+                                    });
+                                  } else {
+                                    showToast(
+                                        context, "Pastikan semua data terisi!");
+                                  }
+                                },
+                                icon: const Icon(Icons.check_circle_outline,
+                                    size: 26),
+                                label: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 12.0, horizontal: 24),
+                                  child: Text(
+                                    "Selesai",
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.blueAccent.shade700,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      )
-                    ],
-                  ),
-          )
+                      ),
+                    )
+                  : Center(
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 20),
+                        width: 500,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Title & Cancel
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  "Tambah Cabang Baru",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: "Batalkan proses tambah",
+                                  child: IconButton(
+                                    icon: const Icon(Icons.close,
+                                        color: Colors.redAccent),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                DaftarCabang()),
+                                      );
+                                    },
+                                  ),
+                                )
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Form fields
+                            ..._buildBranchForm(),
+
+                            const SizedBox(height: 20),
+
+                            // Warning
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade900.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.redAccent),
+                              ),
+                              child: const Text(
+                                "Pastikan data benar karena saat menekan tombol, data akan langsung tersimpan!",
+                                style: TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // Submit button
+                            Center(
+                              child: FilledButton.icon(
+                                onPressed: () {
+                                  if (nama_cabang.text.isNotEmpty ||
+                                      alamat_cabang.text.isNotEmpty ||
+                                      no_telp.text.isNotEmpty ||
+                                      alamat_gudang.text.isNotEmpty) {
+                                    nambahcabangngudang_Owner(
+                                      nama_cabang.text,
+                                      alamat_cabang.text,
+                                      no_telp.text,
+                                      alamat_gudang.text,
+                                      context,
+                                    );
+                                    final dataStorage = GetStorage();
+                                    setState(() {
+                                      nama_cabang.text = "";
+                                      alamat_cabang.text = "";
+                                      no_telp.text = "";
+                                      alamat_gudang.text = "";
+                                      dataStorage.write('switchmode', true);
+                                      switchmode =
+                                          dataStorage.read('switchmode');
+                                    });
+                                  } else {
+                                    showToast(
+                                        context, "Pastikan semua data terisi!");
+                                  }
+                                },
+                                label: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 12.0, horizontal: 24),
+                                  child: Text(
+                                    "Simpan Cabang",
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.blueAccent.shade700,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ))
         ],
       ),
     );
@@ -114,52 +298,35 @@ class _managecabangState extends State<managecabang> {
       _buildTextField(controller: email, label: 'Enter Email'),
       _buildTextField(
           controller: pass, label: 'Enter Password', obscureText: true),
-      _buildTextField(controller: fname, label: 'Enter First Name'),
-      _buildTextField(controller: lname, label: 'Enter Last Name'),
+
+      // First Name & Last Name in a Row
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5.0),
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                controller: fname,
+                label: 'First Name',
+              ),
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: _buildTextField(
+                controller: lname,
+                label: 'Last Name',
+              ),
+            ),
+          ],
+        ),
+      ),
+
       _buildTextField(controller: alamat, label: 'Enter Address'),
       _buildTextField(
         controller: no_telp_manager,
         label: 'Enter Nomor Telepon Manager',
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      ),
-      SizedBox(height: 10.0),
-      Padding(
-        padding: EdgeInsets.only(left: 20),
-        child: FilledButton(
-          onPressed: () {
-            if (email.text.isNotEmpty ||
-                pass.text.isNotEmpty ||
-                fname.text.isNotEmpty ||
-                lname.text.isNotEmpty ||
-                alamat.text.isNotEmpty ||
-                no_telp_manager.text.isNotEmpty) {
-              tambahmanager_Owner(email.text, pass.text, fname.text, lname.text,
-                  alamat.text, no_telp_manager.text, context);
-              final dataStorage = GetStorage();
-              setState(() {
-                email.text = "";
-                pass.text = "";
-                fname.text = "";
-                lname.text = "";
-                alamat.text = "";
-                no_telp_manager.text = "";
-                dataStorage.write('switchmode', false);
-                switchmode = dataStorage.read('switchmode');
-              });
-            } else {
-              showToast(context, "Pastikan semua data terisi!");
-            }
-          },
-          child: Text("Selesai"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue[400],
-            padding: EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        ),
       ),
     ];
   }
@@ -185,40 +352,6 @@ class _managecabangState extends State<managecabang> {
       ),
       SizedBox(height: 10),
       _buildTextField(controller: alamat_gudang, label: 'Enter Alamat Gudang'),
-      SizedBox(height: 10),
-      Padding(
-        padding: EdgeInsets.only(left: 20),
-        child: FilledButton(
-          onPressed: () {
-            if (nama_cabang.text.isNotEmpty ||
-                alamat_cabang.text.isNotEmpty ||
-                no_telp.text.isNotEmpty ||
-                alamat_gudang.text.isNotEmpty) {
-              nambahcabangngudang_Owner(nama_cabang.text, alamat_cabang.text,
-                  no_telp.text, alamat_gudang.text, context);
-              final dataStorage = GetStorage();
-              setState(() {
-                nama_cabang.text = "";
-                alamat_cabang.text = "";
-                no_telp.text = "";
-                alamat_gudang.text = "";
-                dataStorage.write('switchmode', true);
-                switchmode = dataStorage.read('switchmode');
-              });
-            } else {
-              showToast(context, "Pastikan semua data terisi!");
-            }
-          },
-          child: Text("Submit"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue[400],
-            padding: EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        ),
-      ),
     ];
   }
 

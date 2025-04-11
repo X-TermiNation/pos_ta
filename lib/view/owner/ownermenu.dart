@@ -41,35 +41,69 @@ class _owner_menu_state extends State<ownermenu> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-          child: Container(
+        body: Center(
+      child: Container(
         height: 500,
         width: 500,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text("Pilih Cabang Yang Tersedia:"),
+            Text(
+              "Pilih Cabang Yang Tersedia:",
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
+            ),
+            const SizedBox(height: 16),
             Expanded(
-              child: ListView.builder(
-                itemCount: datacabang.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    leading: Checkbox(
-                      value: _selectedCheckboxIndex == index,
-                      onChanged: (bool? value) {
-                        _onCheckboxChanged(index, value);
-                      },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.white),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
                     ),
-                    title: Text(datacabang[index]['nama_cabang'] ?? ''),
-                    onTap: () {
-                      _onCheckboxChanged(
-                          index, !(_selectedCheckboxIndex == index));
-                    },
-                  );
-                },
+                  ],
+                ),
+                child: ListView.builder(
+                  itemCount: datacabang.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ListTile(
+                        leading: Checkbox(
+                          value: _selectedCheckboxIndex == index,
+                          onChanged: (bool? value) {
+                            _onCheckboxChanged(index, value);
+                          },
+                        ),
+                        title: Text(datacabang[index]['nama_cabang'] ?? ''),
+                        onTap: () {
+                          _onCheckboxChanged(
+                              index, !(_selectedCheckboxIndex == index));
+                        },
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
+            const SizedBox(height: 16),
             FilledButton(
               onPressed: () async {
                 if (_selectedCheckboxIndex != -1) {
@@ -97,7 +131,7 @@ class _owner_menu_state extends State<ownermenu> {
             ),
           ],
         ),
-      )),
-    );
+      ),
+    ));
   }
 }
