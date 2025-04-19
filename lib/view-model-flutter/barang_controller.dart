@@ -186,20 +186,11 @@ void deletebarang(String id) async {
 }
 
 //update barang
-void UpdateBarang(String id,
-    {String? nama_barang,
-    String? jenis_barang,
-    String? kategori_barang,
-    String? insert_date,
-    String? exp_date}) async {
-  final Map<String, dynamic> updatedBarangData = {};
-  updatedBarangData['_id'] = id;
-  if (nama_barang != null) updatedBarangData['nama_barang'] = nama_barang;
-  if (jenis_barang != null) updatedBarangData['jenis_barang'] = jenis_barang;
-  if (kategori_barang != null)
-    updatedBarangData['kategori_barang'] = kategori_barang;
-  if (insert_date != null) updatedBarangData['insert_date'] = insert_date;
-  if (exp_date != null) updatedBarangData['exp_date'] = exp_date;
+void UpdateBarang(String id, String nama_barang) async {
+  if (nama_barang.trim().isEmpty) {
+    CustomToast(message: 'Nama barang tidak boleh kosong.');
+    return;
+  }
 
   final dataStorage = GetStorage();
   final id_cabang = dataStorage.read("id_cabang");
@@ -214,19 +205,19 @@ void UpdateBarang(String id,
       },
       body: jsonEncode({
         '_id': id,
-        ...updatedBarangData,
+        'nama_barang': nama_barang.trim(),
       }),
     );
 
     if (response.statusCode == 200) {
-      // Data updated successfully
-      CustomToast(message: 'Data updated successfully');
+      CustomToast(message: 'Nama barang berhasil diupdate.');
     } else {
-      // Error occurred during data update
-      print('Error updating data. Status code: ${response.statusCode}');
+      print('Gagal update nama barang. Status: ${response.statusCode}');
+      CustomToast(message: 'Gagal update nama barang.');
     }
   } catch (error) {
     print('Error: $error');
+    CustomToast(message: 'Terjadi kesalahan saat update.');
   }
 }
 
@@ -330,8 +321,32 @@ Future<Map<String, String>> getmapkategori() async {
   return namaKategoriMap;
 }
 
-//jenis
+Future<Map<String, String>> getKategoriByJenis(String idJenis) async {
+  final url =
+      Uri.parse('http://localhost:3000/barang/getkategorifromjenis/$idJenis');
 
+  try {
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      final Map<String, String> kategoriMap = {};
+      for (var item in data) {
+        kategoriMap[item['_id']] =
+            item['nama_kategori']; // Ubah menjadi Map<String, String>
+      }
+      return kategoriMap; // Kembalikan Map<String, String>
+    } else {
+      print('Gagal mengambil data kategori: ${response.statusCode}');
+      return {};
+    }
+  } catch (e) {
+    print('Error saat mengambil kategori: $e');
+    return {};
+  }
+}
+
+//jenis
 //add jenis
 void addjenis(String nama_jenis, BuildContext context) async {
   final Jenisdata = {

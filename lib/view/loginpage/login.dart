@@ -25,7 +25,7 @@ class _loginscreen_state extends State<loginscreen> {
   @override
   void initState() {
     super.initState();
-    showgetstarted();
+    runStartUp();
   }
 
   // show pop up owner
@@ -114,16 +114,14 @@ class _loginscreen_state extends State<loginscreen> {
 
   bool _showLoading = true;
 
-  void showgetstarted() async {
+  void runStartUp() async {
     _showLoading = true;
     setState(() {});
 
     while (chkOwner == null) {
       await getOwner();
-      await Future.delayed(
-          Duration(milliseconds: 1000)); // Short delay between checks
+      await Future.delayed(Duration(milliseconds: 1000));
     }
-
     _showLoading = false;
     setState(() {});
 

@@ -69,23 +69,9 @@ class _managecabangState extends State<managecabang> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                Tooltip(
-                                  message: "Batalkan proses insert",
-                                  child: IconButton(
-                                    icon: const Icon(Icons.close,
-                                        color: Colors.redAccent),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => DaftarCabang(),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
                               ],
                             ),
+
                             const SizedBox(height: 16),
 
                             // Manager form fields

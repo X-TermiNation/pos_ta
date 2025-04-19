@@ -99,6 +99,12 @@ class _GudangMenuState extends State<GudangMenu> {
   Map<String, dynamic>? selectedSatuan;
   String _jsonString = '';
 
+  //jenis & kategori add barang
+  String? selectedvalueJenis;
+  String? selectedvalueKategori;
+  String katakategori = "";
+  Future<Map<String, String>>? kategoriFuture;
+
   //for stock
   List<Map<String, dynamic>> itemsStock = []; // List to hold each item entry
   List<Map<String, dynamic>> barangListStock = []; // List to hold barang data
@@ -1070,12 +1076,35 @@ class _GudangMenuState extends State<GudangMenu> {
                             ),
                             DropdownButton<Map<String, dynamic>>(
                               value: selectedSatuan,
-                              hint: Text('Select Satuan'),
+                              hint: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'Select Satuan',
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.black54),
+                                ),
+                              ),
                               items: satuanList.map((satuan) {
                                 return DropdownMenuItem<Map<String, dynamic>>(
                                   value: satuan,
-                                  child:
-                                      Text(satuan['nama_satuan'] ?? 'No Name'),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12.0),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Colors.blueAccent,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          satuan['nama_satuan'] ?? 'No Name',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 );
                               }).toList(),
                               onChanged: (selected) {
@@ -1083,8 +1112,13 @@ class _GudangMenuState extends State<GudangMenu> {
                                   selectedSatuan = selected;
                                 });
                               },
+                              isExpanded: true,
+                              underline: SizedBox(),
+                              icon: Icon(Icons.arrow_drop_down_circle,
+                                  color: Colors.blueAccent),
+                              dropdownColor: Colors.grey,
                             ),
-                            SizedBox(height: 16.0),
+                            SizedBox(height: 10.0),
                             if (selectedSatuan != null) ...[
                               Text(
                                 "ID Satuan: ",
@@ -1179,7 +1213,7 @@ class _GudangMenuState extends State<GudangMenu> {
               child: Container(
                 constraints: BoxConstraints(
                   maxWidth:
-                      900, // Batasi lebar maksimum agar lebih kecil dari parent
+                      1000, // Batasi lebar maksimum agar lebih kecil dari parent
                 ),
                 padding: EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
@@ -1243,75 +1277,173 @@ class _GudangMenuState extends State<GudangMenu> {
                       ),
                       SizedBox(height: 16),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Kategori Barang:"),
-                          SizedBox(width: 20),
                           Expanded(
-                            child: FutureBuilder<Map<String, String>>(
-                              future: getmapkategori(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return Center(
-                                    child: SizedBox(
-                                      width:
-                                          24, // Adjust size of CircularProgressIndicator
-                                      height: 24,
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return Text('Error: ${snapshot.error}');
-                                } else if (snapshot.hasData &&
-                                    snapshot.data != null) {
-                                  var entries = snapshot.data!.entries.toList();
-                                  if (entries.isEmpty) {
-                                    return Text('No Kategori Available');
-                                  }
-                                  if (selectedvalueKategori == null ||
-                                      !entries.any((entry) =>
-                                          entry.key == selectedvalueKategori)) {
-                                    selectedvalueKategori = entries.first.key;
-                                  }
-                                  return DropdownButton<String>(
-                                    value: selectedvalueKategori,
-                                    isExpanded: true,
-                                    items: entries
-                                        .map((entry) => DropdownMenuItem(
-                                              child: Text(entry.value),
-                                              value: entry.key,
-                                            ))
-                                        .toList(),
-                                    onChanged: (value) {
-                                      final selectedEntry = entries.firstWhere(
-                                          (entry) => entry.key == value,
-                                          orElse: () => MapEntry('', ''));
-                                      if (selectedEntry.key.isNotEmpty) {
-                                        setState(() {
-                                          selectedvalueKategori = value;
-                                          katakategori = selectedEntry.value;
-                                        });
+                            flex: 4,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Jenis Barang:"),
+                                SizedBox(height: 8),
+                                FutureBuilder<List<Map<String, dynamic>>>(
+                                  future: getJenis(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return Center(
+                                          child: CircularProgressIndicator());
+                                    } else if (snapshot.hasError) {
+                                      return Text('Error: ${snapshot.error}');
+                                    } else if (snapshot.hasData) {
+                                      final jenisList = snapshot.data!;
+                                      if (jenisList.isEmpty) {
+                                        return Text('No Jenis Available');
                                       }
-                                    },
-                                  );
-                                } else {
-                                  return Text('No data available');
-                                }
-                              },
+
+                                      if (selectedvalueJenis == null ||
+                                          !jenisList.any((e) =>
+                                              e['_id'] == selectedvalueJenis)) {
+                                        selectedvalueJenis =
+                                            jenisList.first['_id'];
+                                        kategoriFuture = getKategoriByJenis(
+                                            selectedvalueJenis!);
+                                      }
+
+                                      return Container(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          border:
+                                              Border.all(color: Colors.grey),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: DropdownButton<String>(
+                                          value: selectedvalueJenis,
+                                          isExpanded: true,
+                                          underline: SizedBox(),
+                                          items: jenisList
+                                              .map((item) =>
+                                                  DropdownMenuItem<String>(
+                                                    child: Text(
+                                                        item['nama_jenis']),
+                                                    value: item['_id'],
+                                                  ))
+                                              .toList(),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              selectedvalueJenis = value;
+                                              selectedvalueKategori = null;
+                                              katakategori = '';
+                                              kategoriFuture =
+                                                  getKategoriByJenis(value!);
+                                            });
+                                          },
+                                        ),
+                                      );
+                                    } else {
+                                      return Text('No data');
+                                    }
+                                  },
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                      Align(
-                          alignment: Alignment.centerRight,
-                          child: Padding(
-                            padding: EdgeInsets.only(right: 20),
-                            child: ElevatedButton(
-                                style: FilledButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 30, vertical: 16),
+                          SizedBox(width: 12),
+                          Expanded(
+                            flex: 4,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Kategori Barang:"),
+                                SizedBox(height: 8),
+                                selectedvalueJenis == null
+                                    ? Text("Pilih Jenis terlebih dahulu")
+                                    : FutureBuilder<Map<String, String>>(
+                                        future: kategoriFuture,
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return Center(
+                                                child:
+                                                    CircularProgressIndicator());
+                                          } else if (snapshot.hasError) {
+                                            return Text(
+                                                'Error: ${snapshot.error}');
+                                          } else if (snapshot.hasData &&
+                                              snapshot.data!.isNotEmpty) {
+                                            final entries =
+                                                snapshot.data!.entries.toList();
+
+                                            if (selectedvalueKategori == null ||
+                                                !entries.any((entry) =>
+                                                    entry.key ==
+                                                    selectedvalueKategori)) {
+                                              selectedvalueKategori =
+                                                  entries.first.key;
+                                            }
+
+                                            return Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 12),
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: Colors.grey),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: DropdownButton<String>(
+                                                value: selectedvalueKategori,
+                                                isExpanded: true,
+                                                underline: SizedBox(),
+                                                items: entries
+                                                    .map((entry) =>
+                                                        DropdownMenuItem(
+                                                          child:
+                                                              Text(entry.value),
+                                                          value: entry.key,
+                                                        ))
+                                                    .toList(),
+                                                onChanged: (value) {
+                                                  final selectedEntry =
+                                                      entries.firstWhere(
+                                                          (entry) =>
+                                                              entry.key ==
+                                                              value,
+                                                          orElse: () =>
+                                                              MapEntry('', ''));
+                                                  if (selectedEntry
+                                                      .key.isNotEmpty) {
+                                                    setState(() {
+                                                      selectedvalueKategori =
+                                                          value;
+                                                      katakategori =
+                                                          selectedEntry.value;
+                                                    });
+                                                  }
+                                                },
+                                              ),
+                                            );
+                                          } else {
+                                            return Text(
+                                                'Tidak ada kategori ditemukan');
+                                          }
+                                        },
+                                      ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 30),
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blueAccent,
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -1320,10 +1452,14 @@ class _GudangMenuState extends State<GudangMenu> {
                                   showTambahJenisKategoriDialog(context);
                                 },
                                 child: Text(
-                                  "Tambah Kategori Dan Jenis",
+                                  "Tambah Kategori & Jenis",
                                   style: TextStyle(color: Colors.white),
-                                )),
-                          )),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       SizedBox(height: 16),
                       Divider(),
                       SizedBox(height: 16),
@@ -3048,6 +3184,7 @@ class _GudangMenuState extends State<GudangMenu> {
     );
   }
 
+  //tidak digunakan untuk peringatan hapus satuan
   void confirmDeletion(BuildContext context, String id_barang, String id_satuan,
       String nama_satuan, String nama_barang) async {
     return showDialog<void>(
@@ -3132,14 +3269,6 @@ class UpdateBarangDialog extends StatefulWidget {
 
 class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
   final TextEditingController namaBarangController = TextEditingController();
-  final TextEditingController jenisBarangController = TextEditingController();
-  final TextEditingController kategoriBarangController =
-      TextEditingController();
-  bool isInsertDateEnabled = false;
-  bool isExpDateEnabled = false;
-  DateTime? selectedInsertDate;
-  DateTime? selectedExpDate;
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -3156,29 +3285,6 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
             children: [
               _buildTextField(
                   controller: namaBarangController, label: 'Nama Barang'),
-              SizedBox(height: 12),
-              _buildTextField(
-                  controller: jenisBarangController, label: 'Jenis Barang'),
-              SizedBox(height: 12),
-              _buildTextField(
-                  controller: kategoriBarangController,
-                  label: 'Kategori Barang'),
-              SizedBox(height: 16),
-              _buildDateCheckbox(
-                label: 'Update Expiration Date',
-                isChecked: isExpDateEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    isExpDateEnabled = value ?? false;
-                  });
-                },
-                onDateSelected: (date) {
-                  setState(() {
-                    selectedExpDate = date;
-                  });
-                },
-                selectedDate: selectedExpDate,
-              ),
             ],
           ),
         ),
@@ -3193,36 +3299,41 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
         ),
         ElevatedButton(
           onPressed: () async {
-            final String? namaBarang = namaBarangController.text.isNotEmpty
-                ? namaBarangController.text
-                : null;
-            final String? jenisBarang = jenisBarangController.text.isNotEmpty
-                ? jenisBarangController.text
-                : null;
-            final String? kategoriBarang =
-                kategoriBarangController.text.isNotEmpty
-                    ? kategoriBarangController.text
-                    : null;
-            final String? insertDate =
-                isInsertDateEnabled && selectedInsertDate != null
-                    ? selectedInsertDate!.toLocal().toString().split(' ')[0]
-                    : null;
-            final String? expDate = isExpDateEnabled && selectedExpDate != null
-                ? selectedExpDate!.toLocal().toString().split(' ')[0]
-                : null;
+            final String namaBarang = namaBarangController.text.trim();
 
-            UpdateBarang(
-              widget.barangId,
-              nama_barang: namaBarang,
-              jenis_barang: jenisBarang,
-              kategori_barang: kategoriBarang,
-              insert_date: insertDate,
-              exp_date: expDate,
+            if (namaBarang.isEmpty) {
+              CustomToast(message: 'Nama barang tidak boleh kosong.');
+              return;
+            }
+
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Konfirmasi'),
+                content:
+                    Text('Apakah Anda yakin ingin mengubah nama barang ini?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text('Batal'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text('Ya, Ubah'),
+                  ),
+                ],
+              ),
             );
 
-            widget.onUpdated();
+            if (confirm == true) {
+              UpdateBarang(
+                widget.barangId,
+                namaBarang,
+              );
 
-            Navigator.of(context).pop();
+              widget.onUpdated();
+              Navigator.of(context).pop();
+            }
           },
           child: Text('Update',
               style: TextStyle(fontSize: 16, color: Colors.white)),
@@ -3233,22 +3344,9 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
             ),
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
-        ),
+        )
       ],
     );
-  }
-
-  Future<void> _selectDateUpdate(
-      BuildContext context, Function(DateTime) onDateSelected) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (pickedDate != null && pickedDate != DateTime.now()) {
-      onDateSelected(pickedDate);
-    }
   }
 
   Widget _buildTextField({
@@ -3264,48 +3362,6 @@ class _UpdateBarangDialogState extends State<UpdateBarangDialog> {
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
-    );
-  }
-
-  Widget _buildDateCheckbox({
-    required String label,
-    required bool isChecked,
-    required void Function(bool?) onChanged,
-    required void Function(DateTime) onDateSelected,
-    DateTime? selectedDate,
-  }) {
-    return Row(
-      children: [
-        Checkbox(
-          value: isChecked,
-          onChanged: onChanged,
-        ),
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              if (isChecked) {
-                _selectDateUpdate(context, onDateSelected);
-              }
-            },
-            child: AbsorbPointer(
-              absorbing: !isChecked,
-              child: TextField(
-                enabled: false,
-                decoration: InputDecoration(
-                  labelText: label,
-                  hintText: selectedDate != null
-                      ? '${selectedDate.toLocal()}'.split(' ')[0]
-                      : 'Select Date',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

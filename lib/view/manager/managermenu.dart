@@ -21,7 +21,6 @@ import 'package:latlong2/latlong.dart';
 import 'dart:convert';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
-List<Map<String, dynamic>> _dataList = [];
 var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
 late bool logOwner;
 
@@ -180,9 +179,79 @@ class _ManagerMenuState extends State<ManagerMenu>
     _updatePaginationPegawai();
   }
 
-  //selected Pegawai di daftar pegawai
-  // Map<String, dynamic>? selectedEmployee;
+  //logout popup
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 16,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            height: 200,
+            width: 300,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.red[300]!,
+                width: 2,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Do you want to Log Out?',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child:
+                          Text('Cancel', style: TextStyle(color: Colors.blue)),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        GetStorage().erase();
+                        flushCache();
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => loginscreen()),
+                            );
+                          }
+                        });
+                      },
+                      child: Text('Log Out',
+                          style: TextStyle(color: Colors.red[300])),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
+  //tampilkan semua pegawai
   void fetchUser() async {
     this.userlist = await getUsers();
 
@@ -227,7 +296,7 @@ class _ManagerMenuState extends State<ManagerMenu>
     if (!mounted) return;
 
     setState(() {
-      isWebSocketConnected = false; // Reset connection status
+      isWebSocketConnected = false;
     });
 
     channel = WebSocketChannel.connect(
@@ -276,7 +345,6 @@ class _ManagerMenuState extends State<ManagerMenu>
 
   // Function to refresh WebSocket connection
   void _refreshWebSocketConnection() {
-    // Close the current WebSocket connection and reinitialize it
     channel.sink.close();
     _initializeWebSocket();
     _getDeliveryData();
@@ -525,10 +593,10 @@ class _ManagerMenuState extends State<ManagerMenu>
             height: 850,
             decoration: BoxDecoration(
               border: Border.all(
-                color: Colors.grey, // warna border
-                width: 1, // ketebalan border
+                color: Colors.grey,
+                width: 1,
               ),
-              borderRadius: BorderRadius.circular(8), // optional
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -1660,16 +1728,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                     side: BorderSide(color: Colors.red[300]!),
                   ),
                   onPressed: () {
-                    GetStorage().erase();
-                    flushCache();
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => loginscreen()),
-                        );
-                      }
-                    });
+                    _showLogoutDialog(context);
                   },
                 ),
               ],
@@ -1929,40 +1988,6 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     color: Colors.blue,
                                   ),
                                   onPressed: () => _onItemTapped(11),
-                                ),
-                              ),
-                              SizedBox(height: 20),
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  bottom:
-                                      MediaQuery.of(context).viewInsets.bottom >
-                                              0
-                                          ? 0
-                                          : 16.0,
-                                ),
-                                child: Tooltip(
-                                  message: 'Logout',
-                                  child: IconButton(
-                                    icon: Icon(
-                                      Icons.logout,
-                                      size: 32,
-                                      color: Colors.blue,
-                                    ),
-                                    onPressed: () {
-                                      GetStorage().erase();
-                                      flushCache();
-                                      WidgetsBinding.instance
-                                          .addPostFrameCallback((_) {
-                                        if (mounted) {
-                                          Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      loginscreen()));
-                                        }
-                                      });
-                                    },
-                                  ),
                                 ),
                               ),
                             ],
