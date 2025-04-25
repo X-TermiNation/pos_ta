@@ -2,6 +2,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/manager/DeliveryHistory.dart';
+import 'package:ta_pos/view/manager/analisa_pendapatan.dart';
 import 'package:ta_pos/view/manager/chatWhatsapp.dart';
 import 'package:ta_pos/view-model-flutter/transaksi_controller.dart';
 import 'package:ta_pos/view-model-flutter/user_controller.dart';
@@ -12,6 +13,7 @@ import 'package:ta_pos/view/manager/CustomTab.dart';
 import 'package:ta_pos/view/manager/content_view.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:ta_pos/view/manager/grafikTrend.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/loginpage/login.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -1064,20 +1066,16 @@ class _ManagerMenuState extends State<ManagerMenu>
         ),
       ),
       ContentView(
-          tab: CustomTab(title: 'Analisa Pendapatan'),
-          content: Center(
-            child: Container(color: Colors.blue, width: 100, height: 100),
-          )),
+        tab: CustomTab(title: 'Analisa Pendapatan'),
+        content: AnalisaPendapatanView(),
+      ),
       ContentView(
           tab: CustomTab(title: 'Analisa Penghasilan'),
           content: Center(
             child: Container(color: Colors.green, width: 100, height: 100),
           )),
       ContentView(
-          tab: CustomTab(title: 'Grafik Trend'),
-          content: Center(
-            child: Container(color: Colors.green, width: 100, height: 100),
-          )),
+          tab: CustomTab(title: 'Grafik Trend'), content: GrafikTrendWidget()),
       ContentView(
           tab: CustomTab(title: 'Lihat Laporan'),
           content: Center(

@@ -63,67 +63,6 @@ void createInvoice(String external_id, int amount, String payer_email,
   }
 }
 
-Future<Map<String, dynamic>?> addTrans(
-  String payment_method,
-  bool delivery,
-  String desc,
-  List<Map<String, dynamic>> items,
-  String status,
-  double grand_total,
-  BuildContext context,
-) async {
-  final dataStorage = GetStorage();
-  String id_cabang = dataStorage.read('id_cabang');
-  DateTime trans_date = DateTime.now();
-
-  try {
-    for (var cartItem in items) {
-      String id_barang = cartItem['id_reference'];
-      String id_satuan = cartItem['id_satuan'];
-      int quantity = cartItem['trans_qty'];
-      //ubah ini untuk keluar barang
-      updatejumlahSatuanKurang(
-          id_barang, id_satuan, quantity, "", 'kurang', context);
-    }
-
-    // Prepare transaction data
-    final transData = {
-      'id_cabang': id_cabang,
-      'trans_date':
-          trans_date.toIso8601String(), // Ensure date is properly formatted
-      'payment_method': payment_method,
-      'delivery': delivery,
-      'desc': desc,
-      'status': status,
-      'grand_total': grand_total,
-      'Items': items,
-    };
-
-    // Send the transaction data to the server
-    final url = 'http://localhost:3000/transaksi/addtrans/$id_cabang';
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(transData),
-    );
-
-    // Handle the server response
-    if (response.statusCode == 200) {
-      showToast(context, 'Berhasil menambah data');
-      final responseData = jsonDecode(response.body);
-      return responseData;
-    } else {
-      showToast(context, "Gagal menambahkan data");
-      print('HTTP Error: ${response.statusCode}');
-    }
-  } catch (error) {
-    showToast(context, "Error: $error");
-    print('Exception during HTTP request: $error');
-  }
-
-  return null; // Return null in case of an error
-}
-
 //update transaction status after delivery
 Future<Map<String, dynamic>?> updateTransStatus(
   BuildContext context,
@@ -200,6 +139,72 @@ Future<Map<String, dynamic>?> getTransById(String trans_id) async {
   } else {
     CustomToast(message: "Failed to load data: ${response.statusCode}");
     return null;
+  }
+}
+
+//mengambil semua data transaksi yang berhasil pada cabang
+Future<List<dynamic>> getConfirmedTransInRange(
+    DateTime startDate, DateTime endDate) async {
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  final url =
+      Uri.parse('http://localhost:3000/transaksi/allConfirmedTrans/$id_cabang');
+
+  try {
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> transaksiList = json.decode(response.body);
+
+      // Filter transaksi berdasarkan rentang tanggal
+      return transaksiList.where((trans) {
+        DateTime transDate = DateTime.parse(trans['trans_date']);
+        return transDate.isAfter(startDate.subtract(Duration(days: 1))) &&
+            transDate.isBefore(endDate.add(Duration(days: 1)));
+      }).toList();
+    } else {
+      print('Gagal mengambil data. Status: ${response.statusCode}');
+      return [];
+    }
+  } catch (e) {
+    print('Terjadi error saat fetch transaksi: $e');
+    return [];
+  }
+}
+
+//grafik trend
+Future<Map<String, Map<String, int>>> fetchTrendingItems({
+  required DateTime start,
+  required DateTime end,
+}) async {
+  try {
+    final dataStorage = GetStorage();
+    String id_cabang = dataStorage.read('id_cabang');
+    final uri = Uri.parse(
+      'http://localhost:3000/transaksi/trending'
+      '?id_cabang=$id_cabang'
+      '&start=${start.toIso8601String()}'
+      '&end=${end.toIso8601String()}',
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      final Map<String, Map<String, int>> result = {};
+      data.forEach((barang, tanggalMap) {
+        result[barang] = Map<String, int>.from(tanggalMap);
+      });
+
+      return result;
+    } else {
+      print('Failed to fetch trending data: ${response.statusCode}');
+      return {};
+    }
+  } catch (e) {
+    print('Error fetching trending items: $e');
+    return {};
   }
 }
 

@@ -588,57 +588,6 @@ void updatejumlahSatuanTambah(
   }
 }
 
-//update jumlah (kurang)
-void updatejumlahSatuanKurang(
-  String idBarang,
-  String idSatuan,
-  int jumlahSatuan,
-  String kodeAktivitas,
-  String action,
-  BuildContext context,
-) async {
-  try {
-    if (kodeAktivitas.isNotEmpty && action == 'tambah') {
-      // Insert riwayat stok sebelum update
-      await insertHistoryStok(
-        id_barang: idBarang,
-        satuan_id: idSatuan,
-        tanggal_pengisian: DateTime.now(),
-        jumlah_input: jumlahSatuan,
-        jenis_aktivitas: "Masuk",
-        Kode_Aktivitas: kodeAktivitas,
-        id_cabang: GetStorage().read("id_cabang"),
-      );
-    }
-
-    // Update jumlah satuan
-    final satuanUpdatedata = {
-      'jumlah_satuan': jumlahSatuan,
-      'action': action,
-    };
-    final idCabang = GetStorage().read("id_cabang");
-    final idGudang = GetStorage().read('id_gudang');
-    final url =
-        'http://localhost:3000/barang/editjumlahsatuan/$idBarang/$idCabang/$idGudang/$idSatuan';
-
-    final response = await http.put(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(satuanUpdatedata),
-    );
-
-    if (response.statusCode == 200) {
-      print('Berhasil menambah data');
-    } else {
-      showToast(context, "Gagal menambahkan data");
-      print('HTTP Error: ${response.statusCode}');
-    }
-  } catch (error) {
-    showToast(context, "Error: $error");
-    print('Exception during HTTP request: $error');
-  }
-}
-
 Future<List<Map<String, dynamic>>> getlowstocksatuan(
     BuildContext context) async {
   try {
@@ -1045,6 +994,28 @@ Future<Map<String, dynamic>> fetchSupplierByInvoice(
     }
   } catch (error) {
     return {'success': false, 'message': 'An error occurred: $error'};
+  }
+}
+
+Future<List<Map<String, dynamic>>> fetchInvoiceItems(
+    String invoiceNumber) async {
+  final getstorage = GetStorage();
+  final String? idCabang = getstorage.read('id_cabang');
+  final url = Uri.parse(
+      'http://localhost:3000/barang/supplierInvoiceItems/$idCabang/$invoiceNumber');
+  try {
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((item) => item as Map<String, dynamic>).toList();
+    } else {
+      print('Failed to load items. Status code: ${response.statusCode}');
+      return [];
+    }
+  } catch (e) {
+    print('Error fetching invoice items: $e');
+    return [];
   }
 }
 

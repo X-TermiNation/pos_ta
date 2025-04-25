@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/cabang/managecabang.dart';
 import 'package:ta_pos/view/loginpage/login_owner.dart';
 import 'dart:convert';
@@ -148,7 +149,7 @@ void tambahmanager_Owner(String email, String pass, String fname, String lname,
           final dataStorage = GetStorage();
           dataStorage.write('switchmode', false);
           Navigator.push(
-              context, MaterialPageRoute(builder: (context) => login_owner()));
+              context, MaterialPageRoute(builder: (context) => DaftarCabang()));
         } else {
           showToast(context, 'Gagal menambah data ke server');
         }

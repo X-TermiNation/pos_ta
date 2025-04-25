@@ -42,6 +42,7 @@ class GudangMenu extends StatefulWidget {
 
 class _GudangMenuState extends State<GudangMenu> {
   //lokasi inisialisasi dalam state
+  bool checkExpiredDetail = false;
   TextEditingController nama_barang = TextEditingController();
   TextEditingController nama_kategori = TextEditingController();
   TextEditingController nama_jenis = TextEditingController();
@@ -897,6 +898,8 @@ class _GudangMenuState extends State<GudangMenu> {
                                                             "${map['jenis_barang']} / ${map['kategori_barang']}";
 
                                                         _isEditUser = true;
+                                                        checkExpiredDetail =
+                                                            map['isKadaluarsa'];
                                                         temp_id_update =
                                                             map['_id'];
                                                         fetchsatuandetail();
@@ -1154,7 +1157,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                 style: TextStyle(fontSize: 15),
                               ),
                               SizedBox(height: 10),
-                              selectedSatuan!['exp_date'] != null
+                              checkExpiredDetail
                                   ? Text(
                                       "Expire Date: ${formatToWIBDetail(selectedSatuan!['exp_date'].toString())}",
                                       style: TextStyle(fontSize: 15),
@@ -1176,7 +1179,7 @@ class _GudangMenuState extends State<GudangMenu> {
                               ),
                               selectedSatuan!['last_insert_date'] != null
                                   ? Text(
-                                      "Last Modified: ${formatToWIBDetail(selectedSatuan!['exp_date'].toString())}",
+                                      "Last Modified: ${formatToWIBDetail(selectedSatuan!['last_insert_date'].toString())}",
                                       style: TextStyle(fontSize: 15),
                                     )
                                   : Text("Last Modified: No Date Registered",

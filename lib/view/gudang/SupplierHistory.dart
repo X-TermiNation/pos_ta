@@ -104,6 +104,26 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
         .format(dateWIB); // Format in desired format
   }
 
+  //detail items invoice
+  List<Map<String, dynamic>> invoiceItems = [];
+  String? selectedInvoiceNumber;
+
+// Tambahkan fungsi ini:
+  Future<void> loadInvoiceItems(String invoiceNumber) async {
+    final items = await fetchInvoiceItems(invoiceNumber);
+    setState(() {
+      invoiceItems = items;
+      selectedInvoiceNumber = invoiceNumber;
+    });
+  }
+
+  void clearInvoiceItems() {
+    setState(() {
+      invoiceItems = [];
+      selectedInvoiceNumber = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,7 +178,7 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
           Expanded(
             child: Row(
               children: [
-                // Supplier list section
+                // === Daftar Supplier (Kiri) ===
                 Expanded(
                   flex: 2,
                   child: ListView.builder(
@@ -170,150 +190,144 @@ class _HistorySupplierPageState extends State<HistorySupplierPage> {
                           supplier['nama_supplier'],
                           style: TextStyle(color: Colors.white),
                         ),
+                        subtitle: Text(
+                          supplier['_id'],
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                        tileColor: selectedSupplier != null &&
+                                selectedSupplier!['_id'] == supplier['_id']
+                            ? Colors.grey[800]
+                            : null,
                         onTap: () {
                           setState(() {
                             selectedSupplier = supplier;
-                            if (selectedSupplier != null) {
-                              selectedSupplier!['invoices'] =
-                                  List<Map<String, dynamic>>.from(
-                                      originalInvoices[
-                                          selectedSupplier!['_id']]!);
-                            }
+                            invoiceItems = [];
+                            selectedInvoiceNumber = null;
+                            // Reset invoice filter juga
+                            _invoiceSearchController.clear();
+                            selectedSupplier!['invoices'] =
+                                List<Map<String, dynamic>>.from(
+                              originalInvoices[supplier['_id']]!,
+                            );
                           });
                         },
                       );
                     },
                   ),
                 ),
-                // Detail section
+
+                // === Detail Supplier dan Invoices (Tengah & Kanan) ===
                 Expanded(
-                  flex: 3,
-                  child: Container(
-                    color: Colors.black87,
-                    padding: EdgeInsets.all(16.0),
-                    child: selectedSupplier != null
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Supplier Details',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Text(
-                                    "ID History Supplier: ${selectedSupplier!['_id']}",
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 18),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Tooltip(
-                                    message: "Copy ID",
-                                    child: IconButton(
-                                      icon: Icon(Icons.copy,
-                                          color: Colors.white, size: 20),
-                                      onPressed: () {
-                                        Clipboard.setData(ClipboardData(
-                                            text: selectedSupplier!['_id']
-                                                .toString()));
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    "ID copied to clipboard")));
-                                      },
-                                      constraints: BoxConstraints(),
-                                      padding: EdgeInsets.all(4),
-                                      splashRadius: 20,
+                  flex: 5,
+                  child: selectedSupplier != null
+                      ? Row(
+                          children: [
+                            // Daftar invoice
+                            Expanded(
+                              flex: 2,
+                              child: ListView.builder(
+                                itemCount: selectedSupplier!['invoices'].length,
+                                itemBuilder: (context, index) {
+                                  final invoice =
+                                      selectedSupplier!['invoices'][index];
+                                  return ListTile(
+                                    title: Text(
+                                      'Invoice No: ${invoice['invoice_number']}',
+                                      style: TextStyle(color: Colors.white),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "Name: ${selectedSupplier!['nama_supplier']}",
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 18),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "Contact: ${selectedSupplier!['kontak'] ?? 'N/A'}",
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 18),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "Address: ${selectedSupplier!['alamat'] ?? 'N/A'}",
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 18),
-                              ),
-                              SizedBox(height: 16),
-
-                              // Invoice Search Bar
-                              TextField(
-                                controller: _invoiceSearchController,
-                                decoration: InputDecoration(
-                                  hintText: 'Search Invoices...',
-                                  hintStyle: TextStyle(color: Colors.white60),
-                                  prefixIcon:
-                                      Icon(Icons.search, color: Colors.white),
-                                  filled: true,
-                                  fillColor: Colors.black,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(color: Colors.white),
-                                  ),
-                                ),
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              SizedBox(height: 16),
-
-                              // Invoice List
-                              selectedSupplier!['invoices'] != null &&
-                                      selectedSupplier!['invoices'].isNotEmpty
-                                  ? Expanded(
-                                      child: ListView.builder(
-                                        shrinkWrap: true,
-                                        itemCount: selectedSupplier!['invoices']
-                                            .length,
-                                        itemBuilder: (context, index) {
-                                          final invoice =
-                                              selectedSupplier!['invoices']
-                                                  [index];
-                                          return ListTile(
-                                            title: Text(
-                                              'Invoice No: ${invoice['invoice_number']}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                            subtitle: Text(
-                                              'Date: ${formatDateToWIB(invoice['insert_date'])}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    )
-                                  : Center(
-                                      child: Text(
-                                        "No invoices found.",
-                                        style: TextStyle(color: Colors.white60),
-                                      ),
+                                    subtitle: Text(
+                                      'Date: ${formatDateToWIB(invoice['insert_date'])}',
+                                      style: TextStyle(color: Colors.white),
                                     ),
-                            ],
-                          )
-                        : Center(
-                            child: Text(
-                              "Select a supplier to view details.",
-                              style: TextStyle(
-                                  color: Colors.white60, fontSize: 18),
+                                    onTap: () => loadInvoiceItems(
+                                        invoice['invoice_number']),
+                                    tileColor: selectedInvoiceNumber ==
+                                            invoice['invoice_number']
+                                        ? Colors.grey[800]
+                                        : null,
+                                  );
+                                },
+                              ),
                             ),
+
+                            // Detail item dari invoice
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                margin: EdgeInsets.only(left: 16),
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  border: Border.all(
+                                      color: Colors.greenAccent, width: 2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: invoiceItems.isNotEmpty
+                                    ? Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Detail Items (Invoice: $selectedInvoiceNumber)',
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(Icons.clear,
+                                                    color: Colors.white),
+                                                onPressed: clearInvoiceItems,
+                                              ),
+                                            ],
+                                          ),
+                                          Divider(color: Colors.white),
+                                          Expanded(
+                                            child: ListView.builder(
+                                              itemCount: invoiceItems.length,
+                                              itemBuilder: (context, index) {
+                                                final item =
+                                                    invoiceItems[index];
+                                                return ListTile(
+                                                  title: Text(
+                                                    item['item_name'] ??
+                                                        'No Name',
+                                                    style: TextStyle(
+                                                        color: Colors.white),
+                                                  ),
+                                                  subtitle: Text(
+                                                    'Qty: ${item['qty']} | Unit: ${item['unit']} | Price: ${item['price']}',
+                                                    style: TextStyle(
+                                                        color: Colors.white70),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Center(
+                                        child: Text(
+                                          "No item detail. Select an invoice.",
+                                          style:
+                                              TextStyle(color: Colors.white60),
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Center(
+                          child: Text(
+                            "Select a supplier to view details",
+                            style: TextStyle(color: Colors.white70),
                           ),
-                  ),
+                        ),
                 ),
               ],
             ),
