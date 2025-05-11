@@ -101,11 +101,17 @@ class _login_owner_state extends State<login_owner> {
                   onPressed: () async {
                     int signcode = 0;
                     signcode = await loginOwner(email.text, pass.text);
-                    if (signcode == 1) {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => ownermenu()));
+                    if (email.text.isNotEmpty && pass.text.isNotEmpty) {
+                      if (signcode == 1) {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ownermenu()));
+                      } else {
+                        showToast(context, "Username/Password Salah!");
+                      }
                     } else {
-                      showToast(context, "Username/Password Salah!");
+                      showToast(context, "Field tidak boleh kosong!");
                     }
                   },
                   style: ElevatedButton.styleFrom(

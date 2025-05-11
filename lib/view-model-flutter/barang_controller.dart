@@ -85,11 +85,9 @@ void addbarang(
     );
 
     // Add the selected image as a file if available
-    if (selectedImage != null) {
+    if (selectedImage != null && selectedImage.path.isNotEmpty) {
       request.files.add(await http.MultipartFile.fromPath(
           'gambar_barang', selectedImage.path));
-    } else {
-      request.fields['gambar_barang'] = '';
     }
 
     final response = await request.send();

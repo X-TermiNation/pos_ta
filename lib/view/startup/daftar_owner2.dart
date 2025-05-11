@@ -130,19 +130,31 @@ class _daftar_owner2_State extends State<daftar_owner2> {
                 children: [
                   FilledButton(
                     onPressed: () {
-                      nambahcabangngudang(
-                        nama_cabang.text,
-                        alamat_cabang.text,
-                        no_telp.text,
-                        alamat_gudang.text,
-                        context,
-                      );
-                      setState(() {
-                        alamat_cabang.text = "";
-                        no_telp.text = "";
-                        alamat_gudang.text = "";
-                        nama_cabang.text = "";
-                      });
+                      if (nama_cabang.text.isNotEmpty &&
+                          alamat_cabang.text.isNotEmpty &&
+                          no_telp.text.isNotEmpty &&
+                          alamat_gudang.text.isNotEmpty) {
+                        nambahcabangngudang(
+                          nama_cabang.text,
+                          alamat_cabang.text,
+                          no_telp.text,
+                          alamat_gudang.text,
+                          context,
+                        );
+                        setState(() {
+                          nama_cabang.clear();
+                          alamat_cabang.clear();
+                          no_telp.clear();
+                          alamat_gudang.clear();
+                        });
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                'Semua field harus diisi sebelum menambah cabang dan gudang.'),
+                          ),
+                        );
+                      }
                     },
                     style: FilledButton.styleFrom(
                       minimumSize: Size(200, 50), // Fixed width and height

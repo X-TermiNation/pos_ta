@@ -128,23 +128,36 @@ class _daftar_owner3_State extends State<daftar_owner3> {
                   SizedBox(height: 30),
                   FilledButton(
                     onPressed: () {
-                      tambahmanager(
-                        email.text,
-                        pass.text,
-                        fname.text,
-                        lname.text,
-                        alamat.text,
-                        no_telp.text,
-                        context,
-                      );
-                      setState(() {
-                        email.clear();
-                        pass.clear();
-                        fname.clear();
-                        lname.clear();
-                        alamat.clear();
-                        no_telp.clear();
-                      });
+                      if (email.text.isNotEmpty &&
+                          pass.text.isNotEmpty &&
+                          fname.text.isNotEmpty &&
+                          lname.text.isNotEmpty &&
+                          alamat.text.isNotEmpty &&
+                          no_telp.text.isNotEmpty) {
+                        tambahmanager(
+                          email.text,
+                          pass.text,
+                          fname.text,
+                          lname.text,
+                          alamat.text,
+                          no_telp.text,
+                          context,
+                        );
+                        setState(() {
+                          email.clear();
+                          pass.clear();
+                          fname.clear();
+                          lname.clear();
+                          alamat.clear();
+                          no_telp.clear();
+                        });
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Field tidak boleh kosong!'),
+                          ),
+                        );
+                      }
                     },
                     style: FilledButton.styleFrom(
                       padding: EdgeInsets.symmetric(

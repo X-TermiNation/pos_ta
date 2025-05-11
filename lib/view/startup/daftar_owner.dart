@@ -135,21 +135,35 @@ class _daftar_owner_State extends State<daftar_owner> {
                       MainAxisSize.min, // Prevents full-width stretching
                   children: [
                     ElevatedButton(
-                      onPressed: _isValidEmail
-                          ? () {
-                              tambahOwner(
-                                email.text.toString(),
-                                pass.text.toString(),
-                                FnameOwner.text.toString(),
-                                LnameOwner.text.toString(),
-                                context,
-                              );
-                              email.clear();
-                              pass.clear();
-                              FnameOwner.clear();
-                              LnameOwner.clear();
-                            }
-                          : null,
+                      onPressed: () {
+                        if (_isValidEmail &&
+                            email.text.isNotEmpty &&
+                            pass.text.isNotEmpty &&
+                            FnameOwner.text.isNotEmpty &&
+                            LnameOwner.text.isNotEmpty) {
+                          tambahOwner(
+                            email.text.toString(),
+                            pass.text.toString(),
+                            FnameOwner.text.toString(),
+                            LnameOwner.text.toString(),
+                            context,
+                          );
+                          email.clear();
+                          pass.clear();
+                          FnameOwner.clear();
+                          LnameOwner.clear();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                !_isValidEmail
+                                    ? 'Format email tidak valid.'
+                                    : 'Field tidak boleh kosong!',
+                              ),
+                            ),
+                          );
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         minimumSize: Size(200, 50), // Set fixed width
                         padding: EdgeInsets.symmetric(vertical: 15),

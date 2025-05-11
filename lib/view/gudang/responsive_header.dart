@@ -92,8 +92,8 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                GetStorage().erase();
                 flushCache();
+                GetStorage().erase();
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => loginscreen()),

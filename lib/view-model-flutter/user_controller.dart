@@ -18,8 +18,11 @@ Future<void> verify() async {
 
 //delete redis cache
 Future<void> flushCache() async {
-  final url =
-      Uri.parse('http://localhost:3000/user/flush-cache'); // Backend API URL
+  final dataStorage = GetStorage();
+  String id_cabang = dataStorage.read('id_cabang');
+  String id_gudang = dataStorage.read('id_gudang');
+  final url = Uri.parse(
+      'http://localhost:3000/user/flush-cache/$id_cabang/$id_gudang'); // Backend API URL
 
   try {
     final response = await http.post(url);
@@ -160,8 +163,15 @@ void tambahOwner(String email, String pass, String fname, String lname) async {
 }
 
 //
-void tambahpegawai(String email, String pass, String fname, String lname,
-    String alamat, String no_telp, String role) async {
+Future<String> tambahpegawai(
+  String email,
+  String pass,
+  String fname,
+  String lname,
+  String alamat,
+  String no_telp,
+  String role,
+) async {
   try {
     final useradd = {
       'email': email,
@@ -175,12 +185,13 @@ void tambahpegawai(String email, String pass, String fname, String lname,
 
     final dataStorage = GetStorage();
     String id_cabang = dataStorage.read('id_cabang');
-    if (email != "" &&
-        pass != "" &&
-        fname != "" &&
-        lname != "" &&
-        alamat != "" &&
-        no_telp != "") {
+
+    if (email.isNotEmpty &&
+        pass.isNotEmpty &&
+        fname.isNotEmpty &&
+        lname.isNotEmpty &&
+        alamat.isNotEmpty &&
+        no_telp.isNotEmpty) {
       final url = 'http://localhost:3000/user/addUser/$id_cabang';
       final response = await http.post(
         Uri.parse(url),
@@ -189,16 +200,24 @@ void tambahpegawai(String email, String pass, String fname, String lname,
         },
         body: jsonEncode(useradd),
       );
+
       if (response.statusCode == 200) {
-        print('berhasil tambah data pegawai');
+        print('Berhasil tambah data pegawai');
+        return 'success';
+      } else if (response.statusCode == 400) {
+        print('email sudah terdaftar sebelumnya!');
+        return 'email_exist';
       } else {
         print('Gagal menambah data pegawai ke server');
+        return 'server_error';
       }
     } else {
       print('Field tidak boleh kosong!');
+      return 'empty_field';
     }
   } catch (e) {
     print('Error tambah pegawai: $e');
+    return 'error';
   }
 }
 

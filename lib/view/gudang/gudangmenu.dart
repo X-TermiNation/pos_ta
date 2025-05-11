@@ -591,6 +591,16 @@ class _GudangMenuState extends State<GudangMenu> {
                               setState(() {
                                 fetchData();
                                 getKategori();
+                                getFirstKategoriId().then((value) {
+                                  setState(() {
+                                    edit_selectedvalueKategori = value;
+                                  });
+                                });
+                                getKategori();
+                                fetchData();
+                                getdatagudang();
+                                fetchDataAndUseInJsonString();
+                                fetchDataKategori();
                               });
                               Navigator.of(context).pop();
                             },
@@ -1012,13 +1022,21 @@ class _GudangMenuState extends State<GudangMenu> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Center(
-                              child: Text(
-                                "Detail Barang",
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(
+                                    12), // Adjust the radius as needed
+                              ),
+                              padding: EdgeInsets.all(16), // Add some padding
+                              child: Center(
+                                child: Text(
+                                  "Detail Barang",
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1158,12 +1176,22 @@ class _GudangMenuState extends State<GudangMenu> {
                               ),
                               SizedBox(height: 10),
                               checkExpiredDetail
-                                  ? Text(
-                                      "Expire Date: ${formatToWIBDetail(selectedSatuan!['exp_date'].toString())}",
+                                  ? (selectedSatuan!['exp_date'] != null &&
+                                          selectedSatuan!['exp_date']
+                                              .toString()
+                                              .isNotEmpty
+                                      ? Text(
+                                          "Expire Date: ${formatToWIBDetail(selectedSatuan!['exp_date'].toString())}",
+                                          style: TextStyle(fontSize: 15),
+                                        )
+                                      : Text(
+                                          "Expire Date: No Expire Date",
+                                          style: TextStyle(fontSize: 15),
+                                        ))
+                                  : Text(
+                                      "Expire Date: No Expire Date",
                                       style: TextStyle(fontSize: 15),
-                                    )
-                                  : Text("Expire Date: No Expire Date",
-                                      style: TextStyle(fontSize: 15)),
+                                    ),
                               SizedBox(height: 10),
                               Text(
                                 "Jumlah Stock Satuan: ${selectedSatuan!['jumlah_satuan']}",
@@ -1596,6 +1624,16 @@ class _GudangMenuState extends State<GudangMenu> {
                             await getlowstocksatuan(context);
                             await loadSuppliers();
                             await _loadExpiringBatches();
+                            getFirstKategoriId().then((value) {
+                              setState(() {
+                                edit_selectedvalueKategori = value;
+                              });
+                            });
+                            getKategori();
+                            fetchData();
+                            getdatagudang();
+                            fetchDataAndUseInJsonString();
+                            fetchDataKategori();
                             setState(() {
                               fetchData();
                               onBarangRefresh();
@@ -1605,6 +1643,9 @@ class _GudangMenuState extends State<GudangMenu> {
                               harga_satuan_initial.text = "";
                               id_supplier_insert.text = "";
                               selectedImage = null;
+                              selectedvalueJenis = null;
+                              selectedvalueKategori = null;
+                              katakategori = "";
                             });
                           },
                           style: FilledButton.styleFrom(
@@ -2210,18 +2251,32 @@ class _GudangMenuState extends State<GudangMenu> {
                     Spacer(),
                     FilledButton(
                       onPressed: () async {
+                        // Cek semua field input dulu
+                        if (nama_satuan.text.isEmpty ||
+                            harga_satuan.text.isEmpty ||
+                            isi_satuan.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    'Semua field harus diisi sebelum menambahkan satuan')),
+                          );
+                          return; // Stop di sini kalau ada yang kosong
+                        }
+
                         final itemData = await searchItemByID(satuan_idbarang);
                         if (itemData != null) {
                           // Extract base_satuan_id from the item data
                           String baseSatuanId = itemData['base_satuan_id'];
-                          double conversionRate =
-                              double.parse(isi_satuan.text.toString());
+                          double conversionRate = double.parse(isi_satuan.text);
+
                           String id_satuan = await addsatuan(
-                              satuan_idbarang,
-                              nama_satuan.text,
-                              harga_satuan.text.toString(),
-                              isi_satuan.text.toString(),
-                              context);
+                            satuan_idbarang,
+                            nama_satuan.text,
+                            harga_satuan.text,
+                            isi_satuan.text,
+                            context,
+                          );
+
                           if (id_satuan != "") {
                             final conversionResponse = await insertConversion(
                               sourceSatuanId: id_satuan,
@@ -2254,6 +2309,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                     'Barang tidak ditemukan atau terjadi kesalahan')),
                           );
                         }
+
                         setState(() {
                           nama_satuan.text = "";
                           harga_satuan.text = "";
@@ -2986,6 +3042,10 @@ class _GudangMenuState extends State<GudangMenu> {
                               itemsStock.clear();
                               ReStock_InvoiceNumber.clear();
                             });
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('tidak ada barang ')),
+                            );
                           }
                         },
                         style: ElevatedButton.styleFrom(

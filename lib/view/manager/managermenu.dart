@@ -1,5 +1,6 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:ta_pos/view-model-flutter/laporan_controller.dart';
 import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/manager/DeliveryHistory.dart';
 import 'package:ta_pos/view/manager/analisa_pendapatan.dart';
@@ -9,6 +10,7 @@ import 'package:ta_pos/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view-model-flutter/diskon_controller.dart';
 import 'package:ta_pos/view/gudang/gudangmenu.dart';
+import 'package:ta_pos/view/manager/laporanMenu.dart';
 import 'package:ta_pos/view/manager/CustomTab.dart';
 import 'package:ta_pos/view/manager/content_view.dart';
 import 'package:flutter/services.dart';
@@ -229,8 +231,8 @@ class _ManagerMenuState extends State<ManagerMenu>
                     ),
                     TextButton(
                       onPressed: () {
-                        GetStorage().erase();
                         flushCache();
+                        GetStorage().erase();
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (mounted) {
                             Navigator.pushReplacement(
@@ -1025,16 +1027,25 @@ class _ManagerMenuState extends State<ManagerMenu>
                             .parse(_dateFormat.format(selectedDateEnd))
                             .add(Duration(days: 1))
                             .toIso8601String();
-
-                        await tambahdiskon(
-                          nama_diskon.text,
-                          persentase_diskon.text,
-                          start,
-                          end,
-                          isCheckedList,
-                          databarang,
-                          context,
-                        );
+                        if (nama_diskon.text.isNotEmpty &&
+                            persentase_diskon.text.isNotEmpty) {
+                          if (isCheckedList.contains(true)) {
+                            await tambahdiskon(
+                              nama_diskon.text,
+                              persentase_diskon.text,
+                              start,
+                              end,
+                              isCheckedList,
+                              databarang,
+                              context,
+                            );
+                          } else {
+                            showToast(context,
+                                "Minimal memilih satu barang!, pendaftaran gagal...");
+                          }
+                        } else {
+                          showToast(context, "Field tidak boleh kosong!");
+                        }
 
                         nama_diskon.clear();
                         persentase_diskon.clear();
@@ -1077,10 +1088,11 @@ class _ManagerMenuState extends State<ManagerMenu>
       ContentView(
           tab: CustomTab(title: 'Grafik Trend'), content: GrafikTrendWidget()),
       ContentView(
-          tab: CustomTab(title: 'Lihat Laporan'),
-          content: Center(
-            child: Container(color: Colors.green, width: 100, height: 100),
-          )),
+        tab: CustomTab(title: 'Lihat Laporan'),
+        content: const Center(
+          child: ReportNavigationWrapper(),
+        ),
+      ),
       ContentView(
         tab: CustomTab(title: 'Atur Pegawai'),
         content: Center(
@@ -1507,36 +1519,87 @@ class _ManagerMenuState extends State<ManagerMenu>
                     child: SizedBox(
                       width: 200, // ubah sesuai kebutuhan, misal 150 atau 180
                       child: FilledButton(
-                        onPressed: _isValidEmail
+                        onPressed: (_isValidEmail &&
+                                email.text.isNotEmpty &&
+                                pass.text.isNotEmpty &&
+                                fname.text.isNotEmpty &&
+                                lname.text.isNotEmpty &&
+                                alamat.text.isNotEmpty &&
+                                no_telp.text.isNotEmpty)
                             ? () async {
-                                try {
-                                  tambahpegawai(
-                                    email.text,
-                                    pass.text,
-                                    fname.text,
-                                    lname.text,
-                                    alamat.text,
-                                    no_telp.text,
-                                    value,
-                                  );
-                                  fetchUser();
-                                  getUsers();
+                                String result = await tambahpegawai(
+                                  email.text,
+                                  pass.text,
+                                  fname.text,
+                                  lname.text,
+                                  alamat.text,
+                                  no_telp.text,
+                                  value,
+                                );
+
+                                if (result == 'success') {
+                                  showToast(context, 'Daftar Berhasil!');
                                   setState(() {
-                                    showToast(context, 'Berhasil tambah data');
-                                    email.text = "";
-                                    pass.text = "";
-                                    fname.text = "";
-                                    lname.text = "";
-                                    alamat.text = "";
-                                    no_telp.text = "";
+                                    email.clear();
+                                    pass.clear();
+                                    fname.clear();
+                                    lname.clear();
+                                    alamat.clear();
+                                    no_telp.clear();
                                     this.value = "Kasir";
                                   });
-                                } catch (e) {
+                                } else if (result == 'email_exist') {
+                                  showToast(context,
+                                      'Email sudah terdaftar,daftar gagal!');
+                                  setState(() {
+                                    email.clear();
+                                    pass.clear();
+                                    fname.clear();
+                                    lname.clear();
+                                    alamat.clear();
+                                    no_telp.clear();
+                                    this.value = "Kasir";
+                                  });
+                                } else if (result == 'empty_field') {
                                   showToast(
-                                      context, "something went wrong: $e");
+                                      context, 'Field tidak boleh kosong!');
+                                  setState(() {
+                                    email.clear();
+                                    pass.clear();
+                                    fname.clear();
+                                    lname.clear();
+                                    alamat.clear();
+                                    no_telp.clear();
+                                    this.value = "Kasir";
+                                  });
+                                } else if (result == 'server_error') {
+                                  showToast(context,
+                                      'Gagal menambah data pegawai ke server');
+                                  setState(() {
+                                    email.clear();
+                                    pass.clear();
+                                    fname.clear();
+                                    lname.clear();
+                                    alamat.clear();
+                                    no_telp.clear();
+                                    this.value = "Kasir";
+                                  });
+                                } else {
+                                  showToast(
+                                      context, 'Terjadi kesalahan. Coba lagi!');
                                 }
                               }
-                            : null,
+                            : () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      !_isValidEmail
+                                          ? 'Format email tidak valid.'
+                                          : 'Semua field harus diisi.',
+                                    ),
+                                  ),
+                                );
+                              },
                         child: Text('Tambah Pegawai'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue[400],
@@ -1555,7 +1618,7 @@ class _ManagerMenuState extends State<ManagerMenu>
         ),
       ),
       ContentView(
-        tab: CustomTab(title: 'Tracking Kurir'),
+        tab: CustomTab(title: ' '),
         content: Column(
           children: [
             Row(
@@ -2293,5 +2356,53 @@ class PerformanceChart extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class ReportNavigationWrapper extends StatefulWidget {
+  const ReportNavigationWrapper({super.key});
+
+  @override
+  State<ReportNavigationWrapper> createState() =>
+      _ReportNavigationWrapperState();
+}
+
+class _ReportNavigationWrapperState extends State<ReportNavigationWrapper> {
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCacheData();
+  }
+
+  Future<void> _loadCacheData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await triggerCacheAllDataCabang();
+    } catch (e) {
+      print('❌ Error loading cache: $e');
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isLoading
+        ? const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading data...', style: TextStyle(fontSize: 16)),
+            ],
+          )
+        : const ReportNavigationWidget();
   }
 }

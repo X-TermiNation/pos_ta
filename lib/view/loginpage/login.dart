@@ -217,24 +217,28 @@ class _loginscreen_state extends State<loginscreen> {
                         onPressed: () async {
                           int signcode = 0;
                           signcode = await loginbtn(emailstr, pass.text);
-                          if (signcode == 1) {
-                            setState(() {
-                              logOwner = false;
-                            });
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => ManagerMenu()));
-                          } else if (signcode == 2) {
-                            edit_selectedvalueKategori =
-                                await getFirstKategoriId();
-                            setState(() {});
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => GudangMenu()));
+                          if (emailstr.isNotEmpty && pass.text.isNotEmpty) {
+                            if (signcode == 1) {
+                              setState(() {
+                                logOwner = false;
+                              });
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => ManagerMenu()));
+                            } else if (signcode == 2) {
+                              edit_selectedvalueKategori =
+                                  await getFirstKategoriId();
+                              setState(() {});
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => GudangMenu()));
+                            } else {
+                              showToast(context, "Username/Password Salah!");
+                            }
                           } else {
-                            showToast(context, "Username/Password Salah!");
+                            showToast(context, "Field tidak boleh kosong!");
                           }
                         },
                         style: ElevatedButton.styleFrom(
