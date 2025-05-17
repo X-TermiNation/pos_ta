@@ -23,14 +23,17 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
   }
 
   Future<void> fetchAllTime() async {
+    if (!mounted) return;
     setState(() {
       loading = true;
       showAllTime = true;
     });
+
     final data = await fetchTrendingItems(
       start: DateTime(2000),
       end: DateTime.now(),
     );
+    if (!mounted) return;
     setState(() {
       trendingData = data;
       loading = false;

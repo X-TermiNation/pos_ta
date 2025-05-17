@@ -142,36 +142,6 @@ Future<Map<String, dynamic>?> getTransById(String trans_id) async {
   }
 }
 
-//mengambil semua data transaksi yang berhasil pada cabang
-Future<List<dynamic>> getConfirmedTransInRange(
-    DateTime startDate, DateTime endDate) async {
-  final dataStorage = GetStorage();
-  String id_cabang = dataStorage.read('id_cabang');
-  final url =
-      Uri.parse('http://localhost:3000/transaksi/allConfirmedTrans/$id_cabang');
-
-  try {
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final List<dynamic> transaksiList = json.decode(response.body);
-
-      // Filter transaksi berdasarkan rentang tanggal
-      return transaksiList.where((trans) {
-        DateTime transDate = DateTime.parse(trans['trans_date']);
-        return transDate.isAfter(startDate.subtract(Duration(days: 1))) &&
-            transDate.isBefore(endDate.add(Duration(days: 1)));
-      }).toList();
-    } else {
-      print('Gagal mengambil data. Status: ${response.statusCode}');
-      return [];
-    }
-  } catch (e) {
-    print('Terjadi error saat fetch transaksi: $e');
-    return [];
-  }
-}
-
 //grafik trend
 Future<Map<String, Map<String, int>>> fetchTrendingItems({
   required DateTime start,

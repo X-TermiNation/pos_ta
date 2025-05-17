@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:ta_pos/view-model-flutter/laporan_controller.dart';
 import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/manager/DeliveryHistory.dart';
-import 'package:ta_pos/view/manager/analisa_pendapatan.dart';
 import 'package:ta_pos/view/manager/chatWhatsapp.dart';
 import 'package:ta_pos/view-model-flutter/transaksi_controller.dart';
 import 'package:ta_pos/view-model-flutter/user_controller.dart';
@@ -384,11 +383,6 @@ class _ManagerMenuState extends State<ManagerMenu>
       tab: CustomTab(title: 'Edit Diskon'),
       content: Container(),
     ),
-    ContentView(
-      tab: CustomTab(title: 'Analisa Revenue'),
-      content: Container(),
-    ),
-    ContentView(tab: CustomTab(title: 'Analisa Pendapatan'), content: Center()),
     ContentView(tab: CustomTab(title: 'Grafik Trend'), content: Center()),
     ContentView(
         tab: CustomTab(title: 'Laporan'),
@@ -1076,15 +1070,6 @@ class _ManagerMenuState extends State<ManagerMenu>
           ),
         ),
       ),
-      ContentView(
-        tab: CustomTab(title: 'Analisa Pendapatan'),
-        content: AnalisaPendapatanView(),
-      ),
-      ContentView(
-          tab: CustomTab(title: 'Analisa Penghasilan'),
-          content: Center(
-            child: Container(color: Colors.green, width: 100, height: 100),
-          )),
       ContentView(
           tab: CustomTab(title: 'Grafik Trend'), content: GrafikTrendWidget()),
       ContentView(
@@ -1895,28 +1880,6 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           ),
                                         ),
                                         Tooltip(
-                                          message: 'Analisa Pendapatan',
-                                          child: IconButton(
-                                            icon: Icon(
-                                              Icons.auto_graph_rounded,
-                                              size: 28,
-                                              color: Colors.blue,
-                                            ),
-                                            onPressed: () => _onItemTapped(3),
-                                          ),
-                                        ),
-                                        Tooltip(
-                                          message: 'Analisa Penghasilan',
-                                          child: IconButton(
-                                            icon: Icon(
-                                              Icons.attach_money_rounded,
-                                              size: 32,
-                                              color: Colors.blue,
-                                            ),
-                                            onPressed: () => _onItemTapped(4),
-                                          ),
-                                        ),
-                                        Tooltip(
                                           message: 'Grafik Trend',
                                           child: IconButton(
                                             icon: Icon(
@@ -1924,7 +1887,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                               size: 32,
                                               color: Colors.blue,
                                             ),
-                                            onPressed: () => _onItemTapped(5),
+                                            onPressed: () => _onItemTapped(3),
                                           ),
                                         ),
                                         Tooltip(
@@ -1935,7 +1898,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                               size: 32,
                                               color: Colors.blue,
                                             ),
-                                            onPressed: () => _onItemTapped(6),
+                                            onPressed: () => _onItemTapped(4),
                                           ),
                                         ),
                                         Container(
@@ -1990,7 +1953,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           size: 28,
                                           color: Colors.blue,
                                         ),
-                                        onPressed: () => _onItemTapped(7),
+                                        onPressed: () => _onItemTapped(5),
                                       ),
                                     ),
                                     Tooltip(
@@ -2001,7 +1964,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                           size: 28,
                                           color: Colors.blue,
                                         ),
-                                        onPressed: () => _onItemTapped(8),
+                                        onPressed: () => _onItemTapped(6),
                                       ),
                                     ),
                                     Container(
@@ -2024,7 +1987,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     size: 32,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onItemTapped(9),
+                                  onPressed: () => _onItemTapped(7),
                                 ),
                               ),
                               SizedBox(height: 20),
@@ -2036,7 +1999,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     size: 32,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onItemTapped(10),
+                                  onPressed: () => _onItemTapped(8),
                                 ),
                               ),
                               SizedBox(height: 20),
@@ -2048,7 +2011,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                     size: 32,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onItemTapped(11),
+                                  onPressed: () => _onItemTapped(9),
                                 ),
                               ),
                             ],
