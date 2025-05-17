@@ -3857,7 +3857,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                               final String tanggalRequest =
                                   formatToWIB(request['tanggal_request']);
                               final String cabangId =
-                                  request['id_cabang_request'];
+                                  request['id_cabang_confirm'];
                               final String status = request['status'];
                               return DataRow(cells: [
                                 DataCell(Text(tanggalRequest)),

@@ -102,6 +102,15 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
       );
       return;
     }
+    final invalidItems = items
+        .where((item) => item["quantity"] == null || item["quantity"] < 1)
+        .toList();
+    if (invalidItems.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Semua item harus memiliki jumlah minimal 1.")),
+      );
+      return;
+    }
 
     try {
       final data = {
@@ -365,8 +374,6 @@ class _SubmitRequestScreenState extends State<SubmitRequestScreen> {
               child: ElevatedButton(
                 onPressed: () async {
                   await submitRequest();
-                  print("Selected Branch: $selectedBranchId");
-                  print("Items: $items");
                   Navigator.pop(context);
                 },
                 child: Text("Submit Request"),
