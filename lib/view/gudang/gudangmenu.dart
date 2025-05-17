@@ -3444,6 +3444,8 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
   List<Map<String, dynamic>> allData = [];
   List<Map<String, dynamic>> filteredData = [];
   Map<String, String> idToNamaCabang = {};
+  final Map<String, String> cabangNamaMap = {};
+  final Map<String, String> cabangAlamatMap = {};
   String searchQuery = "";
   DateTimeRange? dateRange;
 
@@ -3452,6 +3454,18 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
     super.initState();
     fetchAllCabang();
     fetchDataRequest = fetchData();
+    fetchCabangDataPDF();
+  }
+
+  Future<void> fetchCabangDataPDF() async {
+    final cabangs =
+        await getallcabang(); // Asumsikan ini List<Map<String, dynamic>>
+
+    for (var cabang in cabangs) {
+      final id = cabang['_id'].toString();
+      cabangNamaMap[id] = cabang['nama_cabang'] ?? 'Unknown Cabang';
+      cabangAlamatMap[id] = cabang['alamat'] ?? 'Alamat tidak diketahui';
+    }
   }
 
   Future<void> fetchAllCabang() async {
@@ -3611,9 +3625,13 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
     final kodeSJ =
         request['Kode_SJ'] ?? "SJ-${DateTime.now().millisecondsSinceEpoch}";
     final cabangAsal =
-        idToNamaCabang[request['id_cabang_request']] ?? "Unknown Cabang Asal";
+        cabangNamaMap[request['id_cabang_request']] ?? "Unknown Cabang Asal";
     final cabangTujuan =
-        idToNamaCabang[request['id_cabang_confirm']] ?? "Unknown Cabang Tujuan";
+        cabangNamaMap[request['id_cabang_confirm']] ?? "Unknown Cabang Tujuan";
+    final alamatAsal = cabangAlamatMap[request['id_cabang_request']] ??
+        "Alamat tidak diketahui";
+    final alamatTujuan = cabangAlamatMap[request['id_cabang_confirm']] ??
+        "Alamat tidak diketahui";
     final tanggalRequest = request['tanggal_request'] != null
         ? DateFormat('yyyy-MM-dd')
             .format(DateTime.parse(request['tanggal_request']).toLocal())
@@ -3645,11 +3663,14 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
               pw.SizedBox(height: 10),
               pw.Text('Cabang Asal: $cabangAsal',
                   style: pw.TextStyle(fontSize: 14)),
+              pw.Text('Alamat Asal: $alamatAsal',
+                  style: pw.TextStyle(fontSize: 12)),
+              pw.SizedBox(height: 8),
               pw.Text('Cabang Tujuan: $cabangTujuan',
                   style: pw.TextStyle(fontSize: 14)),
+              pw.Text('Alamat Tujuan: $alamatTujuan',
+                  style: pw.TextStyle(fontSize: 12)),
               pw.SizedBox(height: 20),
-
-              // Tabel detail barang
               pw.Table.fromTextArray(
                 headers: ['No', 'Nama Barang', 'Jumlah'],
                 data: List<List<String>>.generate(
@@ -3673,9 +3694,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                 border:
                     pw.TableBorder.all(width: 0.5, color: PdfColors.grey400),
               ),
-
               pw.Spacer(),
-
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
@@ -3884,6 +3903,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                                           IconButton(
                                             icon: Icon(Icons.picture_as_pdf),
                                             onPressed: () async {
+                                              await fetchCabangDataPDF();
                                               await generateSuratJalanPdf(
                                                   request);
                                             },
