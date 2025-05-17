@@ -3474,7 +3474,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
 
   Future<List<Map<String, dynamic>>> fetchData() async {
     try {
-      List<Map<String, dynamic>>? data = await getMutasiBarangByCabangConfirm();
+      List<Map<String, dynamic>>? data = await getMutasiBarangByCabangRequest();
       if (data == null) data = [];
 
       for (var item in data) {
