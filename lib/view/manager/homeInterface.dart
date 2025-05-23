@@ -145,7 +145,7 @@ class _CabangDashboardChartPageState extends State<CabangDashboardChartPage> {
                   .where((e) => e.key <= currentHour)
                   .map((e) => FlSpot(e.key.toDouble(), e.value))
                   .toList(),
-              isCurved: true,
+              isCurved: false,
               barWidth: 2,
               color: Colors.blue,
               dotData: FlDotData(show: false),
