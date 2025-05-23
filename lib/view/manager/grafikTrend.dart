@@ -13,13 +13,14 @@ class GrafikTrendWidget extends StatefulWidget {
 class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
   Map<String, Map<String, int>> trendingData = {};
   bool loading = false;
-  bool showAllTime = false;
+  bool showAllTime = true;
   DateTimeRange? selectedRange;
+  String? selectedBarang;
 
   @override
   void initState() {
     super.initState();
-    fetchAllTime(); // default all time
+    fetchAllTime();
   }
 
   Future<void> fetchAllTime() async {
@@ -27,6 +28,7 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
     setState(() {
       loading = true;
       showAllTime = true;
+      selectedBarang = null;
     });
 
     final data = await fetchTrendingItems(
@@ -45,6 +47,7 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
       loading = true;
       showAllTime = false;
     });
+
     final data = await fetchTrendingItems(
       start: range.start,
       end: range.end,
@@ -58,7 +61,7 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final chart = showAllTime ? buildBarChart() : buildLineChart();
+    final chart = (selectedBarang == null) ? buildBarChart() : buildLineChart();
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -66,6 +69,7 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
         children: [
           Wrap(
             spacing: 12,
+            runSpacing: 12,
             children: [
               ElevatedButton(
                 onPressed: () async {
@@ -83,6 +87,28 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
               ElevatedButton(
                 onPressed: fetchAllTime,
                 child: const Text('Tampilkan All Time'),
+              ),
+              DropdownButton<String>(
+                hint: const Text("Pilih Barang (Opsional)"),
+                value: selectedBarang,
+                isDense: true,
+                onChanged: (value) {
+                  setState(() {
+                    selectedBarang = value;
+                  });
+                },
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: null,
+                    child: Text('Tampilkan Semua Barang'),
+                  ),
+                  ...trendingData.keys.map((key) {
+                    return DropdownMenuItem<String>(
+                      value: key,
+                      child: Text(key),
+                    );
+                  }).toList(),
+                ],
               ),
             ],
           ),
@@ -106,16 +132,18 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
   }
 
   Widget buildLineChart() {
-    if (trendingData.isEmpty) {
+    if (selectedBarang == null || trendingData[selectedBarang] == null) {
       return const Center(
-          child: Text("Tidak ada data untuk tanggal tersebut."));
+          child: Text("Silakan pilih barang untuk melihat tren."));
     }
 
-    final dates = <String>{};
-    trendingData.values.forEach((map) => dates.addAll(map.keys));
-    final sortedDates = dates.toList()..sort();
-
-    final dateLabels = List.generate(sortedDates.length, (i) => sortedDates[i]);
+    final data = trendingData[selectedBarang!]!;
+    final sortedDates = data.keys.toList()..sort();
+    final spots = sortedDates.asMap().entries.map((e) {
+      final idx = e.key;
+      final date = e.value;
+      return FlSpot(idx.toDouble(), data[date]!.toDouble());
+    }).toList();
 
     return LineChart(LineChartData(
       titlesData: FlTitlesData(
@@ -126,9 +154,9 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
             interval: 1,
             getTitlesWidget: (value, _) {
               final idx = value.toInt();
-              if (idx >= 0 && idx < dateLabels.length) {
+              if (idx >= 0 && idx < sortedDates.length) {
                 return Text(
-                    DateFormat.Md().format(DateTime.parse(dateLabels[idx])));
+                    DateFormat.Md().format(DateTime.parse(sortedDates[idx])));
               }
               return const SizedBox.shrink();
             },
@@ -136,29 +164,36 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
         ),
         leftTitles: AxisTitles(
           axisNameWidget: const Text("Qty"),
-          sideTitles: SideTitles(showTitles: true, interval: 10),
+          sideTitles: SideTitles(
+            showTitles: true,
+            interval: 10,
+            getTitlesWidget: (value, _) {
+              return Text(
+                value.toInt().toString(),
+                style: const TextStyle(fontSize: 10),
+                textAlign: TextAlign.center,
+              );
+            },
+          ),
         ),
       ),
-      lineBarsData: trendingData.entries.map((entry) {
-        final color =
-            Colors.primaries[entry.key.hashCode % Colors.primaries.length];
-        return LineChartBarData(
-          spots: sortedDates.asMap().entries.map((e) {
-            final idx = e.key;
-            final date = e.value;
-            final qty = entry.value[date] ?? 0;
-            return FlSpot(idx.toDouble(), qty.toDouble());
-          }).toList(),
+      lineBarsData: [
+        LineChartBarData(
+          spots: spots,
           isCurved: true,
-          dotData: FlDotData(show: false),
-          color: color,
+          color: Colors.blue,
           barWidth: 2,
-        );
-      }).toList(),
+          dotData: FlDotData(show: true),
+        ),
+      ],
     ));
   }
 
   Widget buildBarChart() {
+    if (trendingData.isEmpty) {
+      return const Center(child: Text("Tidak ada data tersedia."));
+    }
+
     final totalPerBarang = trendingData.map((key, map) {
       final total = map.values.fold(0, (sum, qty) => sum + qty);
       return MapEntry(key, total);
@@ -171,7 +206,17 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
       titlesData: FlTitlesData(
         leftTitles: AxisTitles(
           axisNameWidget: const Text("Qty"),
-          sideTitles: SideTitles(showTitles: true, interval: 10),
+          sideTitles: SideTitles(
+            showTitles: true,
+            interval: 10,
+            getTitlesWidget: (value, _) {
+              return Text(
+                value.toInt().toString(),
+                style: const TextStyle(fontSize: 10),
+                textAlign: TextAlign.center,
+              );
+            },
+          ),
         ),
         bottomTitles: AxisTitles(
           axisNameWidget: const Text("Barang"),
@@ -193,10 +238,30 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
         return BarChartGroupData(
           x: e.key,
           barRods: [
-            BarChartRodData(toY: e.value.value.toDouble(), color: Colors.blue),
+            BarChartRodData(
+              toY: e.value.value.toDouble(),
+              color: Colors.blue,
+              width: 20,
+              borderRadius: BorderRadius.circular(4),
+              rodStackItems: [],
+            ),
           ],
+          showingTooltipIndicators: [0],
         );
       }).toList(),
+      barTouchData: BarTouchData(
+        enabled: true,
+        touchTooltipData: BarTouchTooltipData(
+          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+            final barang = sorted[group.x.toInt()].key;
+            final jumlah = rod.toY.toInt();
+            return BarTooltipItem(
+              '$barang\n$jumlah pcs',
+              const TextStyle(color: Colors.white),
+            );
+          },
+        ),
+      ),
     ));
   }
 }

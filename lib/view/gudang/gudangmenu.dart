@@ -3830,95 +3830,99 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                         child: Container(
                           width: MediaQuery.of(context).size.width *
                               0.7, // 70% lebar layar
-                          child: DataTable(
-                            columnSpacing: 10.0,
-                            headingRowColor: MaterialStateColor.resolveWith(
-                              (states) => Colors.grey.shade500,
+                          height: 450, // Batasi tinggi tabel, bisa sesuaikan
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.vertical,
+                            child: DataTable(
+                              columnSpacing: 10.0,
+                              headingRowColor: MaterialStateColor.resolveWith(
+                                (states) => Colors.grey.shade500,
+                              ),
+                              columns: [
+                                DataColumn(
+                                    label: Text("Tanggal Request (WIB)",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                DataColumn(
+                                    label: Text("Cabang",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                DataColumn(
+                                    label: Text("Barang-Jumlah",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                                DataColumn(
+                                    label: Text("Status",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold))),
+                              ],
+                              rows: filteredData.map((request) {
+                                final String tanggalRequest =
+                                    formatToWIB(request['tanggal_request']);
+                                final String cabangId =
+                                    request['id_cabang_confirm'];
+                                final String status = request['status'];
+                                return DataRow(cells: [
+                                  DataCell(Text(tanggalRequest)),
+                                  DataCell(
+                                    FutureBuilder<String>(
+                                      future: getNamaCabang(cabangId),
+                                      builder: (context, cabangSnapshot) {
+                                        if (cabangSnapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return Text("Loading...");
+                                        } else if (cabangSnapshot.hasError) {
+                                          return Text("Error");
+                                        }
+                                        return Text(
+                                            cabangSnapshot.data ?? "Unknown");
+                                      },
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: (request['Items'] as List)
+                                          .map<Widget>((item) {
+                                        return Text(
+                                            "${item['nama_item']} (${item['jumlah_item']} ${item['nama_satuan']})");
+                                      }).toList(),
+                                    ),
+                                  ),
+                                  DataCell(Padding(
+                                      padding: EdgeInsets.only(right: 20),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            status,
+                                            style: TextStyle(
+                                              color: getStatusColor(status),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          if (status == 'confirmed')
+                                            IconButton(
+                                              icon: Icon(Icons.picture_as_pdf),
+                                              onPressed: () async {
+                                                await fetchCabangDataPDF();
+                                                await generateSuratJalanPdf(
+                                                    request);
+                                              },
+                                            ),
+                                        ],
+                                      ))),
+                                ]);
+                              }).toList(),
                             ),
-                            columns: [
-                              DataColumn(
-                                  label: Text("Tanggal Request (WIB)",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                              DataColumn(
-                                  label: Text("Cabang",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                              DataColumn(
-                                  label: Text("Barang-Jumlah",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                              DataColumn(
-                                  label: Text("Status",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
-                            ],
-                            rows: filteredData.map((request) {
-                              final String tanggalRequest =
-                                  formatToWIB(request['tanggal_request']);
-                              final String cabangId =
-                                  request['id_cabang_confirm'];
-                              final String status = request['status'];
-                              return DataRow(cells: [
-                                DataCell(Text(tanggalRequest)),
-                                DataCell(
-                                  FutureBuilder<String>(
-                                    future: getNamaCabang(cabangId),
-                                    builder: (context, cabangSnapshot) {
-                                      if (cabangSnapshot.connectionState ==
-                                          ConnectionState.waiting) {
-                                        return Text("Loading...");
-                                      } else if (cabangSnapshot.hasError) {
-                                        return Text("Error");
-                                      }
-                                      return Text(
-                                          cabangSnapshot.data ?? "Unknown");
-                                    },
-                                  ),
-                                ),
-                                DataCell(
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: (request['Items'] as List)
-                                        .map<Widget>((item) {
-                                      return Text(
-                                          "${item['nama_item']} (${item['jumlah_item']} ${item['nama_satuan']})");
-                                    }).toList(),
-                                  ),
-                                ),
-                                DataCell(Padding(
-                                    padding: EdgeInsets.only(right: 20),
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          status,
-                                          style: TextStyle(
-                                            color: getStatusColor(status),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        if (status == 'confirmed')
-                                          IconButton(
-                                            icon: Icon(Icons.picture_as_pdf),
-                                            onPressed: () async {
-                                              await fetchCabangDataPDF();
-                                              await generateSuratJalanPdf(
-                                                  request);
-                                            },
-                                          ),
-                                      ],
-                                    ))),
-                              ]);
-                            }).toList(),
                           ),
                         ),
                       ),
                     );
                   },
                 ),
-              ),
+              )
             ],
           ),
         ),

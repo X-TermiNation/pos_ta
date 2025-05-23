@@ -2,7 +2,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:get_storage/get_storage.dart';
-import 'package:ta_pos/view/tools/custom_toast.dart';
 
 Future<Map<String, dynamic>?> insertQuestion(String questionText) async {
   final url = Uri.parse("http://localhost:3000/chatbot/question");

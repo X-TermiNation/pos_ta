@@ -1,39 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
-import 'package:ta_pos/view-model-flutter/barang_controller.dart';
 import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'dart:async';
-
-Future<String?> createqris(int amount, BuildContext context) async {
-  try {
-    final qrData = {
-      'amount': amount,
-      'callback_url': "https://yourcallbackurl.com",
-    };
-    final url = 'http://localhost:3000/xendit/create-qris';
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(qrData),
-    );
-    final responseData = jsonDecode(response.body);
-
-    if (response.statusCode == 200) {
-      return responseData['qrCodeUrl'];
-    } else {
-      showToast(context, "Gagal menampilkan QR");
-      print('HTTP Error: ${response.statusCode}');
-      return "";
-    }
-  } catch (error) {
-    showToast(context, "Error: $error");
-    print('Exception during HTTP request: $error');
-  }
-}
 
 void createInvoice(String external_id, int amount, String payer_email,
     String description, BuildContext context) async {

@@ -132,7 +132,7 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
                       return ListTile(
                         title: Text('${index + 1}. ${q['questionText']}'),
                         tileColor: selectedQuestionId == q['_id']
-                            ? Colors.grey[300]
+                            ? Colors.grey[500]
                             : null,
                         onTap: () =>
                             setState(() => selectedQuestionId = q['_id']),

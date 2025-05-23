@@ -9,6 +9,7 @@ import 'package:ta_pos/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view-model-flutter/barang_controller.dart';
 import 'package:ta_pos/view-model-flutter/diskon_controller.dart';
 import 'package:ta_pos/view/gudang/gudangmenu.dart';
+import 'package:ta_pos/view/manager/homeInterface.dart';
 import 'package:ta_pos/view/manager/laporanMenu.dart';
 import 'package:ta_pos/view/manager/CustomTab.dart';
 import 'package:ta_pos/view/manager/content_view.dart';
@@ -544,45 +545,7 @@ class _ManagerMenuState extends State<ManagerMenu>
 
     contentView = [
       ContentView(
-        tab: CustomTab(title: 'Home'),
-        content: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio:
-                  1.8, // Adjust aspect ratio to fit content properly
-            ),
-            itemCount: 4,
-            itemBuilder: (context, index) {
-              switch (index) {
-                case 0:
-                  return DashboardCard(
-                    title: 'Sales Overview',
-                    child: SalesChart(),
-                  );
-                case 1:
-                  return DashboardCard(
-                    title: 'User Statistics',
-                    child: UserStatsChart(),
-                  );
-                case 2:
-                  return DashboardCard(
-                    title: 'Revenue',
-                    child: RevenueChart(),
-                  );
-                case 3:
-                  return DashboardCard(
-                    title: 'Performance',
-                    child: PerformanceChart(),
-                  );
-                default:
-                  return Container(); // Default empty container
-              }
-            },
-          ),
-        ),
-      ),
+          tab: CustomTab(title: 'Home'), content: CabangDashboardChartPage()),
       ContentView(
         tab: CustomTab(title: 'Daftar Diskon'),
         content: Center(
