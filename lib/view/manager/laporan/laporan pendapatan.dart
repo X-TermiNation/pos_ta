@@ -70,7 +70,13 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
   }
 
   Future<void> _downloadPDF() async {
-    if (_data == null || (_data!["detail"] as List).isEmpty) return;
+    if (_data == null || (_data!["detail"] as List).isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Data laporan kosong, tidak dapat mengunduh PDF')),
+      );
+      return;
+    }
 
     final pdf = pw.Document();
     final formatter = DateFormat("dd MMM yyyy");

@@ -4296,7 +4296,7 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                                         ),
                                       if (status == 'denied')
                                         Padding(
-                                          padding: EdgeInsets.only(left: 16),
+                                          padding: EdgeInsets.only(left: 70),
                                           child: Text("Denied",
                                               style:
                                                   TextStyle(color: Colors.red)),
@@ -4306,7 +4306,7 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                                           children: [
                                             Padding(
                                               padding:
-                                                  EdgeInsets.only(left: 16),
+                                                  EdgeInsets.only(left: 60),
                                               child: Text("Delivered",
                                                   style: TextStyle(
                                                       color: Colors.green)),

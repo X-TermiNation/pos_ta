@@ -26,11 +26,10 @@ class _ChatbotManagerScreenState extends State<ChatbotManagerScreen> {
     var chatbotData = await getAllQuestions();
 
     if (chatbotData != null && chatbotData['success'] == true) {
-      setState(() {
-        questions =
-            List<Map<String, dynamic>>.from(chatbotData['questions'] ?? []);
-        firstQuestionId = chatbotData['firstQuestionID'];
-      });
+      questions =
+          List<Map<String, dynamic>>.from(chatbotData['questions'] ?? []);
+      firstQuestionId = chatbotData['firstQuestionID'];
+      setState(() {});
     }
   }
 

@@ -30,9 +30,7 @@ Future<void> flushCache() async {
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       print('Cache flushed successfully: ${responseData['message']}');
-    } else {
-      print('Failed to flush cache: ${response.body}');
-    }
+    } else {}
   } catch (error) {
     print('Error flushing cache: $error');
   }

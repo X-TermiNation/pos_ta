@@ -258,9 +258,20 @@ class _LaporanPengeluaranPageState extends State<LaporanPengeluaranPage> {
                   width: 20,
                 ),
                 ElevatedButton(
-                  onPressed: () => _generatePdf(_reportData!),
+                  onPressed: () {
+                    if (_reportData == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Data belum tersedia. Silakan ambil laporan terlebih dahulu.'),
+                        ),
+                      );
+                    } else {
+                      _generatePdf(_reportData!);
+                    }
+                  },
                   child: Text("Unduh PDF"),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 16),

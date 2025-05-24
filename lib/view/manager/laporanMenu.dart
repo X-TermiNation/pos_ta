@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:ta_pos/view/manager/laporan/analisa_revenue.dart';
 import 'package:ta_pos/view/manager/laporan/laporan pendapatan.dart';
+import 'package:ta_pos/view/manager/laporan/laporan_mutasi.dart';
+import 'package:ta_pos/view/manager/laporan/laporan_opname.dart';
 import 'package:ta_pos/view/manager/laporan/laporan_pengeluaran.dart';
 
 class ReportNavigationWidget extends StatelessWidget {
@@ -36,7 +39,10 @@ class ReportNavigationWidget extends StatelessWidget {
         description: "Informasi keluar/masuk & stok barang gudang.",
         icon: LucideIcons.clipboardList,
         onTap: () {
-          // TODO: Navigate to Laporan Opname
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => LaporanOpnamePage()),
+          );
         },
       ),
       _ReportItem(
@@ -44,7 +50,10 @@ class ReportNavigationWidget extends StatelessWidget {
         description: "Laporan barang yang ditransfer antar cabang.",
         icon: LucideIcons.repeat,
         onTap: () {
-          // TODO: Navigate to Laporan Mutasi
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => MutasiReportPage()),
+          );
         },
       ),
       _ReportItem(
@@ -52,7 +61,10 @@ class ReportNavigationWidget extends StatelessWidget {
         description: "Grafik pendapatan, laba, dan analisa performa.",
         icon: LucideIcons.barChart4,
         onTap: () {
-          // TODO: Navigate to Laporan Revenue
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => AnalisaRevenuePage()),
+          );
         },
       ),
     ];

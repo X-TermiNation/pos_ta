@@ -41,7 +41,9 @@ class _CabangDashboardChartPageState extends State<CabangDashboardChartPage> {
       Map<String, int> itemCount = {};
 
       for (var trx in data) {
-        DateTime date = DateTime.parse(trx['trans_date']);
+        DateTime date = DateTime.parse(trx['trans_date'])
+            .toUtc()
+            .add(const Duration(hours: 7));
         if (date.year == now.year &&
             date.month == now.month &&
             date.day == now.day) {
@@ -74,30 +76,47 @@ class _CabangDashboardChartPageState extends State<CabangDashboardChartPage> {
 
   @override
   Widget build(BuildContext context) {
-    return isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Row(
-                    children: [
-                      Expanded(child: Card(child: buildLineChart())),
-                      const SizedBox(width: 16),
-                      Expanded(child: Card(child: buildBarChart())),
-                    ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Dashboard Cabang"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'Sinkronisasi Data',
+            onPressed: () {
+              setState(() {
+                isLoading = true;
+              });
+              fetchAndProcessData();
+            },
+          ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      children: [
+                        Expanded(child: Card(child: buildLineChart())),
+                        const SizedBox(width: 16),
+                        Expanded(child: Card(child: buildBarChart())),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  flex: 1,
-                  child: Card(child: buildPieChart()),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Expanded(
+                    flex: 1,
+                    child: Card(child: buildPieChart()),
+                  ),
+                ],
+              ),
             ),
-          );
+    );
   }
 
   Widget buildLineChart() {
