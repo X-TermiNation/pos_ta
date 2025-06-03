@@ -44,6 +44,7 @@ class _CabangDashboardChartPageState extends State<CabangDashboardChartPage> {
         DateTime date = DateTime.parse(trx['trans_date'])
             .toUtc()
             .add(const Duration(hours: 7));
+
         if (date.year == now.year &&
             date.month == now.month &&
             date.day == now.day) {
@@ -100,18 +101,19 @@ class _CabangDashboardChartPageState extends State<CabangDashboardChartPage> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: Row(
-                      children: [
-                        Expanded(child: Card(child: buildLineChart())),
-                        const SizedBox(width: 16),
-                        Expanded(child: Card(child: buildBarChart())),
-                      ],
-                    ),
+                    child: Card(child: buildLineChart()), // Line Chart di atas
                   ),
                   const SizedBox(height: 16),
                   Expanded(
-                    flex: 1,
-                    child: Card(child: buildPieChart()),
+                    flex: 2,
+                    child: Row(
+                      // Bar Chart dan Pie Chart di bawah dalam satu baris
+                      children: [
+                        Expanded(child: Card(child: buildBarChart())),
+                        const SizedBox(width: 16),
+                        Expanded(child: Card(child: buildPieChart())),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -156,6 +158,12 @@ class _CabangDashboardChartPageState extends State<CabangDashboardChartPage> {
                   );
                 },
               ),
+            ),
+            topTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
             ),
           ),
           lineBarsData: [

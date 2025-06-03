@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:mongo_dart/mongo_dart.dart';
 import 'dart:convert';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:get_storage/get_storage.dart';
 
 //getdiskon
-//bermasalah
 Future<List<Map<String, dynamic>>> getDiskon() async {
   final dataStorage = GetStorage();
   final id_cabangs = dataStorage.read('id_cabang');
@@ -60,20 +58,19 @@ Future<List<Map<String, dynamic>>> getbarangdiskonlist(String id_gudang) async {
 
 //insert diskon
 Future<void> tambahdiskon(
-    String nama_diskon,
-    String persentase_diskon,
-    String DateStringStart,
-    String DateStringEnd,
-    List<bool> isCheckedList,
-    List<Map<String, dynamic>> databarang,
-    BuildContext context) async {
+  String nama_diskon,
+  String persentase_diskon,
+  String DateStringStart,
+  String DateStringEnd,
+  List<String> selectedBarangIds,
+  List<Map<String, dynamic>> databarang,
+  BuildContext context,
+) async {
   try {
     final dataStorage = GetStorage();
     String id_cabangs = dataStorage.read('id_cabang');
     String id_gudang = dataStorage.read('id_gudang');
-    for (var i = 0; i < isCheckedList.length; i++) {
-      print("ini isinya :${isCheckedList[i]}");
-    }
+
     final diskonadd = {
       'nama_diskon': nama_diskon,
       'id_cabang_reference': id_cabangs,
@@ -83,65 +80,79 @@ Future<void> tambahdiskon(
       'isActive': true,
     };
 
-    if (nama_diskon != "" && persentase_diskon != "") {
+    if (nama_diskon.isNotEmpty && persentase_diskon.isNotEmpty) {
       final url = 'http://localhost:3000/barang/tambahdiskon/$id_cabangs';
       final response = await http.post(
         Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(diskonadd),
       );
+
       if (response.statusCode == 200 ||
           response.statusCode == 204 ||
           response.statusCode == 304) {
         showToast(context, "Berhasil tambah diskon");
-        String nmdiskon = nama_diskon.toString();
-        //mencari diskon sesuai nama yang baru di add
+
+        // Ambil data diskon baru berdasarkan nama diskon dan cabang
         final request3 = Uri.parse(
-            'http://localhost:3000/barang/diskonlist/$id_cabangs/$nmdiskon');
+            'http://localhost:3000/barang/diskonlist/$id_cabangs/$nama_diskon');
         final response3 = await http.get(request3);
+
         if (response3.statusCode == 200 ||
-            response.statusCode == 204 ||
+            response3.statusCode == 204 ||
             response3.statusCode == 304) {
           final jsonDiskon = json.decode(response3.body);
           final datadiskon = jsonDiskon["data"];
-          for (var i = 0; i < isCheckedList.length; i++) {
-            //print("ini ngulang ${isCheckedList[i]}");
-            if (isCheckedList[i] == true) {
+          if (datadiskon.isEmpty) {
+            showToast(context, "Diskon tidak ditemukan setelah penambahan");
+            return;
+          }
+          final diskonId = datadiskon[0]['_id'];
+          for (var idBarang in selectedBarangIds) {
+            final barang = databarang.firstWhere(
+              (element) => element['_id'] == idBarang,
+              orElse: () => <String, dynamic>{},
+            );
+
+            if (barang != null) {
               final diskonadd2 = {
-                'nama_barang': databarang[i]['nama_barang'],
-                'id_reference': databarang[i]['_id'].toString(),
-                'jenis_barang': databarang[i]['jenis_barang'],
-                'kategori_barang': databarang[i]['kategori_barang'],
+                'nama_barang': barang['nama_barang'],
+                'id_reference': barang['_id'].toString(),
+                'jenis_barang': barang['jenis_barang'],
+                'kategori_barang': barang['kategori_barang'],
               };
+
               final url2 =
-                  'http://localhost:3000/barang/tambahdiskonbarang/${datadiskon[0]['_id']}/${databarang[i]['_id']}/$id_cabangs/$id_gudang';
+                  'http://localhost:3000/barang/tambahdiskonbarang/$diskonId/$idBarang/$id_cabangs/$id_gudang';
               final response2 = await http.post(
                 Uri.parse(url2),
-                headers: {
-                  'Content-Type': 'application/json',
-                },
+                headers: {'Content-Type': 'application/json'},
                 body: jsonEncode(diskonadd2),
               );
+
               if (response2.statusCode == 200) {
-                showToast(context, "berhasil tambah barang");
+                showToast(context,
+                    "Berhasil tambah barang: ${barang['nama_barang']}");
               } else {
-                showToast(context, "gagal tambah barang");
+                showToast(
+                    context, "Gagal tambah barang: ${barang['nama_barang']}");
               }
+            } else {
+              print("Barang dengan id $idBarang tidak ditemukan di databarang");
             }
           }
         } else {
-          showToast(context, "something is wrong here");
+          showToast(context, "Gagal mengambil data diskon terbaru");
         }
       } else {
-        CustomToast(message: 'Gagal menambah data ke server');
+        showToast(context, 'Gagal menambah data ke server');
       }
     } else {
-      CustomToast(message: 'Field tidak boleh kosong!');
+      showToast(context, 'Field tidak boleh kosong!');
     }
   } catch (e) {
     print('Error tambah diskon: $e');
+    showToast(context, 'Terjadi kesalahan: $e');
   }
 }
 

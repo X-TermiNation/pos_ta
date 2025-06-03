@@ -58,12 +58,12 @@ class _ManagerMenuState extends State<ManagerMenu>
   List<Map<String, dynamic>> _diskonData = [];
   int _rowsPerPagediskon = 10;
   int _currentPagediskon = 0;
-  //search bar insert diskon
+  //insert diskon
   String searchQueryDiskon = '';
-  //checkbox atur diskon
-  List<bool> isCheckedList = [];
-  List<Map<String, dynamic>> databarang = [];
+  Map<String, bool> isCheckedMap = {};
   bool selectAll = false;
+  List<Map<String, dynamic>> databarang = [];
+  Set<String> selectedBarangIds = {};
   //func list diskon
   void fetchDiskon() async {
     var data = await getDiskon();
@@ -412,7 +412,9 @@ class _ManagerMenuState extends State<ManagerMenu>
     String id_gudangs = dataStorage.read('id_gudang');
     databarang = await fetchDataDiskonItem(id_gudangs);
     if (databarang.isNotEmpty) {
-      isCheckedList = List.generate(databarang.length, (index) => false);
+      setState(() {
+        isCheckedMap = {for (var item in databarang) item['_id']: false};
+      });
     }
     print("baranglist untuk diskon:$databarang");
   }
@@ -539,7 +541,15 @@ class _ManagerMenuState extends State<ManagerMenu>
     void toggleSelectAll(bool value) {
       setState(() {
         selectAll = value;
-        isCheckedList = List.filled(filteredBarang.length, value);
+        if (value) {
+          for (var barang in filteredBarang) {
+            selectedBarangIds.add(barang['_id']);
+          }
+        } else {
+          for (var barang in filteredBarang) {
+            selectedBarangIds.remove(barang['_id']);
+          }
+        }
       });
     }
 
@@ -778,6 +788,7 @@ class _ManagerMenuState extends State<ManagerMenu>
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final maxListViewHeight = constraints.maxHeight - 420;
                 return Column(
                   children: [
                     Expanded(
@@ -892,7 +903,11 @@ class _ManagerMenuState extends State<ManagerMenu>
                             ),
                             SizedBox(height: 12),
                             TextField(
-                              onChanged: (value) => filterSearchResults(value),
+                              onChanged: (value) {
+                                setState(() {
+                                  searchQueryDiskon = value.toLowerCase();
+                                });
+                              },
                               decoration: InputDecoration(
                                 labelText: 'Cari Barang',
                                 border: OutlineInputBorder(),
@@ -902,10 +917,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                             SizedBox(height: 12),
                             GestureDetector(
                               onTap: () {
-                                setState(() {
-                                  selectAll = !selectAll;
-                                  toggleSelectAll(selectAll);
-                                });
+                                toggleSelectAll(!selectAll);
                               },
                               child: Container(
                                 decoration: BoxDecoration(
@@ -943,32 +955,55 @@ class _ManagerMenuState extends State<ManagerMenu>
                             ),
                             SizedBox(height: 12),
                             Container(
-                              height: 180,
+                              height: maxListViewHeight,
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey),
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade800),
                               ),
-                              child: databarang.isEmpty
-                                  ? Center(child: CircularProgressIndicator())
+                              child: filteredBarang.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        "Barang tidak ditemukan.",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    )
                                   : ListView.builder(
                                       itemCount: filteredBarang.length,
                                       itemBuilder: (context, index) {
-                                        return CheckboxListTile(
-                                          title: Text(filteredBarang[index]
-                                                  ['nama_barang']
-                                              .toString()),
-                                          value: isCheckedList[index],
-                                          onChanged: (value) {
-                                            setState(() {
-                                              isCheckedList[index] = value!;
-                                              selectAll =
-                                                  isCheckedList.every((e) => e);
-                                            });
-                                          },
+                                        final barang = filteredBarang[index];
+                                        final idBarang = barang['_id'];
+                                        return Theme(
+                                          data: Theme.of(context).copyWith(
+                                            unselectedWidgetColor: Colors.white,
+                                          ),
+                                          child: CheckboxListTile(
+                                            activeColor: Colors.blueAccent,
+                                            checkColor: Colors.white,
+                                            tileColor: Colors.transparent,
+                                            title: Text(
+                                              barang['nama_barang'],
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                            value: selectedBarangIds
+                                                .contains(idBarang),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                if (value!) {
+                                                  selectedBarangIds
+                                                      .add(idBarang);
+                                                } else {
+                                                  selectedBarangIds
+                                                      .remove(idBarang);
+                                                }
+                                              });
+                                            },
+                                          ),
                                         );
                                       },
                                     ),
-                            ),
+                            )
                           ],
                         ),
                       ),
@@ -986,13 +1021,13 @@ class _ManagerMenuState extends State<ManagerMenu>
                             .toIso8601String();
                         if (nama_diskon.text.isNotEmpty &&
                             persentase_diskon.text.isNotEmpty) {
-                          if (isCheckedList.contains(true)) {
+                          if (selectedBarangIds.isNotEmpty) {
                             await tambahdiskon(
                               nama_diskon.text,
                               persentase_diskon.text,
                               start,
                               end,
-                              isCheckedList,
+                              selectedBarangIds.toList(),
                               databarang,
                               context,
                             );
@@ -1008,8 +1043,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                         persentase_diskon.clear();
                         selectedDateStart = DateTime.now();
                         selectedDateEnd = DateTime.now();
-                        isCheckedList =
-                            List<bool>.filled(databarang.length, false);
+                        selectedBarangIds.clear();
 
                         setState(() {
                           fetchDiskon();
@@ -1747,6 +1781,7 @@ class _ManagerMenuState extends State<ManagerMenu>
       ),
     ];
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black87,

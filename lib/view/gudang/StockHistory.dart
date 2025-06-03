@@ -182,7 +182,7 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
                 Text('Jumlah Satuan: ${item['jumlah_input'] ?? 'N/A'}'),
                 Text('Kode Aktivitas: ${item['Kode_Aktivitas'] ?? 'N/A'}'),
                 Text(
-                    'Tanggal Pengisian: ${formatDate(item['tanggal_pengisian'])}'),
+                    'Tanggal Aktivitas: ${formatDate(item['tanggal_pengisian'])}'),
                 if (item['jenis_aktivitas'] == 'Masuk') ...[
                   Text('Nama Supplier: ${item['nama_supplier'] ?? 'N/A'}'),
                   Text('Kontak Supplier: ${item['kontak_supplier'] ?? 'N/A'}'),

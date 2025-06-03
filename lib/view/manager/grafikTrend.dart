@@ -146,6 +146,7 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
     }).toList();
 
     return LineChart(LineChartData(
+      minY: 0,
       titlesData: FlTitlesData(
         bottomTitles: AxisTitles(
           axisNameWidget: const Text("Tanggal"),

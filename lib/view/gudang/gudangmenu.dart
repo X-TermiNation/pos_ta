@@ -161,6 +161,7 @@ class _GudangMenuState extends State<GudangMenu> {
       var data = await getBarang(); // Fetch updated data
       setState(() {
         barangListStock = List<Map<String, dynamic>>.from(data);
+        _searchResults = barangListStock;
       });
     } catch (e) {
       showToast(context, 'Failed to fetch barang data: $e');
@@ -642,6 +643,7 @@ class _GudangMenuState extends State<GudangMenu> {
     _loadExpiringBatches();
   }
 
+  //pencarian tambah satuan
   List<Map<String, dynamic>> _searchResults = [];
   void _updateSearchResults(String query) {
     setState(() {
@@ -3492,8 +3494,8 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
       if (data == null) data = [];
 
       for (var item in data) {
-        final idCabang = item['id_cabang_request'];
-        item['nama_cabang_request'] =
+        final idCabang = item['id_cabang_confirm'];
+        item['nama_cabang_confirm'] =
             idToNamaCabang[idCabang] ?? 'Unknown Cabang';
       }
 
@@ -3509,25 +3511,26 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
   void filterData() {
     setState(() {
       filteredData = allData.where((request) {
-        final namaCabang =
-            request['nama_cabang_request']?.toString().toLowerCase() ?? '';
+        final namaCabangConfirm =
+            request['nama_cabang_confirm']?.toString().toLowerCase() ?? '';
+        final status = request['status']?.toString().toLowerCase() ?? '';
+
         final items = (request['Items'] as List)
             .map((item) => item['nama_item'].toString().toLowerCase())
             .join(", ");
+
         final lowerQuery = searchQuery.toLowerCase();
 
         final queryMatch = lowerQuery.isEmpty ||
-            namaCabang.contains(lowerQuery) ||
+            namaCabangConfirm.contains(lowerQuery) ||
+            status.contains(lowerQuery) ||
             items.contains(lowerQuery);
 
         if (dateRange != null) {
           final originalDateStr = request['tanggal_request'];
-          // Parse ke UTC
           DateTime utcDate = DateTime.parse(originalDateStr).toUtc();
-          // Convert ke WIB (UTC+7)
           DateTime transferDate = utcDate.add(Duration(hours: 7));
 
-          // Buat filterStart dan filterEnd juga di WIB
           DateTime filterStart = DateTime(
             dateRange!.start.year,
             dateRange!.start.month,
@@ -3535,8 +3538,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
             0,
             0,
             0,
-          );
-          filterStart = filterStart.toUtc().add(Duration(hours: 7));
+          ).toUtc().add(Duration(hours: 7));
 
           DateTime filterEnd = DateTime(
             dateRange!.end.year,
@@ -3545,8 +3547,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
             23,
             59,
             59,
-          );
-          filterEnd = filterEnd.toUtc().add(Duration(hours: 7));
+          ).toUtc().add(Duration(hours: 7));
 
           bool inDateRange = !transferDate.isBefore(filterStart) &&
               !transferDate.isAfter(filterEnd);
@@ -3661,14 +3662,14 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
               ),
               pw.Divider(),
               pw.SizedBox(height: 10),
-              pw.Text('Cabang Asal: $cabangAsal',
+              pw.Text('Cabang Pemohon: $cabangAsal',
                   style: pw.TextStyle(fontSize: 14)),
-              pw.Text('Alamat Asal: $alamatAsal',
+              pw.Text('Alamat Pemohon: $alamatAsal',
                   style: pw.TextStyle(fontSize: 12)),
               pw.SizedBox(height: 8),
-              pw.Text('Cabang Tujuan: $cabangTujuan',
+              pw.Text('Cabang Pemberi: $cabangTujuan',
                   style: pw.TextStyle(fontSize: 14)),
-              pw.Text('Alamat Tujuan: $alamatTujuan',
+              pw.Text('Alamat Pemberi: $alamatTujuan',
                   style: pw.TextStyle(fontSize: 12)),
               pw.SizedBox(height: 20),
               pw.Table.fromTextArray(
@@ -3700,14 +3701,16 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                 children: [
                   pw.Column(
                     children: [
-                      pw.Text('Pengirim', style: pw.TextStyle(fontSize: 14)),
+                      pw.Text('Manager Cabang Pemohon',
+                          style: pw.TextStyle(fontSize: 14)),
                       pw.SizedBox(height: 50),
                       pw.Text('(___________________)'),
                     ],
                   ),
                   pw.Column(
                     children: [
-                      pw.Text('Penerima', style: pw.TextStyle(fontSize: 14)),
+                      pw.Text('Manager Cabang Pemberi',
+                          style: pw.TextStyle(fontSize: 14)),
                       pw.SizedBox(height: 50),
                       pw.Text('(___________________)'),
                     ],
@@ -3823,102 +3826,116 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                       return Center(child: Text("No requests found."));
                     }
 
-                    return Align(
-                      alignment: Alignment.topCenter,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Container(
-                          width: MediaQuery.of(context).size.width *
-                              0.7, // 70% lebar layar
-                          height: 450, // Batasi tinggi tabel, bisa sesuaikan
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        double tableWidth = constraints.maxWidth;
+                        // Batasi minimum dan maksimum lebar agar proporsional
+                        double finalWidth = tableWidth.clamp(800, 1200);
+
+                        return Align(
+                          alignment: Alignment.topCenter,
                           child: SingleChildScrollView(
-                            scrollDirection: Axis.vertical,
-                            child: DataTable(
-                              columnSpacing: 10.0,
-                              headingRowColor: MaterialStateColor.resolveWith(
-                                (states) => Colors.grey.shade500,
+                            scrollDirection: Axis.horizontal,
+                            child: Container(
+                              width: finalWidth,
+                              constraints: BoxConstraints(
+                                maxHeight: 450, // Tinggi tetap dibatasi
                               ),
-                              columns: [
-                                DataColumn(
-                                    label: Text("Tanggal Request (WIB)",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold))),
-                                DataColumn(
-                                    label: Text("Cabang",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold))),
-                                DataColumn(
-                                    label: Text("Barang-Jumlah",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold))),
-                                DataColumn(
-                                    label: Text("Status",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold))),
-                              ],
-                              rows: filteredData.map((request) {
-                                final String tanggalRequest =
-                                    formatToWIB(request['tanggal_request']);
-                                final String cabangId =
-                                    request['id_cabang_confirm'];
-                                final String status = request['status'];
-                                return DataRow(cells: [
-                                  DataCell(Text(tanggalRequest)),
-                                  DataCell(
-                                    FutureBuilder<String>(
-                                      future: getNamaCabang(cabangId),
-                                      builder: (context, cabangSnapshot) {
-                                        if (cabangSnapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          return Text("Loading...");
-                                        } else if (cabangSnapshot.hasError) {
-                                          return Text("Error");
-                                        }
-                                        return Text(
-                                            cabangSnapshot.data ?? "Unknown");
-                                      },
-                                    ),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.vertical,
+                                child: DataTable(
+                                  columnSpacing: 10.0,
+                                  headingRowColor:
+                                      MaterialStateColor.resolveWith(
+                                    (states) => Colors.grey.shade500,
                                   ),
-                                  DataCell(
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: (request['Items'] as List)
-                                          .map<Widget>((item) {
-                                        return Text(
-                                            "${item['nama_item']} (${item['jumlah_item']} ${item['nama_satuan']})");
-                                      }).toList(),
-                                    ),
-                                  ),
-                                  DataCell(Padding(
-                                      padding: EdgeInsets.only(right: 20),
-                                      child: Row(
-                                        children: [
-                                          Text(
-                                            status,
+                                  columns: [
+                                    DataColumn(
+                                        label: Text("Tanggal Request (WIB)",
                                             style: TextStyle(
-                                              color: getStatusColor(status),
-                                              fontWeight: FontWeight.bold,
+                                                fontWeight: FontWeight.bold))),
+                                    DataColumn(
+                                        label: Text("Cabang",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold))),
+                                    DataColumn(
+                                        label: Text("Barang-Jumlah",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold))),
+                                    DataColumn(
+                                        label: Text("Status",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold))),
+                                  ],
+                                  rows: filteredData.map((request) {
+                                    final String tanggalRequest =
+                                        formatToWIB(request['tanggal_request']);
+                                    final String cabangId =
+                                        request['id_cabang_confirm'];
+                                    final String status = request['status'];
+                                    return DataRow(cells: [
+                                      DataCell(Text(tanggalRequest)),
+                                      DataCell(
+                                        FutureBuilder<String>(
+                                          future: getNamaCabang(cabangId),
+                                          builder: (context, cabangSnapshot) {
+                                            if (cabangSnapshot
+                                                    .connectionState ==
+                                                ConnectionState.waiting) {
+                                              return Text("Loading...");
+                                            } else if (cabangSnapshot
+                                                .hasError) {
+                                              return Text("Error");
+                                            }
+                                            return Text(cabangSnapshot.data ??
+                                                "Unknown");
+                                          },
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: (request['Items'] as List)
+                                              .map<Widget>((item) {
+                                            return Text(
+                                                "${item['nama_item']} (${item['jumlah_item']} ${item['nama_satuan']})");
+                                          }).toList(),
+                                        ),
+                                      ),
+                                      DataCell(Padding(
+                                        padding: EdgeInsets.only(right: 20),
+                                        child: Row(
+                                          children: [
+                                            Text(
+                                              status,
+                                              style: TextStyle(
+                                                color: getStatusColor(status),
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                          ),
-                                          if (status == 'confirmed')
-                                            IconButton(
-                                              icon: Icon(Icons.picture_as_pdf),
-                                              onPressed: () async {
-                                                await fetchCabangDataPDF();
-                                                await generateSuratJalanPdf(
-                                                    request);
-                                              },
-                                            ),
-                                        ],
-                                      ))),
-                                ]);
-                              }).toList(),
+                                            if (status == 'confirmed')
+                                              IconButton(
+                                                icon:
+                                                    Icon(Icons.picture_as_pdf),
+                                                onPressed: () async {
+                                                  await fetchCabangDataPDF();
+                                                  await generateSuratJalanPdf(
+                                                      request);
+                                                },
+                                              ),
+                                          ],
+                                        ),
+                                      )),
+                                    ]);
+                                  }).toList(),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -3989,55 +4006,45 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
   }
 
   // Apply the search and date filters
-  void applyFilters() {
+  Future<void> applyFilters() async {
+    List<Map<String, dynamic>> result = [];
+
+    for (var transfer in allData) {
+      String namaCabang =
+          await getNamaCabang(transfer['id_cabang_request'].toString());
+
+      bool matchesSearch = searchKeyword.isEmpty ||
+          namaCabang.toLowerCase().contains(searchKeyword.toLowerCase()) ||
+          (transfer['Items'] as List).any((item) =>
+              item['nama_item']
+                  .toString()
+                  .toLowerCase()
+                  .contains(searchKeyword.toLowerCase()) ||
+              item['nama_satuan']
+                  .toString()
+                  .toLowerCase()
+                  .contains(searchKeyword.toLowerCase()));
+
+      bool matchesDateRange = true;
+      if (startDate != null && endDate != null) {
+        DateTime transferDate =
+            DateTime.parse(transfer['tanggal_request']).toLocal();
+
+        DateTime filterStart = DateTime(
+            startDate!.year, startDate!.month, startDate!.day, 0, 0, 0);
+        DateTime filterEnd =
+            DateTime(endDate!.year, endDate!.month, endDate!.day, 23, 59, 59);
+        matchesDateRange = !transferDate.isBefore(filterStart) &&
+            !transferDate.isAfter(filterEnd);
+      }
+
+      if (matchesSearch && matchesDateRange) {
+        result.add(transfer);
+      }
+    }
+
     setState(() {
-      filteredData = allData.where((transfer) {
-        // Filter search dulu (barang, cabang, satuan)
-        bool matchesSearch = searchKeyword.isEmpty ||
-            transfer['id_cabang_request']
-                .toString()
-                .toLowerCase()
-                .contains(searchKeyword.toLowerCase()) ||
-            (transfer['Items'] as List).any((item) =>
-                item['nama_item']
-                    .toString()
-                    .toLowerCase()
-                    .contains(searchKeyword.toLowerCase()) ||
-                item['nama_satuan']
-                    .toString()
-                    .toLowerCase()
-                    .contains(searchKeyword.toLowerCase()));
-
-        // Filter tanggal
-        bool matchesDateRange = true;
-        if (startDate != null && endDate != null) {
-          // Parse tanggal_request dan konversi ke waktu lokal (WIB)
-          DateTime transferDate =
-              DateTime.parse(transfer['tanggal_request']).toLocal();
-          // Filter start dan end dengan waktu lokal WIB
-          DateTime filterStart = DateTime(
-            startDate!.year,
-            startDate!.month,
-            startDate!.day,
-            0,
-            0,
-            0,
-          );
-
-          DateTime filterEnd = DateTime(
-            endDate!.year,
-            endDate!.month,
-            endDate!.day,
-            23,
-            59,
-            59,
-          );
-          matchesDateRange = !transferDate.isBefore(filterStart) &&
-              !transferDate.isAfter(filterEnd);
-        }
-
-        return matchesSearch && matchesDateRange;
-      }).toList();
+      filteredData = result;
     });
   }
 
@@ -4103,73 +4110,76 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                         });
                       },
                       decoration: InputDecoration(
-                        labelText: 'Search Barang/Cabang/Satuan',
+                        labelText: 'Search Barang atau Cabang',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.search),
                       ),
                     ),
                   ),
-                  Column(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () async {
-                          final DateTimeRange? picked =
-                              await showDateRangePicker(
-                            context: context,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime
-                                .now(), // Restrict to today as last date
-                            initialDateRange:
-                                startDate != null && endDate != null
-                                    ? DateTimeRange(
-                                        start: startDate!, end: endDate!)
-                                    : null,
-                          );
-                          if (picked != null &&
-                              picked.start != null &&
-                              picked.end != null) {
-                            setState(() {
-                              startDate = picked.start;
-                              endDate = picked.end;
-                              applyFilters(); // Apply the filter when date range is selected
-                            });
-                          }
-                        },
-                        child: Row(
-                          children: [
-                            Icon(Icons.date_range),
-                            Text("Date Filter")
-                          ],
-                        ),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              searchKeyword = '';
-                              startDate = null;
-                              endDate = null;
-                              applyFilters(); // Clear filters
-                            });
+                  Padding(
+                    padding: EdgeInsets.only(left: 20),
+                    child: Column(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            final DateTimeRange? picked =
+                                await showDateRangePicker(
+                              context: context,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime
+                                  .now(), // Restrict to today as last date
+                              initialDateRange:
+                                  startDate != null && endDate != null
+                                      ? DateTimeRange(
+                                          start: startDate!, end: endDate!)
+                                      : null,
+                            );
+                            if (picked != null &&
+                                picked.start != null &&
+                                picked.end != null) {
+                              setState(() {
+                                startDate = picked.start;
+                                endDate = picked.end;
+                                applyFilters(); // Apply the filter when date range is selected
+                              });
+                            }
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                          ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.clear,
-                                color: Colors.black,
-                              ),
-                              Text(
-                                "Clear Filter",
-                                style: TextStyle(color: Colors.black),
-                              ),
+                              Icon(Icons.date_range),
+                              Text("Date Filter")
                             ],
-                          )),
-                    ],
+                          ),
+                        ),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                searchKeyword = '';
+                                startDate = null;
+                                endDate = null;
+                                applyFilters(); // Clear filters
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.clear,
+                                  color: Colors.black,
+                                ),
+                                Text(
+                                  "Clear Filter",
+                                  style: TextStyle(color: Colors.black),
+                                ),
+                              ],
+                            )),
+                      ],
+                    ),
                   ),
                 ],
               ),
