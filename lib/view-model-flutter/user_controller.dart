@@ -68,8 +68,12 @@ Future<void> getOwner() async {
 //print data user
 Future<void> fetchData() async {
   try {
-    final items = await getUsers();
-    print("ini data :$items");
+    final dataStorage = GetStorage();
+    String id_cabangs = dataStorage.read('id_cabang');
+    if (id_cabangs.isNotEmpty) {
+      final items = await getUsers();
+      print("ini data :$items");
+    }
   } catch (error) {
     print('Error fetch data: $error');
   }

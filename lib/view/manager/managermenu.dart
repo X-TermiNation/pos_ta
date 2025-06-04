@@ -23,7 +23,9 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:http/http.dart' as http;
 
 var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
 late bool logOwner;
@@ -38,9 +40,12 @@ class ManagerMenu extends StatefulWidget {
 class _ManagerMenuState extends State<ManagerMenu>
     with SingleTickerProviderStateMixin {
   //web socket check for courier tracking
+  List<LatLng> _routePolyline = [];
+  LatLng? _destinationPosition;
   LatLng? _courierPosition;
   late WebSocketChannel channel;
   bool isWebSocketConnected = false;
+  Timer? _throttleTimer;
 
   TextEditingController email = TextEditingController();
   TextEditingController pass = TextEditingController();
@@ -231,10 +236,10 @@ class _ManagerMenuState extends State<ManagerMenu>
                     ),
                     TextButton(
                       onPressed: () {
-                        flushCache();
-                        GetStorage().erase();
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (mounted) {
+                            flushCache();
+                            GetStorage().erase();
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(builder: (_) => loginscreen()),
@@ -297,6 +302,8 @@ class _ManagerMenuState extends State<ManagerMenu>
 
   // Function to initialize the WebSocket connection for tracking
   void _initializeWebSocket() {
+    final dataStorage = GetStorage();
+    String id_cabang = dataStorage.read('id_cabang');
     if (!mounted) return;
 
     setState(() {
@@ -308,18 +315,36 @@ class _ManagerMenuState extends State<ManagerMenu>
     );
 
     channel.stream.listen(
-      (message) {
+      (message) async {
         if (!mounted) return;
         Map<String, dynamic> data = jsonDecode(message);
 
         if (data.containsKey('latitude') &&
             data.containsKey('longitude') &&
-            data.containsKey('id_transaksi')) {
-          setState(() {
-            isWebSocketConnected = true;
-            _courierPosition = LatLng(data['latitude'], data['longitude']);
-            id_transaksi = data['id_transaksi'];
-          });
+            data.containsKey('id_transaksi') &&
+            data.containsKey('id_cabang')) {
+          if (data['id_cabang'] == id_cabang) {
+            setState(() {
+              isWebSocketConnected = true;
+              _courierPosition = LatLng(data['latitude'], data['longitude']);
+              id_transaksi = data['id_transaksi'];
+
+              if (data.containsKey('latitude_tujuan') &&
+                  data.containsKey('longitude_tujuan')) {
+                _destinationPosition =
+                    LatLng(data['latitude_tujuan'], data['longitude_tujuan']);
+              }
+            });
+            if (_deliveryData == null) {
+              await _getDeliveryData();
+            }
+
+            if (_throttleTimer?.isActive ?? false) return;
+
+            _throttleTimer = Timer(Duration(seconds: 2), () async {
+              await _getRouteFromCourierToDestination();
+            });
+          }
         }
       },
       onError: (error) {
@@ -344,21 +369,26 @@ class _ManagerMenuState extends State<ManagerMenu>
   @override
   void dispose() {
     channel.sink.close();
+    _throttleTimer?.cancel();
     super.dispose();
   }
 
   // Function to refresh WebSocket connection
-  void _refreshWebSocketConnection() {
-    channel.sink.close();
+  Future<void> _refreshWebSocketConnection() async {
+    await channel.sink.close(); // tunggu sink ditutup
+    await Future.delayed(Duration(milliseconds: 300));
     _initializeWebSocket();
-    _getDeliveryData();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Refreshing WebSocket connection...'),
-    ));
+    await _getDeliveryData();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Refreshing WebSocket connection...'),
+      ));
+    }
   }
 
   Future<void> _getDeliveryData() async {
-    if (id_transaksi != "") {
+    if (id_transaksi.isNotEmpty) {
+      print("holahola:$id_transaksi");
       final deliveryData = await showDeliveryByTransID(id_transaksi, context);
       if (deliveryData != null) {
         if (!mounted) return;
@@ -368,6 +398,34 @@ class _ManagerMenuState extends State<ManagerMenu>
       }
     } else {
       print("id_transaksi kosong");
+    }
+  }
+
+  Future<void> _getRouteFromCourierToDestination() async {
+    if (_courierPosition == null || _destinationPosition == null) return;
+
+    final String apiKey =
+        '5b3ce3597851110001cf6248e4d9fd9aea234edf85a286746755089e';
+    final url =
+        'https://api.openrouteservice.org/v2/directions/driving-car?start=${_courierPosition!.longitude},${_courierPosition!.latitude}&end=${_destinationPosition!.longitude},${_destinationPosition!.latitude}&api_key=$apiKey';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final coordinates =
+            data['features'][0]['geometry']['coordinates'] as List;
+
+        List<LatLng> polyline =
+            coordinates.map((point) => LatLng(point[1], point[0])).toList();
+
+        setState(() {
+          _routePolyline = polyline;
+        });
+      } else {
+        print('Failed to fetch route: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching route: $e');
     }
   }
 
@@ -1138,8 +1196,7 @@ class _ManagerMenuState extends State<ManagerMenu>
                                 role.contains(queryLower);
                           }).toList();
 
-                          _filteredDataPegawai =
-                              filteredDataPegawai; // ensure for pagination
+                          _filteredDataPegawai = filteredDataPegawai;
 
                           final rows = filteredDataPegawai
                               .skip(_currentPagepegawai * _rowsPerPagepegawai)
@@ -1631,46 +1688,73 @@ class _ManagerMenuState extends State<ManagerMenu>
             Expanded(
               child: SlidingUpPanel(
                 controller: _panelController,
-                minHeight: 80, // Height of the closed panel
+                minHeight: 80,
                 maxHeight: MediaQuery.of(context).size.height * 0.4,
                 panel: _deliveryData != null
                     ? _buildDeliveryPanel()
                     : Center(child: CircularProgressIndicator()),
-                body: Expanded(
-                  child: Center(
-                    child: isWebSocketConnected && _courierPosition != null
-                        ? FlutterMap(
-                            options: MapOptions(
-                              initialCenter:
-                                  _courierPosition!, // Center the map on the courier
-                              initialZoom: 15.0,
+                body: Center(
+                  child: isWebSocketConnected && _courierPosition != null
+                      ? FlutterMap(
+                          options: MapOptions(
+                            initialCenter:
+                                _courierPosition!, // Fokus ke posisi kurir
+                            initialZoom: 15.0,
+                          ),
+                          children: [
+                            // Peta dasar dari OpenStreetMap
+                            TileLayer(
+                              urlTemplate:
+                                  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                              subdomains: ['a', 'b', 'c'],
                             ),
-                            children: [
-                              TileLayer(
-                                urlTemplate:
-                                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                                subdomains: ['a', 'b', 'c'],
-                              ),
-                              MarkerLayer(
-                                markers: [
-                                  Marker(
-                                    point: _courierPosition!,
-                                    width: 80.0,
-                                    height: 80.0,
-                                    child: Icon(
-                                      Icons.location_on,
-                                      color: Colors.red,
-                                      size: 40,
-                                    ),
+
+                            // Rute dari kurir ke tujuan
+                            if (_routePolyline.isNotEmpty)
+                              PolylineLayer(
+                                polylines: [
+                                  Polyline(
+                                    points: _routePolyline,
+                                    strokeWidth: 4.0,
+                                    color: Colors.blueAccent,
                                   ),
                                 ],
                               ),
-                            ],
-                          )
-                        : Text(isWebSocketConnected
-                            ? 'Waiting for location updates...'
-                            : 'WebSocket not connected or no in-progress delivery.'),
-                  ),
+
+                            // Marker untuk posisi kurir & tujuan
+                            MarkerLayer(
+                              markers: [
+                                // Marker posisi kurir
+                                Marker(
+                                  point: _courierPosition!,
+                                  width: 80.0,
+                                  height: 80.0,
+                                  child: Icon(
+                                    Icons.delivery_dining,
+                                    color: Colors.blueAccent,
+                                    size: 40,
+                                  ),
+                                ),
+
+                                // Marker posisi tujuan
+                                if (_destinationPosition != null)
+                                  Marker(
+                                    point: _destinationPosition!,
+                                    width: 80.0,
+                                    height: 80.0,
+                                    child: Icon(
+                                      Icons.flag,
+                                      color: Colors.green,
+                                      size: 40,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Text(isWebSocketConnected
+                          ? 'Waiting for location updates...'
+                          : 'WebSocket not connected or no in-progress delivery.'),
                 ),
               ),
             ),
