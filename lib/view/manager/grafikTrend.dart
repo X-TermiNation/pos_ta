@@ -177,6 +177,9 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
             },
           ),
         ),
+        topTitles: AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
       ),
       lineBarsData: [
         LineChartBarData(
@@ -220,7 +223,7 @@ class _GrafikTrendWidgetState extends State<GrafikTrendWidget> {
           ),
         ),
         bottomTitles: AxisTitles(
-          axisNameWidget: const Text("Barang"),
+          axisNameWidget: const Text("Barang", style: TextStyle(fontSize: 10)),
           sideTitles: SideTitles(
             showTitles: true,
             getTitlesWidget: (value, _) {

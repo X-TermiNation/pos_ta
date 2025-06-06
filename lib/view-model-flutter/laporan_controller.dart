@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
 import 'package:get/get.dart';
+import '../api_config.dart';
 
 Future<void> triggerCacheAllDataCabang() async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   String id_gudang = dataStorage.read('id_gudang');
   final url = Uri.parse(
-      'http://localhost:3000/laporan/RefreshCacheAllDataCabang/$id_gudang/$id_cabang');
+      '${ApiConfig().baseUrl}/laporan/RefreshCacheAllDataCabang/$id_gudang/$id_cabang');
 
   try {
     final response = await http.post(url, headers: {
@@ -33,7 +34,7 @@ Future<Map<String, dynamic>> getPendapatanReport({
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
-      Uri.parse('http://localhost:3000/laporan/report/pendapatan/$id_cabang');
+      Uri.parse('${ApiConfig().baseUrl}/laporan/report/pendapatan/$id_cabang');
   final headers = {"Content-Type": "application/json"};
 
   final body = jsonEncode({
@@ -73,7 +74,7 @@ Future<Map<String, dynamic>> getPengeluaranReport({
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
-      Uri.parse('http://localhost:3000/laporan/report/pengeluaran/$id_cabang');
+      Uri.parse('${ApiConfig().baseUrl}/laporan/report/pengeluaran/$id_cabang');
   final headers = {"Content-Type": "application/json"};
 
   final body = jsonEncode({
@@ -109,7 +110,7 @@ Future<Map<String, dynamic>> getPengeluaranReport({
 }
 
 class OpnameController {
-  final String baseUrl = "http://localhost:3000/laporan";
+  final String baseUrl = "${ApiConfig().baseUrl}/laporan";
 
   Future<Map<String, dynamic>> fetchOpnameReport({
     required DateTime startDate,
@@ -143,7 +144,7 @@ class MutasiController {
     final dataStorage = GetStorage();
     String id_cabang = dataStorage.read('id_cabang');
     final url =
-        Uri.parse('http://localhost:3000/laporan/report/mutasi/$id_cabang');
+        Uri.parse('${ApiConfig().baseUrl}/laporan/report/mutasi/$id_cabang');
     final body = jsonEncode({
       "startDate": startDate.toIso8601String(),
       "endDate": endDate.toIso8601String(),
@@ -167,7 +168,7 @@ class MutasiController {
 }
 
 class AnalisaRevenueController extends GetxController {
-  final String baseUrl = "http://localhost:3000/laporan";
+  final String baseUrl = "${ApiConfig().baseUrl}/laporan";
 
   var analisa = <String, dynamic>{}.obs;
   var loading = false.obs;

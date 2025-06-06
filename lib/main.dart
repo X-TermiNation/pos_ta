@@ -3,6 +3,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/loginpage/login.dart';
 import 'package:ta_pos/view-model-flutter/user_controller.dart';
 import 'package:window_manager/window_manager.dart';
+import '../api_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,9 +28,9 @@ void main() async {
     await windowManager.setMinimizable(true);
     await windowManager.setMaximizable(true);
   });
-
   await GetStorage.init();
   await getOwner().then((value) => runApp(const MyApp()));
+  await ApiConfig().init();
 }
 
 class MyApp extends StatelessWidget {

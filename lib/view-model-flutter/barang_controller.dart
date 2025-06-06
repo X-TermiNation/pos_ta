@@ -6,6 +6,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view-model-flutter/gudang_controller.dart';
+import '../api_config.dart';
 
 //cari barang dari id
 Future<Map<String, dynamic>?> searchItemByID(String idBarang) async {
@@ -13,7 +14,7 @@ Future<Map<String, dynamic>?> searchItemByID(String idBarang) async {
   String id_cabang = dataStorage.read('id_cabang');
   String id_gudang = dataStorage.read('id_gudang');
   final String baseUrl =
-      'http://localhost:3000/barang/searchItem'; // Adjust as needed
+      '${ApiConfig().baseUrl}/barang/searchItem'; // Adjust as needed
   final String url = '$baseUrl/$id_cabang/$id_gudang/$idBarang';
 
   try {
@@ -63,7 +64,7 @@ void addbarang(
     String id_gudangs = dataStorage.read('id_gudang');
 
     final requestjenis = Uri.parse(
-        'http://localhost:3000/barang/getjenisfromkategori/$katakategori');
+        '${ApiConfig().baseUrl}/barang/getjenisfromkategori/$katakategori');
     final datajenis = await http.get(requestjenis);
     final jenis = json.decode(datajenis.body);
     DateTime creationDate = DateTime.now();
@@ -77,7 +78,8 @@ void addbarang(
       'isExp': isExp,
     };
 
-    final url = 'http://localhost:3000/barang/addbarang/$id_gudangs/$id_cabang';
+    final url =
+        '${ApiConfig().baseUrl}/barang/addbarang/$id_gudangs/$id_cabang';
     var request = http.MultipartRequest('POST', Uri.parse(url));
 
     request.fields.addAll(
@@ -107,7 +109,7 @@ void addbarang(
           print('Newly added satuan _id: $newSatuanId');
 
           final baseSatuanUrl =
-              'http://localhost:3000/barang/addinitialsatuan/$id_gudangs/$id_cabang/$id_barang/$newSatuanId';
+              '${ApiConfig().baseUrl}/barang/addinitialsatuan/$id_gudangs/$id_cabang/$id_barang/$newSatuanId';
           final updateResponse = await http.put(Uri.parse(baseSatuanUrl));
 
           if (updateResponse.statusCode == 200) {
@@ -137,8 +139,8 @@ Future<List<Map<String, dynamic>>> getBarang() async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   String idgudang = dataStorage.read('id_gudang');
-  final request =
-      Uri.parse('http://localhost:3000/barang/baranglist/$idgudang/$id_cabang');
+  final request = Uri.parse(
+      '${ApiConfig().baseUrl}/barang/baranglist/$idgudang/$id_cabang');
   final response = await http.get(request);
   if (response.statusCode == 200 || response.statusCode == 304) {
     final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -155,7 +157,7 @@ Future<List<Map<String, dynamic>>> getBarang() async {
 Future<List<Map<String, dynamic>>> getBarangMutasi(
     String? idcabang, String idgudang) async {
   final request =
-      Uri.parse('http://localhost:3000/barang/baranglist/$idgudang/$idcabang');
+      Uri.parse('${ApiConfig().baseUrl}/barang/baranglist/$idgudang/$idcabang');
   final response = await http.get(request);
   if (response.statusCode == 200 || response.statusCode == 304) {
     final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -174,7 +176,7 @@ void deletebarang(String id) async {
   final id_cabang = dataStorage.read("id_cabang");
   final id_gudang = dataStorage.read("id_gudang");
   final url =
-      'http://localhost:3000/barang/deletebarang/$id_gudang/$id_cabang/$id';
+      '${ApiConfig().baseUrl}/barang/deletebarang/$id_gudang/$id_cabang/$id';
   final response = await http.delete(Uri.parse(url));
   if (response.statusCode == 200) {
     print('Data deleted successfully');
@@ -193,7 +195,8 @@ void UpdateBarang(String id, String nama_barang) async {
   final dataStorage = GetStorage();
   final id_cabang = dataStorage.read("id_cabang");
   final id_gudang = dataStorage.read("id_gudang");
-  final url = 'http://localhost:3000/barang/updatebarang/$id_gudang/$id_cabang';
+  final url =
+      '${ApiConfig().baseUrl}/barang/updatebarang/$id_gudang/$id_cabang';
 
   try {
     final response = await http.put(
@@ -229,7 +232,7 @@ void addkategori(String nama_kategori, String selectedvalueJenis,
       'nama_kategori': nama_kategori,
       'id_jenis': selectedvalueJenis,
     };
-    final url = 'http://localhost:3000/barang/tambahkategori';
+    final url = '${ApiConfig().baseUrl}/barang/tambahkategori';
     final response = await http.post(
       Uri.parse(url),
       headers: {
@@ -254,7 +257,7 @@ void addkategori(String nama_kategori, String selectedvalueJenis,
 
 //get kategori
 Future<List<Map<String, dynamic>>> getKategori() async {
-  final url = 'http://localhost:3000/barang/getkategori';
+  final url = '${ApiConfig().baseUrl}/barang/getkategori';
   final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
     print('berhasil akses data');
@@ -267,7 +270,7 @@ Future<List<Map<String, dynamic>>> getKategori() async {
 }
 
 Future<String> getFirstKategoriId() async {
-  final url = 'http://localhost:3000/barang/getfirstkategori';
+  final url = '${ApiConfig().baseUrl}/barang/getfirstkategori';
   final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
     print('berhasil akses data kategori pertama');
@@ -321,7 +324,7 @@ Future<Map<String, String>> getmapkategori() async {
 
 Future<Map<String, String>> getKategoriByJenis(String idJenis) async {
   final url =
-      Uri.parse('http://localhost:3000/barang/getkategorifromjenis/$idJenis');
+      Uri.parse('${ApiConfig().baseUrl}/barang/getkategorifromjenis/$idJenis');
 
   try {
     final response = await http.get(url);
@@ -350,7 +353,7 @@ void addjenis(String nama_jenis, BuildContext context) async {
   final Jenisdata = {
     'nama_jenis': nama_jenis,
   };
-  final url = 'http://localhost:3000/barang/tambahjenis';
+  final url = '${ApiConfig().baseUrl}/barang/tambahjenis';
   final response = await http.post(
     Uri.parse(url),
     headers: {
@@ -366,7 +369,7 @@ void addjenis(String nama_jenis, BuildContext context) async {
 }
 
 Future<List<Map<String, dynamic>>> getJenis() async {
-  final url = 'http://localhost:3000/barang/getjenis';
+  final url = '${ApiConfig().baseUrl}/barang/getjenis';
   final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
     print('berhasil akses data jenis');
@@ -379,7 +382,7 @@ Future<List<Map<String, dynamic>>> getJenis() async {
 }
 
 Future<String> getFirstJenisId() async {
-  final url = 'http://localhost:3000/barang/getfirstjenis';
+  final url = '${ApiConfig().baseUrl}/barang/getfirstjenis';
   final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200 || response.statusCode == 304) {
     print('berhasil akses data jenis pertama');
@@ -455,7 +458,7 @@ Future<String> addsatuan(String id_barang, String nama_satuan,
     String id_gudangs = dataStorage.read('id_gudang');
 
     final url =
-        'http://localhost:3000/barang/addsatuan/$id_barang/$id_cabang/$id_gudangs';
+        '${ApiConfig().baseUrl}/barang/addsatuan/$id_barang/$id_cabang/$id_gudangs';
     final response = await http.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
@@ -486,7 +489,7 @@ Future<void> deletesatuan(
     final id_cabang = dataStorage.read("id_cabang");
     String id_gudangs = dataStorage.read('id_gudang');
     final url =
-        'http://localhost:3000/barang/deletesatuan/$id_barang/$id_cabang/$id_gudangs/$id_satuan';
+        '${ApiConfig().baseUrl}/barang/deletesatuan/$id_barang/$id_cabang/$id_gudangs/$id_satuan';
 
     final response = await http.delete(
       Uri.parse(url),
@@ -566,7 +569,7 @@ void updatejumlahSatuanTambah(
     final idCabang = GetStorage().read("id_cabang");
     final idGudang = GetStorage().read('id_gudang');
     final url =
-        'http://localhost:3000/barang/editjumlahsatuan/$idBarang/$idCabang/$idGudang/$idSatuan';
+        '${ApiConfig().baseUrl}/barang/editjumlahsatuan/$idBarang/$idCabang/$idGudang/$idSatuan';
 
     final response = await http.put(
       Uri.parse(url),
@@ -593,7 +596,7 @@ Future<List<Map<String, dynamic>>> getlowstocksatuan(
     final id_cabang = dataStorage.read("id_cabang");
     String id_gudangs = dataStorage.read('id_gudang');
     final url =
-        'http://localhost:3000/barang/getlowstocksatuan/$id_cabang/$id_gudangs';
+        '${ApiConfig().baseUrl}/barang/getlowstocksatuan/$id_cabang/$id_gudangs';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200 || response.statusCode == 304) {
       print('berhasil akses data jenis');
@@ -616,7 +619,7 @@ Future<List<Map<String, dynamic>>> getsatuan(
     final id_cabang = dataStorage.read("id_cabang");
     String id_gudangs = dataStorage.read('id_gudang');
     final url =
-        'http://localhost:3000/barang/getsatuan/$id_barang/$id_cabang/$id_gudangs';
+        '${ApiConfig().baseUrl}/barang/getsatuan/$id_barang/$id_cabang/$id_gudangs';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200 || response.statusCode == 304) {
       print('berhasil akses data jenis');
@@ -637,7 +640,7 @@ Future<List<Map<String, dynamic>>> getsatuanMutasi(String? id_cabang,
     String? id_gudangs, String id_barang, BuildContext context) async {
   try {
     final url =
-        'http://localhost:3000/barang/getsatuan/$id_barang/$id_cabang/$id_gudangs';
+        '${ApiConfig().baseUrl}/barang/getsatuan/$id_barang/$id_cabang/$id_gudangs';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200 || response.statusCode == 304) {
       print('berhasil akses data jenis');
@@ -668,7 +671,7 @@ Future<bool> convertSatuan(
     final id_cabang = dataStorage.read("id_cabang");
     final id_gudang = dataStorage.read('id_gudang');
     final url =
-        'http://localhost:3000/barang/konversi_satuan/$id_barang/$id_cabang/$id_gudang/$id_satuanFrom/$id_satuanTo';
+        '${ApiConfig().baseUrl}/barang/konversi_satuan/$id_barang/$id_cabang/$id_gudang/$id_satuanFrom/$id_satuanTo';
 
     final barangInfo = await searchItemByID(id_barang);
     if (barangInfo == null) {
@@ -730,7 +733,7 @@ Future<Map<String, dynamic>?> getSatuanById(
 
     // Define the URL with the provided parameters
     final url =
-        'http://localhost:3000/barang/searchsatuanbyId/$idCabang/$idGudang/$idBarang/$idSatuan';
+        '${ApiConfig().baseUrl}/barang/searchsatuanbyId/$idCabang/$idGudang/$idBarang/$idSatuan';
 
     // Make the GET request
     final response = await http.get(Uri.parse(url));
@@ -764,7 +767,7 @@ Future<Map<String, dynamic>?> getSatuanById(
 
 Future<List<dynamic>> fetchConversionHistory(String idCabang) async {
   final url =
-      Uri.parse("http://localhost:3000/barang/getHistoryByCabang/$idCabang");
+      Uri.parse("${ApiConfig().baseUrl}/barang/getHistoryByCabang/$idCabang");
 
   try {
     final response = await http.get(url);
@@ -783,7 +786,7 @@ Future<List<dynamic>> fetchConversionHistory(String idCabang) async {
 
 Future<Map<String, dynamic>> addSupplier(
     Map<String, dynamic> supplierData) async {
-  const String apiUrl = "http://localhost:3000/barang/add-supplier";
+  final String apiUrl = "${ApiConfig().baseUrl}/barang/add-supplier";
 
   try {
     // Send a POST request with the supplier data as JSON
@@ -816,7 +819,7 @@ Future<Map<String, dynamic>> addSupplier(
 Future<List<Map<String, dynamic>>> fetchSuppliersByCabang() async {
   final getstorage = GetStorage();
   final String? idCabang = getstorage.read('id_cabang');
-  final url = Uri.parse('http://localhost:3000/barang/getSuppliers/$idCabang');
+  final url = Uri.parse('${ApiConfig().baseUrl}/barang/getSuppliers/$idCabang');
 
   try {
     final response = await http.get(url);
@@ -849,7 +852,7 @@ Future<void> insertHistoryStok({
 }) async {
   final getstorage = GetStorage();
   final String? User_email = getstorage.read('email_login');
-  final url = Uri.parse("http://localhost:3000/barang/insertHistoryStok");
+  final url = Uri.parse("${ApiConfig().baseUrl}/barang/insertHistoryStok");
 
   final data = {
     'cabang_id': id_cabang,
@@ -881,7 +884,7 @@ Future<void> insertHistoryStok({
 
 //get history stock by cabang
 Future<List<dynamic>> fetchHistoryStokByCabang(String idCabang) async {
-  final url = 'http://localhost:3000/barang/gethistorystok/$idCabang';
+  final url = '${ApiConfig().baseUrl}/barang/gethistorystok/$idCabang';
   try {
     final response = await http.get(Uri.parse(url));
 
@@ -913,7 +916,7 @@ Future<Map<String, dynamic>> addInvoiceToSupplier({
   required List<Map<String, dynamic>> items,
 }) async {
   final url = Uri.parse(
-      'http://localhost:3000/barang/addSupplierInvoice'); // Adjust if needed
+      '${ApiConfig().baseUrl}/barang/addSupplierInvoice'); // Adjust if needed
 
   try {
     // Convert DateTime fields in items, if any
@@ -965,7 +968,7 @@ Future<Map<String, dynamic>> addInvoiceToSupplier({
 //search supplier by invoice
 Future<Map<String, dynamic>> fetchSupplierByInvoice(
     String invoiceNumber) async {
-  const String baseUrl = 'http://localhost:3000/barang'; // Base API URL
+  final String baseUrl = '${ApiConfig().baseUrl}/barang'; // Base API URL
 
   final Uri apiUrl =
       Uri.parse('$baseUrl/searchSupplierByInvoice/$invoiceNumber');
@@ -1000,7 +1003,7 @@ Future<List<Map<String, dynamic>>> fetchInvoiceItems(
   final getstorage = GetStorage();
   final String? idCabang = getstorage.read('id_cabang');
   final url = Uri.parse(
-      'http://localhost:3000/barang/supplierInvoiceItems/$idCabang/$invoiceNumber');
+      '${ApiConfig().baseUrl}/barang/supplierInvoiceItems/$idCabang/$invoiceNumber');
   try {
     final response = await http.get(url);
 
@@ -1021,7 +1024,7 @@ Future<List<Map<String, dynamic>>> fetchInvoiceItems(
 Future<Map<String, dynamic>?> insertMutasiBarang(
     Map<String, dynamic> data) async {
   try {
-    final url = Uri.parse('http://localhost:3000/barang/mutasiBarang');
+    final url = Uri.parse('${ApiConfig().baseUrl}/barang/mutasiBarang');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -1048,7 +1051,7 @@ Future<List<Map<String, dynamic>>?> getMutasiBarangByCabangRequest() async {
   String id_cabang = dataStorage.read('id_cabang');
   try {
     final url = Uri.parse(
-        'http://localhost:3000/barang/mutasiBarangRequest/$id_cabang');
+        '${ApiConfig().baseUrl}/barang/mutasiBarangRequest/$id_cabang');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -1070,7 +1073,7 @@ Future<List<Map<String, dynamic>>?> getMutasiBarangByCabangConfirm() async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final String url =
-      'http://localhost:3000/barang/mutasiBarangConfirm/$id_cabang';
+      '${ApiConfig().baseUrl}/barang/mutasiBarangConfirm/$id_cabang';
 
   try {
     final response = await http.get(Uri.parse(url));
@@ -1093,7 +1096,7 @@ Future<List<Map<String, dynamic>>?> getMutasiBarangByCabangConfirm() async {
 
 Future<void> updateStatusToConfirmed(String mutasiBarangId) async {
   final String url =
-      'http://localhost:3000/barang/MutasiChangeConfirmed/$mutasiBarangId';
+      '${ApiConfig().baseUrl}/barang/MutasiChangeConfirmed/$mutasiBarangId';
 
   try {
     final response = await http.put(Uri.parse(url));
@@ -1111,7 +1114,7 @@ Future<void> updateStatusToConfirmed(String mutasiBarangId) async {
 
 Future<void> updateStatusToDenied(String mutasiBarangId) async {
   final String url =
-      'http://localhost:3000/barang/MutasiChangeDenied/$mutasiBarangId';
+      '${ApiConfig().baseUrl}/barang/MutasiChangeDenied/$mutasiBarangId';
 
   try {
     final response = await http.put(Uri.parse(url));
@@ -1130,7 +1133,7 @@ Future<void> updateStatusToDenied(String mutasiBarangId) async {
 //set status to delivered mutasi
 Future<void> updateStatusToDelivered(String mutasiBarangId) async {
   final String updateUrl =
-      'http://localhost:3000/barang/MutasiChangeDelivered/$mutasiBarangId';
+      '${ApiConfig().baseUrl}/barang/MutasiChangeDelivered/$mutasiBarangId';
   try {
     // Fetch MutasiBarang details using the reusable function
     final mutasiData = await fetchMutasiBarangById(mutasiBarangId);
@@ -1250,7 +1253,7 @@ Future<void> updateStatusToDelivered(String mutasiBarangId) async {
 }
 
 Future<Map<String, dynamic>?> fetchMutasiBarangById(String id) async {
-  final String url = 'http://localhost:3000/barang/getmutasiBarang/$id';
+  final String url = '${ApiConfig().baseUrl}/barang/getmutasiBarang/$id';
   try {
     final response = await http.get(Uri.parse(url));
 
@@ -1284,7 +1287,7 @@ Future<Map<String, dynamic>> insertConversion({
   String id_gudang = dataStorage.read('id_gudang');
   final response = await http.post(
     Uri.parse(
-        'http://localhost:3000/barang/insert-conversion/$id_cabang/$id_gudang'),
+        '${ApiConfig().baseUrl}/barang/insert-conversion/$id_cabang/$id_gudang'),
     headers: {'Content-Type': 'application/json'},
     body: json.encode({
       'sourceSatuanId': sourceSatuanId,
@@ -1309,7 +1312,7 @@ Future<Map<String, dynamic>?> fetchSatuanHierarchyById(String satuanId) async {
   String id_cabang = dataStorage.read('id_cabang');
   String id_gudang = dataStorage.read('id_gudang');
   final url =
-      'http://localhost:3000/barang/conversions/$id_cabang/$id_gudang/$satuanId';
+      '${ApiConfig().baseUrl}/barang/conversions/$id_cabang/$id_gudang/$satuanId';
 
   try {
     final response = await http.get(Uri.parse(url));
@@ -1337,7 +1340,7 @@ Future<List<Map<String, dynamic>>> fetchUnitConversionsWithId(
   String idGudang = dataStorage.read('id_gudang');
 
   final url =
-      'http://localhost:3000/barang/conversionsID/$idCabang/$idGudang/$sourceSatuanId';
+      '${ApiConfig().baseUrl}/barang/conversionsID/$idCabang/$idGudang/$sourceSatuanId';
 
   try {
     final response = await http.get(Uri.parse(url));
@@ -1371,7 +1374,7 @@ Future<Map<String, dynamic>?> fetchConversionByTarget(
   String idCabang = dataStorage.read('id_cabang');
   String idGudang = dataStorage.read('id_gudang');
   final String baseUrl =
-      "http://localhost:3000/barang/conversionByTarget/$idCabang/$idGudang/$idBarang/$sourceSatuanId/$targetSatuanId";
+      "${ApiConfig().baseUrl}/barang/conversionByTarget/$idCabang/$idGudang/$idBarang/$sourceSatuanId/$targetSatuanId";
 
   try {
     final response = await http.get(Uri.parse(baseUrl));
@@ -1400,7 +1403,7 @@ Future<Map<String, dynamic>> addItemBatch({
   required int jumlahStok,
   required String tanggalExp,
 }) async {
-  final String url = 'http://localhost:3000/barang/addItemBatch';
+  final String url = '${ApiConfig().baseUrl}/barang/addItemBatch';
 
   try {
     final Map<String, dynamic> body = {
@@ -1451,7 +1454,7 @@ Future<Map<String, dynamic>> getClosestBatch({
   required String barangId,
   required String satuanId,
 }) async {
-  final String url = 'http://localhost:3000/barang/closestBatch';
+  final String url = '${ApiConfig().baseUrl}/barang/closestBatch';
 
   try {
     final Uri uri = Uri.parse(url).replace(queryParameters: {
@@ -1498,7 +1501,7 @@ Future<List<Map<String, dynamic>>> fetchExpiringBatches() async {
   String id_cabang = dataStorage.read('id_cabang');
   String id_gudang = dataStorage.read('id_gudang');
   final String url =
-      'http://localhost:3000/barang/expiringBatches/$id_cabang/$id_gudang';
+      '${ApiConfig().baseUrl}/barang/expiringBatches/$id_cabang/$id_gudang';
 
   try {
     final response = await http.get(Uri.parse(url));
@@ -1525,7 +1528,7 @@ Future<Map<String, dynamic>> convertBatch({
   required double conversionRate,
   required int transferQty,
 }) async {
-  const String apiUrl = "http://localhost:3000/barang/convertBatch";
+  final String apiUrl = "${ApiConfig().baseUrl}/barang/convertBatch";
 
   try {
     final response = await http.post(
@@ -1572,7 +1575,7 @@ Future<Map<String, dynamic>> MutasiBatch({
   required String satuanIdReceiver,
   required int transferQty,
 }) async {
-  const String baseUrl = "http://localhost:3000/barang/mutasiBatch";
+  final String baseUrl = "${ApiConfig().baseUrl}/barang/mutasiBatch";
 
   try {
     // Construct the request body

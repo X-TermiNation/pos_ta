@@ -115,6 +115,7 @@ class _AnalisaRevenuePageState extends State<AnalisaRevenuePage> {
         padding: const EdgeInsets.only(right: 20), // padding kanan 20
         child: LineChart(
           LineChartData(
+            minY: 0,
             lineBarsData: [
               LineChartBarData(
                 spots: spots,

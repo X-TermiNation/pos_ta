@@ -2733,25 +2733,26 @@ class _GudangMenuState extends State<GudangMenu> {
                           ),
                         ],
                       ),
-
                       SizedBox(height: 16),
                       // Input fields for re-stocking items
-                      DropdownButton<Map<String, dynamic>>(
+                      DropdownButton<String>(
                         value: selectedSupplierData.isEmpty
                             ? null
-                            : selectedSupplierData,
+                            : selectedSupplierData['_id'],
                         hint: Text('Select Supplier'),
                         items: suppliers.map((supplier) {
-                          return DropdownMenuItem<Map<String, dynamic>>(
-                            value: supplier,
-                            child: Text(supplier['nama_supplier'] ??
-                                'No Name'), // Display supplier name
+                          return DropdownMenuItem<String>(
+                            value: supplier['_id'],
+                            child: Text(supplier['nama_supplier'] ?? 'No Name'),
                           );
                         }).toList(),
-                        onChanged: (selected) {
-                          if (selected != null) {
+                        onChanged: (selectedId) {
+                          if (selectedId != null) {
+                            // Cari supplier berdasarkan ID
+                            final selected = suppliers
+                                .firstWhere((s) => s['_id'] == selectedId);
                             onSupplierSelected(
-                                selected); // Update the selected supplier and their details
+                                selected); // Kirim Map supplier yang dipilih
                           }
                         },
                       ),
@@ -3031,7 +3032,7 @@ class _GudangMenuState extends State<GudangMenu> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                    'Pastikan semua barang kadaluarsa memiliki tanggal kedaluwarsa!'),
+                                    'Pastikan semua barang kadaluarsa memiliki tanggal kedaluarsa!'),
                                 backgroundColor: Colors.red,
                               ),
                             );

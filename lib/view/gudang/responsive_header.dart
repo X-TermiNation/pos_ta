@@ -46,7 +46,8 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
     loadStockAndExpAlertCounts();
   }
 
-  void _onMenuItemTapped(int index) {
+  void _onMenuItemTapped(int index) async {
+    await loadStockAndExpAlertCounts();
     if (index == 7) {
       log_out = true;
       showConfirmationDialog(context);
@@ -60,21 +61,21 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
   IconData generateIcon(int index) {
     switch (index) {
       case 0:
-        return Icons.list_alt; // Daftar Barang
+        return Icons.list_alt; //Daftar Barang
       case 1:
-        return Icons.add_box; // Tambah Barang
+        return Icons.add_box; //Tambah Barang
       case 2:
         return Icons.sync_alt_rounded; //konversi satuan
       case 3:
-        return Icons.category; // Tambah Satuan Barang
+        return Icons.category; //Tambah Satuan Barang
       case 4:
-        return Icons.warning; // Stock Alert
+        return Icons.warning; //Stock Alert
       case 5:
         return Icons.description_outlined; //supplier management
       case 6:
-        return Icons.move_down; // Mutasi Barang
+        return Icons.move_down; //Mutasi Barang
       default:
-        return Icons.logout_outlined; // Lainnya
+        return Icons.logout_outlined; //Lainnya
     }
   }
 

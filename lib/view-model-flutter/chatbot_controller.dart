@@ -2,9 +2,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:get_storage/get_storage.dart';
+import '../api_config.dart';
 
 Future<Map<String, dynamic>?> insertQuestion(String questionText) async {
-  final url = Uri.parse("http://localhost:3000/chatbot/question");
+  final url = Uri.parse("${ApiConfig().baseUrl}/chatbot/question");
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   try {
@@ -31,7 +32,7 @@ Future<Map<String, dynamic>?> insertQuestion(String questionText) async {
 
 Future<Map<String, dynamic>?> insertAnswer(
     String questionId, String answerText, String? action) async {
-  final url = Uri.parse("http://localhost:3000/chatbot/answer");
+  final url = Uri.parse("${ApiConfig().baseUrl}/chatbot/answer");
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   try {
@@ -62,7 +63,7 @@ Future<Map<String, dynamic>?> getFirstQuestion() async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
-      Uri.parse("http://localhost:3000/chatbot/question/first/$id_cabang");
+      Uri.parse("${ApiConfig().baseUrl}/chatbot/question/first/$id_cabang");
   try {
     final response = await http.get(url);
 
@@ -83,7 +84,7 @@ Future<bool> updateNextQuestion(
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
-      Uri.parse("http://localhost:3000/chatbot/answer/update-next-question");
+      Uri.parse("${ApiConfig().baseUrl}/chatbot/answer/update-next-question");
   try {
     final response = await http.put(
       url,
@@ -107,8 +108,8 @@ Future<bool> updateNextQuestion(
 Future<bool> updateFirstQuestionID(String newFirstQuestionID) async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
-  final url =
-      Uri.parse("http://localhost:3000/chatbot/updateFirstQuestion/$id_cabang");
+  final url = Uri.parse(
+      "${ApiConfig().baseUrl}/chatbot/updateFirstQuestion/$id_cabang");
 
   try {
     final response = await http.put(
@@ -131,7 +132,7 @@ Future<bool> deleteQuestion(String questionID) async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url = Uri.parse(
-      "http://localhost:3000/chatbot/deleteQuestion/$id_cabang/$questionID");
+      "${ApiConfig().baseUrl}/chatbot/deleteQuestion/$id_cabang/$questionID");
 
   try {
     final response = await http.delete(url);
@@ -148,7 +149,7 @@ Future<bool> deleteAnswer(String questionID, String answerID) async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url = Uri.parse(
-      "http://localhost:3000/chatbot/deleteAnswer/$id_cabang/$questionID/$answerID");
+      "${ApiConfig().baseUrl}/chatbot/deleteAnswer/$id_cabang/$questionID/$answerID");
 
   try {
     final response = await http.delete(url);
@@ -171,7 +172,7 @@ Future<Map<String, dynamic>?> getAllQuestions() async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
-      Uri.parse("http://localhost:3000/chatbot/getAllQuestions/$id_cabang");
+      Uri.parse("${ApiConfig().baseUrl}/chatbot/getAllQuestions/$id_cabang");
 
   try {
     final response = await http.get(url);
@@ -200,7 +201,7 @@ Future<List<dynamic>> getAllAnswers(String questionID) async {
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url = Uri.parse(
-      "http://localhost:3000/chatbot/getAllAnswers/$id_cabang/$questionID");
+      "${ApiConfig().baseUrl}/chatbot/getAllAnswers/$id_cabang/$questionID");
 
   try {
     final response = await http.get(url);

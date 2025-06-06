@@ -9,6 +9,7 @@ import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view/startup/daftar_owner3.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/loginpage/login.dart';
+import '../api_config.dart';
 
 void tambahOwner(String email, String pass, String fname, String lname,
     BuildContext context) async {
@@ -19,7 +20,7 @@ void tambahOwner(String email, String pass, String fname, String lname,
       'fname': fname,
       'lname': lname,
     };
-    final url = 'http://localhost:3000/user/addOwner';
+    final url = '${ApiConfig().baseUrl}/user/addOwner';
     if (email.isNotEmpty &&
         pass.isNotEmpty &&
         fname.isNotEmpty &&
@@ -59,7 +60,7 @@ void nambahcabangngudang_Owner(String nama_cabang, String alamat_cabang,
         alamat_cabang.isNotEmpty &&
         alamat_cabang.isNotEmpty &&
         no_telp.isNotEmpty) {
-      final url = 'http://localhost:3000/cabang/tambahcabang';
+      final url = '${ApiConfig().baseUrl}/cabang/tambahcabang';
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -69,7 +70,7 @@ void nambahcabangngudang_Owner(String nama_cabang, String alamat_cabang,
       );
       if (response.statusCode == 200) {
         String namacabang = nama_cabang;
-        final url3 = 'http://localhost:3000/cabang/caricabang/$namacabang';
+        final url3 = '${ApiConfig().baseUrl}/cabang/caricabang/$namacabang';
         final response3 = await http.get(Uri.parse(url3));
         final Map<String, dynamic> jsonData = json.decode(response3.body);
         print(jsonData);
@@ -78,7 +79,7 @@ void nambahcabangngudang_Owner(String nama_cabang, String alamat_cabang,
           final addgudang = {
             'alamat': alamat_cabang,
           };
-          final url2 = 'http://localhost:3000/gudang/tambahgudang/$idcabang';
+          final url2 = '${ApiConfig().baseUrl}/gudang/tambahgudang/$idcabang';
           final response2 = await http.post(
             Uri.parse(url2),
             headers: {
@@ -113,7 +114,7 @@ void tambahmanager_Owner(String email, String pass, String fname, String lname,
   final dataStorage = GetStorage();
   String nama_cabangpass = dataStorage.read('nama_cabang');
   try {
-    final url2 = 'http://localhost:3000/cabang/caricabang/$nama_cabangpass';
+    final url2 = '${ApiConfig().baseUrl}/cabang/caricabang/$nama_cabangpass';
     final response2 = await http.get(
       Uri.parse(url2),
       headers: {'Cache-Control': 'no-cache'},
@@ -130,7 +131,7 @@ void tambahmanager_Owner(String email, String pass, String fname, String lname,
         'no_telp': no_telp,
         'role': "Manager",
       };
-      final url = 'http://localhost:3000/user/addUser/$idcabang';
+      final url = '${ApiConfig().baseUrl}/user/addUser/$idcabang';
       if (email.isNotEmpty &&
           pass.isNotEmpty &&
           fname.isNotEmpty &&
@@ -179,7 +180,7 @@ void nambahcabangngudang(String nama_cabang, String alamat_cabang,
         alamat_cabang.isNotEmpty &&
         alamat_cabang.isNotEmpty &&
         no_telp.isNotEmpty) {
-      final url = 'http://localhost:3000/cabang/tambahcabang';
+      final url = '${ApiConfig().baseUrl}/cabang/tambahcabang';
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -189,7 +190,7 @@ void nambahcabangngudang(String nama_cabang, String alamat_cabang,
       );
       if (response.statusCode == 200) {
         String namacabang = nama_cabang;
-        final url3 = 'http://localhost:3000/cabang/caricabang/$namacabang';
+        final url3 = '${ApiConfig().baseUrl}/cabang/caricabang/$namacabang';
         final response3 = await http.get(Uri.parse(url3));
         final Map<String, dynamic> jsonData = json.decode(response3.body);
         print(jsonData);
@@ -198,7 +199,7 @@ void nambahcabangngudang(String nama_cabang, String alamat_cabang,
           final addgudang = {
             'alamat': alamat_cabang,
           };
-          final url2 = 'http://localhost:3000/gudang/tambahgudang/$idcabang';
+          final url2 = '${ApiConfig().baseUrl}/gudang/tambahgudang/$idcabang';
           final response2 = await http.post(
             Uri.parse(url2),
             headers: {
@@ -234,7 +235,7 @@ void tambahmanager(String email, String pass, String fname, String lname,
   final dataStorage = GetStorage();
   String nama_cabangpass = dataStorage.read('nama_cabang');
   try {
-    final url2 = 'http://localhost:3000/cabang/caricabang/$nama_cabangpass';
+    final url2 = '${ApiConfig().baseUrl}/cabang/caricabang/$nama_cabangpass';
     final response2 = await http.get(
       Uri.parse(url2),
       headers: {'Cache-Control': 'no-cache'},
@@ -251,7 +252,7 @@ void tambahmanager(String email, String pass, String fname, String lname,
         'no_telp': no_telp,
         'role': "Manager",
       };
-      final url = 'http://localhost:3000/user/addUser/$idcabang';
+      final url = '${ApiConfig().baseUrl}/user/addUser/$idcabang';
       if (email.isNotEmpty &&
           pass.isNotEmpty &&
           fname.isNotEmpty &&
