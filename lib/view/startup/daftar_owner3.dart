@@ -128,12 +128,23 @@ class _daftar_owner3_State extends State<daftar_owner3> {
                   SizedBox(height: 30),
                   FilledButton(
                     onPressed: () {
-                      if (email.text.isNotEmpty &&
-                          pass.text.isNotEmpty &&
-                          fname.text.isNotEmpty &&
-                          lname.text.isNotEmpty &&
-                          alamat.text.isNotEmpty &&
-                          no_telp.text.isNotEmpty) {
+                      final emailPattern =
+                          RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+                      if (email.text.isEmpty ||
+                          pass.text.isEmpty ||
+                          fname.text.isEmpty ||
+                          lname.text.isEmpty ||
+                          alamat.text.isEmpty ||
+                          no_telp.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Field tidak boleh kosong!')),
+                        );
+                      } else if (!emailPattern.hasMatch(email.text)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Format email tidak valid!')),
+                        );
+                      } else {
                         tambahmanager(
                           email.text,
                           pass.text,
@@ -151,12 +162,6 @@ class _daftar_owner3_State extends State<daftar_owner3> {
                           alamat.clear();
                           no_telp.clear();
                         });
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Field tidak boleh kosong!'),
-                          ),
-                        );
                       }
                     },
                     style: FilledButton.styleFrom(

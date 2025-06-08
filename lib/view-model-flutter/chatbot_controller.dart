@@ -5,6 +5,7 @@ import 'package:get_storage/get_storage.dart';
 import '../api_config.dart';
 
 Future<Map<String, dynamic>?> insertQuestion(String questionText) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final url = Uri.parse("${ApiConfig().baseUrl}/chatbot/question");
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
@@ -32,6 +33,7 @@ Future<Map<String, dynamic>?> insertQuestion(String questionText) async {
 
 Future<Map<String, dynamic>?> insertAnswer(
     String questionId, String answerText, String? action) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final url = Uri.parse("${ApiConfig().baseUrl}/chatbot/answer");
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
@@ -60,6 +62,7 @@ Future<Map<String, dynamic>?> insertAnswer(
 }
 
 Future<Map<String, dynamic>?> getFirstQuestion() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
@@ -81,6 +84,7 @@ Future<Map<String, dynamic>?> getFirstQuestion() async {
 
 Future<bool> updateNextQuestion(
     String questionId, String answerId, String newNextQuestionID) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
@@ -106,6 +110,7 @@ Future<bool> updateNextQuestion(
 
 // Update the first question ID
 Future<bool> updateFirstQuestionID(String newFirstQuestionID) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url = Uri.parse(
@@ -129,6 +134,7 @@ Future<bool> updateFirstQuestionID(String newFirstQuestionID) async {
 
 // Delete a question
 Future<bool> deleteQuestion(String questionID) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url = Uri.parse(
@@ -146,6 +152,7 @@ Future<bool> deleteQuestion(String questionID) async {
 
 // Delete an answer
 Future<bool> deleteAnswer(String questionID, String answerID) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url = Uri.parse(
@@ -169,6 +176,7 @@ Future<bool> deleteAnswer(String questionID, String answerID) async {
 
 // Get all questions for a cabang
 Future<Map<String, dynamic>?> getAllQuestions() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
@@ -198,6 +206,7 @@ Future<Map<String, dynamic>?> getAllQuestions() async {
 
 // Get all answers for a specific question
 Future<List<dynamic>> getAllAnswers(String questionID) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url = Uri.parse(

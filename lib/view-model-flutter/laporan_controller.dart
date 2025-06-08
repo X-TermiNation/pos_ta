@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../api_config.dart';
 
 Future<void> triggerCacheAllDataCabang() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   String id_gudang = dataStorage.read('id_gudang');
@@ -31,6 +32,7 @@ Future<Map<String, dynamic>> getPendapatanReport({
   required DateTime startDate,
   required DateTime endDate,
 }) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
@@ -71,6 +73,7 @@ Future<Map<String, dynamic>> getPengeluaranReport({
   required DateTime startDate,
   required DateTime endDate,
 }) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final url =
@@ -110,12 +113,12 @@ Future<Map<String, dynamic>> getPengeluaranReport({
 }
 
 class OpnameController {
-  final String baseUrl = "${ApiConfig().baseUrl}/laporan";
-
   Future<Map<String, dynamic>> fetchOpnameReport({
     required DateTime startDate,
     required DateTime endDate,
   }) async {
+    await ApiConfig().refreshConnectionIfNeeded();
+    final String baseUrl = "${ApiConfig().baseUrl}/laporan";
     final dataStorage = GetStorage();
     String id_cabang = dataStorage.read('id_cabang');
     final url = Uri.parse('$baseUrl/report/opname/$id_cabang');
@@ -141,6 +144,7 @@ class MutasiController {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
+    await ApiConfig().refreshConnectionIfNeeded();
     final dataStorage = GetStorage();
     String id_cabang = dataStorage.read('id_cabang');
     final url =
@@ -168,8 +172,6 @@ class MutasiController {
 }
 
 class AnalisaRevenueController extends GetxController {
-  final String baseUrl = "${ApiConfig().baseUrl}/laporan";
-
   var analisa = <String, dynamic>{}.obs;
   var loading = false.obs;
   var errorMessage = "".obs;
@@ -177,7 +179,8 @@ class AnalisaRevenueController extends GetxController {
   Future<void> fetchAnalisaRevenueData(DateTime start, DateTime end) async {
     loading.value = true;
     errorMessage.value = "";
-
+    await ApiConfig().refreshConnectionIfNeeded();
+    final String baseUrl = "${ApiConfig().baseUrl}/laporan";
     final dataStorage = GetStorage();
     String id_cabang = dataStorage.read('id_cabang') ?? '';
 

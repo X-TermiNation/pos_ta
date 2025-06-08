@@ -14,6 +14,7 @@ import '../api_config.dart';
 void tambahOwner(String email, String pass, String fname, String lname,
     BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final owneradd = {
       'email': email,
       'password': pass,
@@ -51,6 +52,7 @@ void tambahOwner(String email, String pass, String fname, String lname,
 void nambahcabangngudang_Owner(String nama_cabang, String alamat_cabang,
     String no_telp, String alamat_gudang, BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final addcabang = {
       'nama_cabang': nama_cabang,
       'alamat': alamat_cabang,
@@ -111,6 +113,7 @@ void nambahcabangngudang_Owner(String nama_cabang, String alamat_cabang,
 //tambah manager dari owner interface
 void tambahmanager_Owner(String email, String pass, String fname, String lname,
     String alamat, String no_telp, BuildContext context) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String nama_cabangpass = dataStorage.read('nama_cabang');
   try {
@@ -171,6 +174,7 @@ void tambahmanager_Owner(String email, String pass, String fname, String lname,
 void nambahcabangngudang(String nama_cabang, String alamat_cabang,
     String no_telp, String alamat_gudang, BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final addcabang = {
       'nama_cabang': nama_cabang,
       'alamat': alamat_cabang,
@@ -232,6 +236,7 @@ void nambahcabangngudang(String nama_cabang, String alamat_cabang,
 //tambah manager startup
 void tambahmanager(String email, String pass, String fname, String lname,
     String alamat, String no_telp, BuildContext context) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String nama_cabangpass = dataStorage.read('nama_cabang');
   try {

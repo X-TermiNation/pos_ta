@@ -7,6 +7,7 @@ import '../api_config.dart';
 
 //getdiskon
 Future<List<Map<String, dynamic>>> getDiskon() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   final id_cabangs = dataStorage.read('id_cabang');
   final request =
@@ -25,6 +26,7 @@ Future<List<Map<String, dynamic>>> getDiskon() async {
 Future<List<Map<String, dynamic>>> fetchDataDiskonItem(
     String id_gudangs) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     List<Map<String, dynamic>> data = await getbarangdiskonlist(id_gudangs);
     print("data bawaan: $data");
     return data;
@@ -38,6 +40,7 @@ Future<List<Map<String, dynamic>>> fetchDataDiskonItem(
 //barang diskon
 Future<List<Map<String, dynamic>>> getbarangdiskonlist(String id_gudang) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final dataStorage = GetStorage();
     String id_cabangs = dataStorage.read('id_cabang');
     final request = Uri.parse(
@@ -68,6 +71,7 @@ Future<void> tambahdiskon(
   BuildContext context,
 ) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final dataStorage = GetStorage();
     String id_cabangs = dataStorage.read('id_cabang');
     String id_gudang = dataStorage.read('id_gudang');
@@ -159,6 +163,7 @@ Future<void> tambahdiskon(
 
 //hapus diskon
 void deletediskon(String id) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabangs = dataStorage.read('id_cabang');
   final url = '${ApiConfig().baseUrl}/barang/deletediskon/$id/$id_cabangs';
@@ -176,6 +181,7 @@ void deletediskon(String id) async {
 
 //toggle diskon status
 Future<void> toggleDiskonStatus(String idDiskon) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabangs = dataStorage.read('id_cabang');
   final String url =

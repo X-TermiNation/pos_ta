@@ -144,13 +144,11 @@ class _DaftarCabangState extends State<DaftarCabang> {
                                         visible: map['role'] != 'Manager' &&
                                             datacabang.length > 1,
                                         child: ElevatedButton(
-                                          onPressed: () {
+                                          onPressed: () async {
                                             try {
-                                              setState(() {
-                                                deletecabang(
-                                                    map['_id'], context);
-                                                fetchdatacabang();
-                                              });
+                                              deletecabang(map['_id'], context);
+                                              await fetchdatacabang();
+                                              setState(() {});
                                             } catch (e) {
                                               print("Gagal hapus: $e");
                                             }

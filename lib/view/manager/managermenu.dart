@@ -26,6 +26,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:http/http.dart' as http;
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
 late bool logOwner;
@@ -43,7 +44,7 @@ class _ManagerMenuState extends State<ManagerMenu>
   List<LatLng> _routePolyline = [];
   LatLng? _destinationPosition;
   LatLng? _courierPosition;
-  late WebSocketChannel channel;
+  WebSocketChannel? channel;
   bool isWebSocketConnected = false;
   Timer? _throttleTimer;
 
@@ -301,7 +302,7 @@ class _ManagerMenuState extends State<ManagerMenu>
   }
 
   // Function to initialize the WebSocket connection for tracking
-  void _initializeWebSocket() {
+  Future<void> _initializeWebSocket() async {
     final dataStorage = GetStorage();
     String id_cabang = dataStorage.read('id_cabang');
     if (!mounted) return;
@@ -310,72 +311,90 @@ class _ManagerMenuState extends State<ManagerMenu>
       isWebSocketConnected = false;
     });
 
-    channel = WebSocketChannel.connect(
-      Uri.parse('ws://localhost:8080/ws'),
-    );
+    //Check internet connection
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      print("No internet connection. Skipping WebSocket.");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Offline mode: real-time updates disabled."),
+        ));
+      }
+      return;
+    }
 
-    channel.stream.listen(
-      (message) async {
-        if (!mounted) return;
-        Map<String, dynamic> data = jsonDecode(message);
+    //Proceed only if connected
+    try {
+      channel = WebSocketChannel.connect(
+        Uri.parse('wss://serverpos-production.up.railway.app/ws'),
+      );
 
-        if (data.containsKey('latitude') &&
-            data.containsKey('longitude') &&
-            data.containsKey('id_transaksi') &&
-            data.containsKey('id_cabang')) {
-          if (data['id_cabang'] == id_cabang) {
-            setState(() {
-              isWebSocketConnected = true;
-              _courierPosition = LatLng(data['latitude'], data['longitude']);
-              id_transaksi = data['id_transaksi'];
+      channel?.stream.listen(
+        (message) async {
+          if (!mounted) return;
+          Map<String, dynamic> data = jsonDecode(message);
 
-              if (data.containsKey('latitude_tujuan') &&
-                  data.containsKey('longitude_tujuan')) {
-                _destinationPosition =
-                    LatLng(data['latitude_tujuan'], data['longitude_tujuan']);
+          if (data.containsKey('latitude') &&
+              data.containsKey('longitude') &&
+              data.containsKey('id_transaksi') &&
+              data.containsKey('id_cabang')) {
+            if (data['id_cabang'] == id_cabang) {
+              setState(() {
+                isWebSocketConnected = true;
+                _courierPosition = LatLng(data['latitude'], data['longitude']);
+                id_transaksi = data['id_transaksi'];
+
+                if (data.containsKey('latitude_tujuan') &&
+                    data.containsKey('longitude_tujuan')) {
+                  _destinationPosition =
+                      LatLng(data['latitude_tujuan'], data['longitude_tujuan']);
+                }
+              });
+
+              if (_deliveryData == null) {
+                await _getDeliveryData();
               }
-            });
-            if (_deliveryData == null) {
-              await _getDeliveryData();
+
+              if (_throttleTimer?.isActive ?? false) return;
+
+              _throttleTimer = Timer(Duration(seconds: 2), () async {
+                await _getRouteFromCourierToDestination();
+              });
             }
-
-            if (_throttleTimer?.isActive ?? false) return;
-
-            _throttleTimer = Timer(Duration(seconds: 2), () async {
-              await _getRouteFromCourierToDestination();
-            });
           }
-        }
-      },
-      onError: (error) {
-        print('WebSocket error: $error');
-        if (!mounted) return;
-        setState(() {
-          isWebSocketConnected = false;
-        });
-      },
-      onDone: () {
-        print('WebSocket connection closed.');
-        if (!mounted) return;
-        setState(() {
-          isWebSocketConnected = false;
-          id_transaksi = "";
-          _deliveryData = null;
-        });
-      },
-    );
+        },
+        onError: (error) {
+          print('WebSocket error: $error');
+          if (!mounted) return;
+          setState(() {
+            isWebSocketConnected = false;
+          });
+        },
+        onDone: () {
+          print('WebSocket connection closed.');
+          if (!mounted) return;
+          setState(() {
+            isWebSocketConnected = false;
+            id_transaksi = "";
+            _deliveryData = null;
+          });
+        },
+      );
+    } catch (e) {
+      print("Failed to connect WebSocket: $e");
+    }
   }
 
   @override
   void dispose() {
-    channel.sink.close();
+    channel?.sink.close();
     _throttleTimer?.cancel();
     super.dispose();
   }
 
   // Function to refresh WebSocket connection
   Future<void> _refreshWebSocketConnection() async {
-    await channel.sink.close(); // tunggu sink ditutup
+    await channel?.sink.close();
     await Future.delayed(Duration(milliseconds: 300));
     _initializeWebSocket();
     await _getDeliveryData();
@@ -388,7 +407,6 @@ class _ManagerMenuState extends State<ManagerMenu>
 
   Future<void> _getDeliveryData() async {
     if (id_transaksi.isNotEmpty) {
-      print("holahola:$id_transaksi");
       final deliveryData = await showDeliveryByTransID(id_transaksi, context);
       if (deliveryData != null) {
         if (!mounted) return;

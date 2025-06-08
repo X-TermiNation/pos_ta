@@ -27,7 +27,7 @@ class ApiConfig {
   Future<void> _checkInternetAndSwitch() async {
     try {
       final response = await http
-          .get(Uri.parse("$_railwayUrl/ping"))
+          .get(Uri.parse("$_railwayUrl/user/ping"))
           .timeout(const Duration(seconds: 2));
       if (response.statusCode == 200) {
         _baseUrl = _railwayUrl;
@@ -50,6 +50,10 @@ class ApiConfig {
 
   void dispose() {
     _timer?.cancel();
+  }
+
+  Future<void> refreshConnectionIfNeeded() async {
+    await _checkInternetAndSwitch();
   }
 
   bool get isReady => _initialized;

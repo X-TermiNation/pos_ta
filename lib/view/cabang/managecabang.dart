@@ -4,7 +4,6 @@ import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:ta_pos/view-model-flutter/startup_controller.dart';
-import 'package:ta_pos/view-model-flutter/cabang_controller.dart';
 
 bool switchmode = false;
 
@@ -100,12 +99,22 @@ class _managecabangState extends State<managecabang> {
                             Center(
                               child: FilledButton.icon(
                                 onPressed: () {
-                                  if (email.text.isNotEmpty ||
-                                      pass.text.isNotEmpty ||
-                                      fname.text.isNotEmpty ||
-                                      lname.text.isNotEmpty ||
-                                      alamat.text.isNotEmpty ||
-                                      no_telp_manager.text.isNotEmpty) {
+                                  final emailPattern = RegExp(
+                                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+                                  if (email.text.isEmpty ||
+                                      pass.text.isEmpty ||
+                                      fname.text.isEmpty ||
+                                      lname.text.isEmpty ||
+                                      alamat.text.isEmpty ||
+                                      no_telp_manager.text.isEmpty) {
+                                    showToast(
+                                        context, "Pastikan semua data terisi!");
+                                  } else if (!emailPattern
+                                      .hasMatch(email.text)) {
+                                    showToast(
+                                        context, "Format email tidak valid!");
+                                  } else {
                                     tambahmanager_Owner(
                                       email.text,
                                       pass.text,
@@ -127,9 +136,6 @@ class _managecabangState extends State<managecabang> {
                                       switchmode =
                                           dataStorage.read('switchmode');
                                     });
-                                  } else {
-                                    showToast(
-                                        context, "Pastikan semua data terisi!");
                                   }
                                 },
                                 icon: const Icon(Icons.check_circle_outline,

@@ -11,6 +11,7 @@ import '../api_config.dart';
 void createInvoice(String external_id, int amount, String payer_email,
     String description, BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final InvoiceData = {
       'external_id': external_id,
       'amount': amount,
@@ -41,6 +42,7 @@ Future<Map<String, dynamic>?> updateTransStatus(
   BuildContext context,
   String id_transaksi,
 ) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final request = Uri.parse(
@@ -73,6 +75,7 @@ Future<Map<String, dynamic>?> updateTransStatus(
 
 //show alltrans in cabang
 Future<List<Map<String, dynamic>>> getTrans() async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   final request =
@@ -91,6 +94,7 @@ Future<List<Map<String, dynamic>>> getTrans() async {
 
 // Get specific transaction by id
 Future<Map<String, dynamic>?> getTransById(String trans_id) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
 
@@ -121,6 +125,7 @@ Future<Map<String, Map<String, int>>> fetchTrendingItems({
   required DateTime end,
 }) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final dataStorage = GetStorage();
     String id_cabang = dataStorage.read('id_cabang');
     final uri = Uri.parse(
@@ -158,6 +163,7 @@ Future<Map<String, dynamic>?> addDelivery(
   String transaksi_id,
   BuildContext context,
 ) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
   DateTime trans_date = DateTime.now();
@@ -195,6 +201,7 @@ Future<List<dynamic>?> updateDeliveryStatus(
   String id_delivery,
   XFile? image, // New parameter for the image
 ) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
 
@@ -240,6 +247,7 @@ Future<List<dynamic>?> updateDeliveryStatus(
 Future<List<dynamic>?> showDelivery(
   BuildContext context,
 ) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
 
@@ -273,6 +281,7 @@ Future<List<dynamic>?> showDeliveryByTransID(
   BuildContext context,
 ) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final url =
         '${ApiConfig().baseUrl}/transaksi/showDeliveryByTransID/$id_transaksi';
     final response = await http.get(
@@ -301,6 +310,7 @@ Future<List<dynamic>?> showDeliveryByTransID(
 Future<List<dynamic>?> showallDelivery(
   BuildContext context,
 ) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
   String id_cabang = dataStorage.read('id_cabang');
 
@@ -312,20 +322,29 @@ Future<List<dynamic>?> showallDelivery(
     );
 
     if (response.statusCode == 200) {
-      showToast(context, 'Berhasil mengambil data pengiriman');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Berhasil mengambil data pengiriman')),
+      );
       final responseData = jsonDecode(response.body);
       return responseData['data'];
     } else if (response.statusCode == 404) {
-      showToast(context, "Tidak ada pengiriman dalam proses");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tidak ada pengiriman dalam proses')),
+      );
     } else {
-      showToast(context, "Gagal mengambil data pengiriman");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengambil data pengiriman')),
+      );
       print('HTTP Error: ${response.statusCode}');
     }
   } catch (error) {
-    showToast(context, "Error: $error");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $error')),
+    );
     print('Exception during HTTP request: $error');
   }
-  return null; // Return null in case of an error
+
+  return null;
 }
 
 //cetak invoice
@@ -339,6 +358,7 @@ Future<Map<String, dynamic>> generateInvoice(
     List<Map<String, dynamic>> items,
     BuildContext context) async {
   try {
+    await ApiConfig().refreshConnectionIfNeeded();
     final DateFormat formatter = DateFormat('dd/MM/yyyy');
     String dateinvoice = formatter.format(date_trans);
     final response = await http.post(
@@ -380,6 +400,7 @@ Future<Map<String, dynamic>> generateInvoice(
 
 Future<bool> sendInvoiceByEmail(
     String invoicePath, String receiverEmail, BuildContext context) async {
+  await ApiConfig().refreshConnectionIfNeeded();
   final Uri uri = Uri.parse('${ApiConfig().baseUrl}/invoice/invoice-email');
   try {
     final response = await http.post(
