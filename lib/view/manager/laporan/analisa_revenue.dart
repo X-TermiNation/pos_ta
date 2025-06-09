@@ -7,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:get/get.dart';
 import 'package:ta_pos/view-model-flutter/laporan_controller.dart';
+import 'dart:math';
 
 class AnalisaRevenuePage extends StatefulWidget {
   const AnalisaRevenuePage({Key? key}) : super(key: key);
@@ -103,6 +104,32 @@ class _AnalisaRevenuePageState extends State<AnalisaRevenuePage> {
     return pdf.save();
   }
 
+  List<Map<String, dynamic>> _topBarangByQty(List<Map<String, dynamic>> list) {
+    List<Map<String, dynamic>> sorted = List.from(list);
+    sorted.sort((a, b) => (b['total_qty'] ?? 0).compareTo(a['total_qty'] ?? 0));
+    return sorted.take(3).toList();
+  }
+
+  List<Map<String, dynamic>> _topBarangByProfit(
+      List<Map<String, dynamic>> list) {
+    List<Map<String, dynamic>> sorted = List.from(list);
+    sorted.sort(
+        (a, b) => (b['total_profit'] ?? 0).compareTo(a['total_profit'] ?? 0));
+    return sorted.take(3).toList();
+  }
+
+  List<Map<String, dynamic>> _worstMargin(List<Map<String, dynamic>> list) {
+    List<Map<String, dynamic>> sorted = List.from(list);
+    sorted.sort((a, b) {
+      double marginA = ((a['total_profit'] ?? 0) * 1.0) /
+          max<double>(1.0, ((a['total_penjualan'] ?? 1) as num).toDouble());
+      double marginB = ((b['total_profit'] ?? 0) * 1.0) /
+          max<double>(1.0, ((b['total_penjualan'] ?? 1) as num).toDouble());
+      return marginA.compareTo(marginB);
+    });
+    return sorted.take(3).toList();
+  }
+
   Widget _buildLineChart() {
     final spots = _generateLineChartData();
     final perJam = controller.analisa['penjualan_per_jam'] ?? [];
@@ -110,9 +137,9 @@ class _AnalisaRevenuePageState extends State<AnalisaRevenuePage> {
     if (spots.isEmpty) return const Text("Data tidak tersedia");
 
     return SizedBox(
-      height: 500,
+      height: 300,
       child: Padding(
-        padding: const EdgeInsets.only(right: 20), // padding kanan 20
+        padding: const EdgeInsets.only(right: 20),
         child: LineChart(
           LineChartData(
             minY: 0,
@@ -145,14 +172,9 @@ class _AnalisaRevenuePageState extends State<AnalisaRevenuePage> {
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(showTitles: true, reservedSize: 40),
               ),
-              topTitles: AxisTitles(
-                // tambahkan ini
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              rightTitles: AxisTitles(
-                // optional, biasanya default false atau true
-                sideTitles: SideTitles(showTitles: false),
-              ),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             gridData: FlGridData(show: true),
             borderData: FlBorderData(show: true),
@@ -162,28 +184,11 @@ class _AnalisaRevenuePageState extends State<AnalisaRevenuePage> {
     );
   }
 
-  Widget _buildDataTable() {
-    final barangList = controller.analisa['penjualan_per_barang'] ?? [];
-    final f =
-        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-
+  Widget _buildDataTable(List<Map<String, dynamic>> data, List<String> columns,
+      List<DataCell> Function(Map<String, dynamic>) buildRow) {
     return DataTable(
-      columns: const [
-        DataColumn(label: Text('Nama Barang')),
-        DataColumn(label: Text('Qty Terjual')),
-        DataColumn(label: Text('Total Penjualan')),
-        DataColumn(label: Text('Total Modal')),
-        DataColumn(label: Text('Profit')),
-      ],
-      rows: barangList.map<DataRow>((item) {
-        return DataRow(cells: [
-          DataCell(Text(item['nama_barang'] ?? '')),
-          DataCell(Text(item['total_qty'].toString())),
-          DataCell(Text(f.format(item['total_penjualan'] ?? 0))),
-          DataCell(Text(f.format(item['total_modal'] ?? 0))),
-          DataCell(Text(f.format(item['total_profit'] ?? 0))),
-        ]);
-      }).toList(),
+      columns: columns.map((e) => DataColumn(label: Text(e))).toList(),
+      rows: data.map((item) => DataRow(cells: buildRow(item))).toList(),
     );
   }
 
@@ -247,13 +252,16 @@ class _AnalisaRevenuePageState extends State<AnalisaRevenuePage> {
               } else if (controller.errorMessage.isNotEmpty) {
                 return Expanded(
                     child: Center(child: Text(controller.errorMessage.value)));
-              } else if ((controller.analisa['penjualan_per_jam'] == null ||
-                      controller.analisa['penjualan_per_jam'].isEmpty) &&
-                  (controller.analisa['penjualan_per_barang'] == null ||
-                      controller.analisa['penjualan_per_barang'].isEmpty)) {
-                return const Expanded(
-                    child: Center(child: Text('Data tidak tersedia')));
               } else {
+                final barangList =
+                    (controller.analisa['penjualan_per_barang'] ?? [])
+                        .cast<Map<String, dynamic>>();
+                final f = NumberFormat.currency(
+                    locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+                final topByQty = _topBarangByQty(barangList);
+                final topByProfit = _topBarangByProfit(barangList);
+                final worstMarginList = _worstMargin(barangList);
+
                 return Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -271,7 +279,70 @@ class _AnalisaRevenuePageState extends State<AnalisaRevenuePage> {
                         const SizedBox(height: 10),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
-                          child: _buildDataTable(),
+                          child: _buildDataTable(
+                            barangList,
+                            [
+                              'Nama Barang',
+                              'Qty',
+                              'Penjualan',
+                              'Modal',
+                              'Profit'
+                            ],
+                            (item) => [
+                              DataCell(Text(item['nama_barang'] ?? '')),
+                              DataCell(Text(item['total_qty'].toString())),
+                              DataCell(
+                                  Text(f.format(item['total_penjualan'] ?? 0))),
+                              DataCell(
+                                  Text(f.format(item['total_modal'] ?? 0))),
+                              DataCell(
+                                  Text(f.format(item['total_profit'] ?? 0))),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        const Text("Top 3 Barang Terlaris",
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                        _buildDataTable(
+                          topByQty,
+                          ['Nama Barang', 'Qty Terjual'],
+                          (item) => [
+                            DataCell(Text(item['nama_barang'] ?? '')),
+                            DataCell(Text(item['total_qty'].toString())),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        const Text("Top 3 Barang dengan Profit Tertinggi",
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                        _buildDataTable(
+                          topByProfit,
+                          ['Nama Barang', 'Profit'],
+                          (item) => [
+                            DataCell(Text(item['nama_barang'] ?? '')),
+                            DataCell(Text(f.format(item['total_profit'] ?? 0))),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        const Text("Top 3 Margin Penjualan Terburuk",
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                        _buildDataTable(
+                          worstMarginList,
+                          ['Nama Barang', 'Penjualan', 'Profit', 'Margin %'],
+                          (item) {
+                            final penjualan = item['total_penjualan'] ?? 1;
+                            final profit = item['total_profit'] ?? 0;
+                            final margin = ((profit * 100.0) / penjualan)
+                                .toStringAsFixed(2);
+                            return [
+                              DataCell(Text(item['nama_barang'] ?? '')),
+                              DataCell(Text(f.format(penjualan))),
+                              DataCell(Text(f.format(profit))),
+                              DataCell(Text('$margin %')),
+                            ];
+                          },
                         ),
                       ],
                     ),

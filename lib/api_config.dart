@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:http/http.dart' as http;
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ApiConfig {
   static final ApiConfig _instance = ApiConfig._internal();

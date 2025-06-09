@@ -56,7 +56,8 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
         return Theme(
           data: ThemeData.dark().copyWith(
             primaryColor: Colors.blue,
-            buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.accent),
+            buttonTheme:
+                const ButtonThemeData(textTheme: ButtonTextTheme.accent),
           ),
           child: child!,
         );
@@ -72,7 +73,7 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
   Future<void> _downloadPDF() async {
     if (_data == null || (_data!["detail"] as List).isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
             content: Text('Data laporan kosong, tidak dapat mengunduh PDF')),
       );
       return;
@@ -81,14 +82,12 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
     final pdf = pw.Document();
     final formatter = DateFormat("dd MMM yyyy");
 
-    // STEP 1: Preload satuan names
-    final satuanMap = <String, String>{}; // key = "$id_barang|$id_satuan"
+    final satuanMap = <String, String>{};
 
     for (var tx in _data!["detail"]) {
       for (var item in tx["barang_terjual"]) {
         final key = "${item["id_barang"]}|${item["id_satuan"]}";
         if (!satuanMap.containsKey(key)) {
-          // Call async method only once per unique combination
           final satuanName = await _getNamaSatuan(
               item["id_barang"], item["id_satuan"], context);
           satuanMap[key] = satuanName;
@@ -96,7 +95,6 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
       }
     }
 
-    // STEP 2: Build PDF
     pdf.addPage(
       pw.Page(
         build: (context) {
@@ -129,14 +127,14 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
               pw.Table(
                 border: pw.TableBorder.all(width: 0.5),
                 columnWidths: {
-                  0: const pw.FlexColumnWidth(1), // No
-                  1: const pw.FlexColumnWidth(2), // Tanggal
-                  2: const pw.FlexColumnWidth(3), // Total Sebelum Pajak
-                  3: const pw.FlexColumnWidth(2), // Total Pajak
-                  4: const pw.FlexColumnWidth(3), // Total Termasuk Pajak
-                  5: const pw.FlexColumnWidth(2), // Modal
-                  6: const pw.FlexColumnWidth(3), // Untung Sebelum Pajak
-                  7: const pw.FlexColumnWidth(3), // Untung Termasuk Pajak
+                  0: const pw.FlexColumnWidth(1),
+                  1: const pw.FlexColumnWidth(2),
+                  2: const pw.FlexColumnWidth(3),
+                  3: const pw.FlexColumnWidth(2),
+                  4: const pw.FlexColumnWidth(3),
+                  5: const pw.FlexColumnWidth(2),
+                  6: const pw.FlexColumnWidth(3),
+                  7: const pw.FlexColumnWidth(3),
                 },
                 children: [
                   pw.TableRow(
@@ -155,14 +153,9 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
                       ])
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
-                          child: pw.Text(
-                            h,
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                            softWrap: true,
-                          ),
+                          child: pw.Text(h,
+                              style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold, fontSize: 9)),
                         )
                     ],
                   ),
@@ -178,51 +171,44 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
                           child: pw.Text(
-                            formatter.format(DateTime.parse(tx["tanggal"])),
-                            style: pw.TextStyle(fontSize: 9),
-                          ),
+                              formatter.format(DateTime.parse(tx["tanggal"])),
+                              style: pw.TextStyle(fontSize: 9)),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
                           child: pw.Text(
-                            "Rp ${numberFormat.format(tx["total_sebelum_pajak"])}",
-                            style: pw.TextStyle(fontSize: 9),
-                          ),
+                              "Rp ${numberFormat.format(tx["total_sebelum_pajak"])}",
+                              style: pw.TextStyle(fontSize: 9)),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
                           child: pw.Text(
-                            "Rp ${numberFormat.format(tx["total_pajak"])}",
-                            style: pw.TextStyle(fontSize: 9),
-                          ),
+                              "Rp ${numberFormat.format(tx["total_pajak"])}",
+                              style: pw.TextStyle(fontSize: 9)),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
                           child: pw.Text(
-                            "Rp ${numberFormat.format(tx["total_termasuk_pajak"])}",
-                            style: pw.TextStyle(fontSize: 9),
-                          ),
+                              "Rp ${numberFormat.format(tx["total_termasuk_pajak"])}",
+                              style: pw.TextStyle(fontSize: 9)),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
                           child: pw.Text(
-                            "Rp ${numberFormat.format(tx["total_modal"])}",
-                            style: pw.TextStyle(fontSize: 9),
-                          ),
+                              "Rp ${numberFormat.format(tx["total_modal"])}",
+                              style: pw.TextStyle(fontSize: 9)),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
                           child: pw.Text(
-                            "Rp ${numberFormat.format(tx["untung_sebelum_pajak"])}",
-                            style: pw.TextStyle(fontSize: 9),
-                          ),
+                              "Rp ${numberFormat.format(tx["untung_sebelum_pajak"])}",
+                              style: pw.TextStyle(fontSize: 9)),
                         ),
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
                           child: pw.Text(
-                            "Rp ${numberFormat.format(tx["untung_termasuk_pajak"])}",
-                            style: pw.TextStyle(fontSize: 9),
-                          ),
+                              "Rp ${numberFormat.format(tx["untung_termasuk_pajak"])}",
+                              style: pw.TextStyle(fontSize: 9)),
                         ),
                       ],
                     );
@@ -238,8 +224,9 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                        "Tanggal: ${formatter.format(DateTime.parse(tx["tanggal"]))}",
-                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      "Tanggal: ${formatter.format(DateTime.parse(tx["tanggal"]))}",
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    ),
                     pw.SizedBox(height: 8),
                     ...(tx["barang_terjual"] as List).map((item) {
                       final key = "${item["id_barang"]}|${item["id_satuan"]}";
@@ -261,7 +248,6 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
       ),
     );
 
-    // STEP 3: Print PDF
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
     );
@@ -351,65 +337,29 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Tanggal: ${formatter.format(DateTime.parse(tx["tanggal"]))}",
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
-                              ),
+                                  "Tanggal: ${formatter.format(DateTime.parse(tx["tanggal"]))}",
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold)),
                               const SizedBox(height: 4),
                               Text(
-                                "Total Sebelum Pajak: Rp ${numberFormat.format(tx["total_sebelum_pajak"])}",
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                                  "Total Sebelum Pajak: Rp ${numberFormat.format(tx["total_sebelum_pajak"])}",
+                                  style: const TextStyle(color: Colors.white)),
                               Text(
-                                "Total Pajak: Rp ${numberFormat.format(tx["total_pajak"])}",
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                                  "Total Pajak: Rp ${numberFormat.format(tx["total_pajak"])}",
+                                  style: const TextStyle(color: Colors.white)),
                               Text(
-                                "Total Termasuk Pajak: Rp ${numberFormat.format(tx["total_termasuk_pajak"])}",
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                                  "Total Termasuk Pajak: Rp ${numberFormat.format(tx["total_termasuk_pajak"])}",
+                                  style: const TextStyle(color: Colors.white)),
                               Text(
-                                "Modal: Rp ${numberFormat.format(tx["total_modal"])}",
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                                  "Modal: Rp ${numberFormat.format(tx["total_modal"])}",
+                                  style: const TextStyle(color: Colors.white)),
                               Text(
-                                "Untung Sebelum Pajak: Rp ${numberFormat.format(tx["untung_sebelum_pajak"])}",
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                                  "Untung Sebelum Pajak: Rp ${numberFormat.format(tx["untung_sebelum_pajak"])}",
+                                  style: const TextStyle(color: Colors.white)),
                               Text(
-                                "Untung Termasuk Pajak: Rp ${numberFormat.format(tx["untung_termasuk_pajak"])}",
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                              const Divider(color: Colors.white38),
-                              const Text("Barang Terjual:",
-                                  style: TextStyle(color: Colors.white70)),
-                              ...(tx["barang_terjual"] as List).map((item) {
-                                return FutureBuilder<String>(
-                                  future: _getNamaSatuan(item["id_barang"],
-                                      item["id_satuan"], context),
-                                  builder: (context, snapshot) {
-                                    final namaSatuan =
-                                        snapshot.connectionState ==
-                                                ConnectionState.waiting
-                                            ? "Loading..."
-                                            : snapshot.data ?? "None";
-
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 2),
-                                      child: Text(
-                                        "- ${item["nama_barang"]} (${item["qty"]} $namaSatuan) | "
-                                        "Harga Jual: Rp ${numberFormat.format(item["harga_jual_sebelum_pajak"])} | " // Changed to harga_jual_sebelum_pajak
-                                        "Modal: Rp ${numberFormat.format(item["harga_modal"])}",
-                                        style: const TextStyle(
-                                            color: Colors.white60,
-                                            fontSize: 13),
-                                      ),
-                                    );
-                                  },
-                                );
-                              }).toList(),
+                                  "Untung Termasuk Pajak: Rp ${numberFormat.format(tx["untung_termasuk_pajak"])}",
+                                  style: const TextStyle(color: Colors.white)),
                             ],
                           ),
                         ),

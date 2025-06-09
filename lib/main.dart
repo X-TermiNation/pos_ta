@@ -29,8 +29,8 @@ void main() async {
     await windowManager.setMaximizable(true);
   });
   await GetStorage.init();
-  await getOwner().then((value) => runApp(const MyApp()));
   await ApiConfig().init();
+  await getOwner().then((value) => runApp(const MyApp()));
 }
 
 class MyApp extends StatelessWidget {

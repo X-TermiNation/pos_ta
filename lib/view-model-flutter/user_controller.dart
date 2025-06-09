@@ -22,18 +22,28 @@ Future<void> verify() async {
 Future<void> flushCache() async {
   await ApiConfig().refreshConnectionIfNeeded();
   final dataStorage = GetStorage();
-  String id_cabang = dataStorage.read('id_cabang');
-  String id_gudang = dataStorage.read('id_gudang');
+
+  final id_cabang = dataStorage.read('id_cabang');
+  final id_gudang = dataStorage.read('id_gudang');
+
+  if (id_cabang == null || id_gudang == null) {
+    print('id_cabang atau id_gudang tidak ditemukan di storage!');
+    return;
+  }
+
   final url = Uri.parse(
-      '${ApiConfig().baseUrl}/user/flush-cache/$id_cabang/$id_gudang'); // Backend API URL
+      '${ApiConfig().baseUrl}/user/flush-cache/$id_cabang/$id_gudang');
 
   try {
     final response = await http.post(url);
 
     if (response.statusCode == 200) {
+      GetStorage().erase();
       final responseData = json.decode(response.body);
       print('Cache flushed successfully: ${responseData['message']}');
-    } else {}
+    } else {
+      print('Flush cache failed: ${response.statusCode}');
+    }
   } catch (error) {
     print('Error flushing cache: $error');
   }
@@ -46,7 +56,6 @@ Future<List<Map<String, dynamic>>> getUsers() async {
   if (connectivityResult == ConnectivityResult.none) {
     print('Offline: menggunakan lokal.');
   }
-
   final dataStorage = GetStorage();
   String id_cabangs = dataStorage.read('id_cabang');
   final request = Uri.parse('${ApiConfig().baseUrl}/user/list/$id_cabangs');

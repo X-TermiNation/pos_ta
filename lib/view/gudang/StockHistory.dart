@@ -30,13 +30,14 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
   }
 
   String formatDate(String date) {
-    DateTime parsedDate = DateTime.parse(date);
-    DateFormat wibFormat = DateFormat('dd MMM yyyy HH:mm:ss');
-    return wibFormat.format(parsedDate.add(Duration(hours: 7)));
+    DateTime parsedDate = DateTime.parse(date).toUtc();
+    DateFormat utcFormat = DateFormat('dd MMM yyyy HH:mm:ss');
+    return utcFormat.format(parsedDate);
   }
 
   Future<void> fetchItemAndSatuanDetailsForAllItems() async {
     for (var item in historyStok) {
+      if (!mounted) return;
       final details = await fetchItemAndSatuanDetails(
         item['barang_id'],
         item['satuan_id'],
@@ -102,7 +103,7 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
   void filterData() {
     setState(() {
       filteredHistoryStok = historyStok.where((item) {
-        DateTime itemDate = DateTime.parse(item['tanggal_pengisian']).toLocal();
+        DateTime itemDate = DateTime.parse(item['tanggal_pengisian']);
         bool matchesSearch =
             item['nama_barang'].toString().contains(searchQuery) ||
                 item['nama_satuan'].toString().contains(searchQuery) ||
@@ -115,8 +116,10 @@ class _HistoryStockPageState extends State<HistoryStockPage> {
               DateTime(startDate!.year, startDate!.month, startDate!.day);
           DateTime normalizedEndDate =
               DateTime(endDate!.year, endDate!.month, endDate!.day);
-          matchesDateRange = itemDate.isAfter(normalizedStartDate) &&
-              itemDate.isBefore(normalizedEndDate.add(Duration(days: 1)));
+          matchesDateRange = itemDate.isAtSameMomentAs(normalizedStartDate) ||
+              itemDate.isAtSameMomentAs(normalizedEndDate) ||
+              (itemDate.isAfter(normalizedStartDate) &&
+                  itemDate.isBefore(normalizedEndDate.add(Duration(days: 1))));
         }
         return matchesSearch && matchesDateRange;
       }).toList();

@@ -3975,11 +3975,11 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
     try {
       List<Map<String, dynamic>>? data = await getMutasiBarangByCabangConfirm();
       allData = data ?? [];
-      applyFilters(); // Apply filters after fetching the data
+      await applyFilters();
       return allData;
     } catch (e) {
       print('Error fetching data: $e');
-      return []; // Return an empty list in case of an error
+      return [];
     }
   }
 
@@ -4011,6 +4011,8 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
     List<Map<String, dynamic>> result = [];
 
     for (var transfer in allData) {
+      if (!mounted) return; // keluar jika sudah dispose
+
       String namaCabang =
           await getNamaCabang(transfer['id_cabang_request'].toString());
 
@@ -4044,6 +4046,7 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
       }
     }
 
+    if (!mounted) return; // Cek sebelum update state
     setState(() {
       filteredData = result;
     });

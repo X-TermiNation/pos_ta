@@ -110,15 +110,17 @@ class _ResponsiveSideMenuState extends State<ResponsiveSideMenu> {
           content: Text('Anda Ingin Log Out?'),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                flushCache();
-                GetStorage().erase();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => loginscreen()),
-                  (Route<dynamic> route) => false,
-                );
+              onPressed: () async {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    flushCache();
+                    GetStorage().erase();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => loginscreen()),
+                    );
+                  }
+                });
               },
               child: Text('Ya'),
             ),

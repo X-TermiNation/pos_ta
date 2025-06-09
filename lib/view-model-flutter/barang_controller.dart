@@ -305,7 +305,6 @@ Future<String> getFirstKategoriId() async {
 
 Future<void> fetchDataKategori() async {
   try {
-    await ApiConfig().refreshConnectionIfNeeded();
     final items = await getKategori();
     print("ini data Kategori :$items");
   } catch (error) {
@@ -315,7 +314,6 @@ Future<void> fetchDataKategori() async {
 
 Future<Map<String, String>> getNamaKategoriMap(
     List<Map<String, dynamic>> array) async {
-  await ApiConfig().refreshConnectionIfNeeded();
   final map = Map<String, String>();
   final objects = await array;
   for (final object in objects) {
@@ -325,7 +323,6 @@ Future<Map<String, String>> getNamaKategoriMap(
 }
 
 Future<Map<String, String>> getmapkategori() async {
-  await ApiConfig().refreshConnectionIfNeeded();
   final Kategori = await getKategori();
   final namaKategoriMap = await getNamaKategoriMap(Kategori);
   print(namaKategoriMap);
@@ -418,7 +415,6 @@ Future<String> getFirstJenisId() async {
 
 Future<void> fetchDatajenis() async {
   try {
-    await ApiConfig().refreshConnectionIfNeeded();
     final items = await getJenis();
     print("ini data Kategori :$items");
   } catch (error) {
@@ -428,7 +424,6 @@ Future<void> fetchDatajenis() async {
 
 Future<Map<String, String>> getNamaJenisMap(
     List<Map<String, dynamic>> array) async {
-  await ApiConfig().refreshConnectionIfNeeded();
   final map = Map<String, String>();
   final objects = await array;
   for (final object in objects) {
@@ -453,7 +448,6 @@ Future<Map<String, Map<String, dynamic>>> getMapFromjenis(
 }
 
 Future<Map<String, String>> getmapjenis() async {
-  await ApiConfig().refreshConnectionIfNeeded();
   final Jenis = await getJenis();
   final namaJenismap = await getNamaJenisMap(Jenis);
   print(namaJenismap);
