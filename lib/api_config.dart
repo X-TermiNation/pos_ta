@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ApiConfig {
   static final ApiConfig _instance = ApiConfig._internal();
@@ -31,7 +30,7 @@ class ApiConfig {
           .get(Uri.parse("$_railwayUrl/user/ping"))
           .timeout(const Duration(seconds: 2));
       if (response.statusCode == 200) {
-        _baseUrl = _railwayUrl;
+        _baseUrl = _localUrl;
         print("[ApiConfig] Railway available, using hosting URL.");
       } else {
         _baseUrl = _localUrl;

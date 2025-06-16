@@ -1,7 +1,6 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view-model-flutter/laporan_controller.dart';
-import 'package:ta_pos/view/cabang/daftarcabang.dart';
 import 'package:ta_pos/view/manager/DeliveryHistory.dart';
 import 'package:ta_pos/view/manager/chatWhatsapp.dart';
 import 'package:ta_pos/view-model-flutter/transaksi_controller.dart';
@@ -29,7 +28,6 @@ import 'package:http/http.dart' as http;
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 var diskondata = Future.delayed(Duration(seconds: 1), () => getDiskon());
-late bool logOwner;
 
 class ManagerMenu extends StatefulWidget {
   const ManagerMenu({super.key});
@@ -1804,25 +1802,6 @@ class _ManagerMenuState extends State<ManagerMenu>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (logOwner) ...[
-                  FilledButton.icon(
-                    icon: Icon(Icons.business),
-                    label: Text('Manage Cabang'),
-                    style: FilledButton.styleFrom(
-                        minimumSize: Size.fromHeight(48)),
-                    onPressed: () {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => DaftarCabang()),
-                          );
-                        }
-                      });
-                    },
-                  ),
-                  SizedBox(height: 16),
-                ],
                 ElevatedButton.icon(
                   icon: Icon(Icons.point_of_sale),
                   label: Text('Pindah Kasir'),

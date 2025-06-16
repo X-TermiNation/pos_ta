@@ -42,7 +42,6 @@ class _DaftarCabangState extends State<DaftarCabang> {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         title: const Text('Daftar Cabang'),
         actions: [
           IconButton(

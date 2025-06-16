@@ -65,7 +65,17 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
     );
 
     if (picked != null) {
-      setState(() => _selectedRange = picked);
+      final adjustedRange = DateTimeRange(
+        start: picked.start,
+        end: picked.end.add(const Duration(
+          hours: 23,
+          minutes: 59,
+          seconds: 59,
+          milliseconds: 999,
+        )),
+      );
+
+      setState(() => _selectedRange = adjustedRange);
       await _fetchPendapatan();
     }
   }
@@ -109,7 +119,7 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
                   "Periode: ${formatter.format(_selectedRange!.start)} - ${formatter.format(_selectedRange!.end)}"),
               pw.Divider(),
               pw.Text(
-                  "Total Pendapatan Kotor: Rp ${numberFormat.format(_data!['total_pendapatan_kotor'])}"),
+                  "Total Pendapatan Kotor: Rp ${numberFormat.format(_data!['total_pendapatan_kotor'] ?? 0)}"),
               pw.Text(
                   "Total Pajak: Rp ${numberFormat.format(_data!['total_pajak'])}"),
               pw.Text(
@@ -177,7 +187,7 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
                           child: pw.Text(
-                              "Rp ${numberFormat.format(tx["total_sebelum_pajak"])}",
+                              "Rp ${numberFormat.format(tx["total_sebelum_pajak"] ?? 0)}",
                               style: pw.TextStyle(fontSize: 9)),
                         ),
                         pw.Padding(
@@ -231,10 +241,14 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
                     ...(tx["barang_terjual"] as List).map((item) {
                       final key = "${item["id_barang"]}|${item["id_satuan"]}";
                       final satuan = satuanMap[key] ?? "Satuan?";
+                      final diskon = (item["diskon"] ?? 0) > 0
+                          ? "${item["diskon"].toString()}%"
+                          : "Tidak ada";
                       return pw.Text(
                         "- ${item["nama_barang"]} (${item["qty"]} $satuan) | "
-                        "Harga Jual: Rp ${numberFormat.format(item["harga_jual_sebelum_pajak"])} | "
-                        "Modal: Rp ${numberFormat.format(item["harga_modal"])}",
+                        "Harga Jual: Rp ${numberFormat.format(item["harga_awal"] ?? 0)} | "
+                        "Modal: Rp ${numberFormat.format(item["harga_modal"] ?? 0)} | "
+                        "Diskon: $diskon",
                         style: pw.TextStyle(fontSize: 12),
                       );
                     }).toList(),
@@ -301,7 +315,7 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
                                 style: const TextStyle(color: Colors.white)),
                             const SizedBox(height: 8),
                             Text(
-                                "Total Pendapatan Kotor: Rp ${numberFormat.format(_data!['total_pendapatan_kotor'])}",
+                                "Total Pendapatan Kotor: Rp ${numberFormat.format(_data!['total_pendapatan_kotor'] ?? 0)}",
                                 style: const TextStyle(color: Colors.white)),
                             Text(
                                 "Total Pajak: Rp ${numberFormat.format(_data!['total_pajak'])}",
@@ -343,7 +357,7 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 4),
                               Text(
-                                  "Total Sebelum Pajak: Rp ${numberFormat.format(tx["total_sebelum_pajak"])}",
+                                  "Total Sebelum Pajak: Rp ${numberFormat.format(tx["total_sebelum_pajak"] ?? 0)}",
                                   style: const TextStyle(color: Colors.white)),
                               Text(
                                   "Total Pajak: Rp ${numberFormat.format(tx["total_pajak"])}",

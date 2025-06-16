@@ -92,6 +92,35 @@ Future<List<Map<String, dynamic>>> getTrans() async {
   }
 }
 
+//get trans with idCabang params
+Future<List<Map<String, dynamic>>> getTransByCabang(
+    String idCabang, DateTime startDate, DateTime endDate) async {
+  await ApiConfig().refreshConnectionIfNeeded();
+  final url =
+      Uri.parse('${ApiConfig().baseUrl}/transaksi/transByDate/$idCabang');
+
+  final response = await http.post(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate.toIso8601String(),
+    }),
+  );
+
+  if (response.statusCode == 200 || response.statusCode == 304) {
+    final Map<String, dynamic> jsonData = json.decode(response.body);
+    List<dynamic> data = jsonData["data"];
+    print("Transaksi cabang $idCabang dari $startDate ke $endDate: $data");
+    return data.cast<Map<String, dynamic>>();
+  } else {
+    CustomToast(message: "Failed to load transaksi: ${response.statusCode}");
+    return [];
+  }
+}
+
 // Get specific transaction by id
 Future<Map<String, dynamic>?> getTransById(String trans_id) async {
   await ApiConfig().refreshConnectionIfNeeded();

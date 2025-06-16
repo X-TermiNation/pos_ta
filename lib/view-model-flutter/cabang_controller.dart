@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ta_pos/view-model-flutter/models_flutter/user_model.dart';
+import 'package:ta_pos/view-model-flutter/gudang_controller.dart';
 import 'package:ta_pos/view-model-flutter/user_controller.dart';
 import 'package:ta_pos/view/tools/custom_toast.dart';
 import 'package:http/http.dart' as http;
@@ -80,5 +81,90 @@ Future<List<Map<String, dynamic>>?> getCabangByID(String id) async {
   } catch (e) {
     print("Exception occurred: $e");
     return null;
+  }
+}
+
+Future<Map<String, dynamic>?> fetchCabangStatistikRingkasan({
+  required String idCabang,
+  required DateTime startDate,
+  required DateTime endDate,
+}) async {
+  final url =
+      Uri.parse('${ApiConfig().baseUrl}/cabang/statistikringkasan/$idCabang');
+
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      print('Error fetching statistik ringkasan: ${response.statusCode}');
+      return null;
+    }
+  } catch (e) {
+    print('Exception fetching statistik ringkasan: $e');
+    return null;
+  }
+}
+
+Future<Map<String, dynamic>> getCabangStatistikRingkasan(
+    String idCabang, String startDate, String endDate) async {
+  // 1. Dapatkan id_gudang terlebih dahulu
+  final String? idGudang = await getIdGudang(idCabang);
+
+  if (idGudang == null) {
+    throw Exception('Gagal mendapatkan ID Gudang untuk cabang $idCabang');
+  }
+
+  final url = Uri.parse(
+      '${ApiConfig().baseUrl}/cabang/getStatistikRingkasan/$idCabang');
+
+  print('Fetching statistik cabang dari: $url');
+  print(
+      'Start: $startDate, End: $endDate, Gudang ID: $idGudang'); // Tambahkan log idGudang
+
+  final response = await http.post(
+    url,
+    headers: {'Content-Type': 'application/json'},
+    // 2. Sertakan id_gudang dalam body request
+    body: jsonEncode({
+      'startDate': startDate,
+      'endDate': endDate,
+      'id_gudang': idGudang, // <-- Tambahkan ini!
+    }),
+  );
+
+  print('Response Status: ${response.statusCode}');
+  print('Response Body: ${response.body}');
+
+  if (response.statusCode == 200) {
+    try {
+      final decoded = jsonDecode(response.body);
+      print('Decoded Response: $decoded');
+      return decoded;
+    } catch (e) {
+      print('JSON Decode Error: $e');
+      throw Exception('Gagal decode response statistik cabang');
+    }
+  } else {
+    // Lebih detail saat throw exception
+    String errorMessage = 'Gagal mengambil data statistik cabang';
+    try {
+      final errorBody = jsonDecode(response.body);
+      if (errorBody.containsKey('error')) {
+        errorMessage = errorBody['error'];
+      }
+    } catch (e) {
+      // Abaikan jika body bukan JSON atau tidak ada 'error'
+    }
+    throw Exception('$errorMessage (Status: ${response.statusCode})');
   }
 }

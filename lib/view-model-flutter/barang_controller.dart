@@ -863,6 +863,32 @@ Future<List<Map<String, dynamic>>> fetchSuppliersByCabang() async {
   }
 }
 
+//pilihan dengan params
+Future<List<Map<String, dynamic>>> fetchSuppliersByCabangChoice(
+    String idCabang) async {
+  await ApiConfig().refreshConnectionIfNeeded();
+  final url = Uri.parse('${ApiConfig().baseUrl}/barang/getSuppliers/$idCabang');
+
+  try {
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> suppliers = json.decode(response.body);
+      print("Supplier dari cabang $idCabang: $suppliers");
+      return suppliers.cast<Map<String, dynamic>>();
+    } else if (response.statusCode == 404) {
+      print("No suppliers found for cabang ID: $idCabang");
+      return [];
+    } else {
+      print("Error: ${response.statusCode}");
+      return [];
+    }
+  } catch (error) {
+    print("Error fetching suppliers for cabang $idCabang: $error");
+    return [];
+  }
+}
+
 //insert stock history
 Future<void> insertHistoryStok({
   required String id_barang,

@@ -106,7 +106,7 @@ class _login_owner_state extends State<login_owner> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => ownermenu()));
+                                builder: (context) => OwnerMenu()));
                       } else {
                         showToast(context, "Username/Password Salah!");
                       }

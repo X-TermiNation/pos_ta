@@ -781,7 +781,7 @@ class _GudangMenuState extends State<GudangMenu> {
                           TextField(
                             controller: _searchControllerBarangList,
                             decoration: InputDecoration(
-                              hintText: 'Search Barang',
+                              hintText: 'Cari Barang',
                               prefixIcon: Icon(Icons.search),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12.0),
@@ -1731,7 +1731,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                   Expanded(
                                     child: TextField(
                                       decoration: InputDecoration(
-                                        labelText: "Search Barang",
+                                        labelText: "Cari Barang",
                                         hintStyle:
                                             TextStyle(color: Colors.grey),
                                         filled: true,
@@ -2816,7 +2816,7 @@ class _GudangMenuState extends State<GudangMenu> {
                                         controller: controller,
                                         focusNode: focusNode,
                                         decoration: InputDecoration(
-                                          labelText: 'Search Barang',
+                                          labelText: 'Cari Barang',
                                           border: OutlineInputBorder(),
                                         ),
                                       );
@@ -3761,7 +3761,7 @@ class _RequestTransferTabState extends State<RequestTransferTab> {
                   Expanded(
                     child: TextField(
                       decoration: InputDecoration(
-                        labelText: "Search by cabang or item name",
+                        labelText: "Cari Cabang atau Barang",
                         prefixIcon: Icon(Icons.search),
                         border: OutlineInputBorder(),
                       ),
@@ -4114,7 +4114,7 @@ class _ConfirmTransferTabState extends State<ConfirmTransferTab> {
                         });
                       },
                       decoration: InputDecoration(
-                        labelText: 'Search Barang atau Cabang',
+                        labelText: 'Cari Cabang atau Barang',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.search),
                       ),

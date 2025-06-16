@@ -1,137 +1,139 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ta_pos/view/manager/managermenu.dart';
+import 'package:ta_pos/view/cabang/dashboardOwner.dart';
 import 'package:ta_pos/view-model-flutter/gudang_controller.dart';
 import 'package:ta_pos/view-model-flutter/cabang_controller.dart';
 
-class ownermenu extends StatefulWidget {
-  const ownermenu({super.key});
+class OwnerMenu extends StatefulWidget {
+  const OwnerMenu({super.key});
 
   @override
-  State<ownermenu> createState() => _owner_menu_state();
+  State<OwnerMenu> createState() => _OwnerMenuState();
 }
 
-class _owner_menu_state extends State<ownermenu> {
+class _OwnerMenuState extends State<OwnerMenu> {
   List<Map<String, dynamic>> datacabang = [];
-  int _selectedCheckboxIndex = -1;
+  int? _selectedIndex;
 
   @override
   void initState() {
     super.initState();
-    fetchdatacabang();
+    fetchDataCabang();
   }
 
-  Future<void> fetchdatacabang() async {
+  Future<void> fetchDataCabang() async {
     try {
       List<Map<String, dynamic>> fetchedData = await getallcabang();
       setState(() {
         datacabang = fetchedData;
       });
     } catch (e) {
-      print('fetch cabang error:$e');
+      print('Fetch cabang error: $e');
     }
   }
 
-  void _onCheckboxChanged(int index, bool? value) {
+  void handleCabangSelected(int? index) {
     setState(() {
-      _selectedCheckboxIndex = value! ? index : -1;
+      _selectedIndex = index;
     });
+  }
+
+  Future<void> masukCabang() async {
+    if (_selectedIndex == null) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          content: const Text('Wajib pilih satu cabang terlebih dahulu!'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final dataStorage = GetStorage();
+    dataStorage.write('id_cabang', datacabang[_selectedIndex!]['_id']);
+    await getdatagudang();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ManagerMenu()),
+    );
+  }
+
+  void masukSebagaiOwner() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const OwnerDashboardPage()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Center(
-      child: Container(
-        height: 500,
-        width: 500,
+      appBar: AppBar(
+        title: const Text('Pilih Cabang Usaha'),
+        automaticallyImplyLeading: false,
+      ),
+      body: Padding(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(16),
-        ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              "Pilih Cabang Yang Tersedia:",
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black),
+            const Text(
+              "Silakan pilih salah satu cabang untuk dikelola:",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.white),
+              child: Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 6,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
                 ),
-                child: ListView.builder(
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   itemCount: datacabang.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (context, index) {
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: ListTile(
-                        leading: Checkbox(
-                          value: _selectedCheckboxIndex == index,
-                          onChanged: (bool? value) {
-                            _onCheckboxChanged(index, value);
-                          },
-                        ),
-                        title: Text(datacabang[index]['nama_cabang'] ?? ''),
-                        onTap: () {
-                          _onCheckboxChanged(
-                              index, !(_selectedCheckboxIndex == index));
-                        },
-                      ),
+                    final cabang = datacabang[index];
+                    return RadioListTile<int>(
+                      value: index,
+                      groupValue: _selectedIndex,
+                      title: Text(cabang['nama_cabang'] ?? ''),
+                      onChanged: handleCabangSelected,
                     );
                   },
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () async {
-                if (_selectedCheckboxIndex != -1) {
-                  final dataStorage = GetStorage();
-                  dataStorage.write(
-                      'id_cabang', datacabang[_selectedCheckboxIndex]['_id']);
-                  await getdatagudang();
-                  setState(() {
-                    logOwner = true;
-                  });
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => ManagerMenu()));
-                } else {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        content: Text('Wajib pilih satu cabang!'),
-                      );
-                    },
-                  );
-                }
-              },
-              child: Text("Pilih Cabang"),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.store),
+                    onPressed: masukCabang,
+                    label: const Text("Masuk Cabang"),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.dashboard_customize),
+                    onPressed: masukSebagaiOwner,
+                    label: const Text("Dashboard Owner"),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
-    ));
+    );
   }
 }
