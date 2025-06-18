@@ -1,11 +1,12 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
-import 'package:get/get.dart';
 import 'package:ta_pos/view-model-flutter/laporan_controller.dart';
 import 'dart:math';
 
@@ -235,9 +236,39 @@ class _AnalisaRevenuePageState extends State<AnalisaRevenuePage> {
                       onPressed: controller.analisa.isEmpty
                           ? null
                           : () async {
-                              final pdfData = await _generatePdf();
-                              await Printing.layoutPdf(
-                                  onLayout: (_) => pdfData);
+                              try {
+                                final pdfData = await _generatePdf();
+                                final now = DateTime.now();
+                                final filename =
+                                    'Laporan_AnalisaRevenue_${DateFormat('dd-MM-yyyy_HHmmss').format(now)}.pdf';
+
+                                final downloadsDir =
+                                    await getDownloadsDirectory();
+                                if (downloadsDir == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            "Folder Downloads tidak ditemukan")),
+                                  );
+                                  return;
+                                }
+
+                                final filePath =
+                                    '${downloadsDir.path}/$filename';
+                                final file = File(filePath);
+                                await file.writeAsBytes(pdfData);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          "PDF berhasil disimpan ke:\n$filePath")),
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text("Gagal menyimpan PDF: $e")),
+                                );
+                              }
                             },
                       icon: const Icon(Icons.picture_as_pdf),
                       label: const Text("Generate PDF"),

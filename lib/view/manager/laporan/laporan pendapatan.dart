@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+import 'dart:io';
 import 'package:ta_pos/view-model-flutter/laporan_controller.dart';
 import 'package:ta_pos/view-model-flutter/barang_controller.dart';
 
@@ -18,6 +18,21 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
   Map<String, dynamic>? _data;
   bool _loading = false;
   final numberFormat = NumberFormat("#,##0", "id_ID");
+
+  @override
+  void initState() {
+    super.initState();
+
+    final now = DateTime.now();
+    final sevenDaysAgo = now.subtract(const Duration(days: 6));
+
+    _selectedRange = DateTimeRange(
+      start: DateTime(sevenDaysAgo.year, sevenDaysAgo.month, sevenDaysAgo.day),
+      end: DateTime(now.year, now.month, now.day, 23, 59, 59, 999),
+    );
+
+    _fetchPendapatan();
+  }
 
   Future<String> _getNamaSatuan(
       String idBarang, String idSatuan, BuildContext context) async {
@@ -84,7 +99,8 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
     if (_data == null || (_data!["detail"] as List).isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Data laporan kosong, tidak dapat mengunduh PDF')),
+          content: Text('Data laporan kosong, tidak dapat mengunduh PDF'),
+        ),
       );
       return;
     }
@@ -105,6 +121,8 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
       }
     }
 
+    // ... [ISI PDF Tetap Seperti Kode Kamu Sebelumnya]
+    // (tidak diubah karena kamu minta tidak mengubah isi PDF)
     pdf.addPage(
       pw.Page(
         build: (context) {
@@ -262,8 +280,19 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
+    // Simpan ke folder Downloads secara manual
+    final now = DateTime.now();
+    final filename =
+        "Laporan_Pendapatan_${DateFormat('dd-MM-yyyy_HHmmss').format(now)}.pdf";
+
+    final downloadsDir =
+        Directory("${Platform.environment['USERPROFILE']}\\Downloads");
+    final file = File("${downloadsDir.path}\\$filename");
+
+    await file.writeAsBytes(await pdf.save());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("PDF berhasil disimpan di: ${file.path}")),
     );
   }
 
@@ -280,6 +309,7 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -298,93 +328,148 @@ class _LaporanPendapatanPageState extends State<LaporanPendapatanPage> {
               ],
             ),
             const SizedBox(height: 20),
-            if (_loading) const CircularProgressIndicator(),
+            if (_loading) const Center(child: CircularProgressIndicator()),
             if (_data != null && !_loading)
               Expanded(
-                child: ListView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Card(
-                      color: Colors.teal.shade900,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                "Periode: ${formatter.format(_selectedRange!.start)} - ${formatter.format(_selectedRange!.end)}",
-                                style: const TextStyle(color: Colors.white)),
-                            const SizedBox(height: 8),
-                            Text(
-                                "Total Pendapatan Kotor: Rp ${numberFormat.format(_data!['total_pendapatan_kotor'] ?? 0)}",
-                                style: const TextStyle(color: Colors.white)),
-                            Text(
-                                "Total Pajak: Rp ${numberFormat.format(_data!['total_pajak'])}",
-                                style: const TextStyle(color: Colors.white)),
-                            Text(
-                                "Total Pendapatan Sebelum Pajak: Rp ${numberFormat.format(_data!['total_pendapatan_sebelum_pajak'])}",
-                                style: const TextStyle(color: Colors.white)),
-                            Text(
-                                "Total Modal: Rp ${numberFormat.format(_data!['total_modal'])}",
-                                style: const TextStyle(color: Colors.white)),
-                            Text(
-                                "Total Untung Sebelum Pajak: Rp ${numberFormat.format(_data!['total_untung_sebelum_pajak'])}",
-                                style: const TextStyle(color: Colors.white)),
-                            Text(
-                                "Total Untung Termasuk Pajak: Rp ${numberFormat.format(_data!['total_untung_termasuk_pajak'])}",
-                                style: const TextStyle(color: Colors.white)),
-                          ],
+                    Center(
+                      child: Table(
+                        defaultVerticalAlignment:
+                            TableCellVerticalAlignment.middle,
+                        columnWidths: const {
+                          0: FixedColumnWidth(220),
+                          1: FlexColumnWidth(),
+                        },
+                        children: [
+                          _buildTableRow("Periode:",
+                              "${formatter.format(_selectedRange!.start)} - ${formatter.format(_selectedRange!.end)}"),
+                          _buildTableRow("Total Pendapatan Kotor:",
+                              "Rp ${numberFormat.format(_data!['total_pendapatan_kotor'])}"),
+                          _buildTableRow("Total Pajak:",
+                              "Rp ${numberFormat.format(_data!['total_pajak'])}"),
+                          _buildTableRow("Pendapatan Sebelum Pajak:",
+                              "Rp ${numberFormat.format(_data!['total_pendapatan_sebelum_pajak'])}"),
+                          _buildTableRow("Total Modal:",
+                              "Rp ${numberFormat.format(_data!['total_modal'])}"),
+                          _buildTableRow("Untung Sebelum Pajak:",
+                              "Rp ${numberFormat.format(_data!['total_untung_sebelum_pajak'])}"),
+                          _buildTableRow("Untung Termasuk Pajak:",
+                              "Rp ${numberFormat.format(_data!['total_untung_termasuk_pajak'])}"),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Detail Transaksi:",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            headingRowColor:
+                                MaterialStateProperty.all(Colors.teal.shade800),
+                            dataRowColor:
+                                MaterialStateProperty.all(Colors.grey.shade900),
+                            columnSpacing: 24,
+                            headingRowHeight: 48,
+                            dataRowHeight: 56,
+                            columns: const [
+                              DataColumn(
+                                  label: Text("Tanggal Transaksi",
+                                      style: TextStyle(color: Colors.white))),
+                              DataColumn(
+                                  label: Text("Pendapatan Sebelum Pajak",
+                                      style: TextStyle(color: Colors.white))),
+                              DataColumn(
+                                  label: Text("Pajak Transaksi Total",
+                                      style: TextStyle(color: Colors.white))),
+                              DataColumn(
+                                  label: Text("Pendapatan Termasuk Pajak",
+                                      style: TextStyle(color: Colors.white))),
+                              DataColumn(
+                                  label: Text("Modal Transaksi",
+                                      style: TextStyle(color: Colors.white))),
+                              DataColumn(
+                                  label: Text("Untung Sebelum Pajak",
+                                      style: TextStyle(color: Colors.white))),
+                              DataColumn(
+                                  label: Text("Untung Termasuk Pajak",
+                                      style: TextStyle(color: Colors.white))),
+                            ],
+                            rows: (_data!["detail"] as List).map<DataRow>((tx) {
+                              return DataRow(
+                                cells: [
+                                  DataCell(Text(
+                                      formatter.format(
+                                          DateTime.parse(tx["tanggal"])),
+                                      style: const TextStyle(
+                                          color: Colors.white))),
+                                  DataCell(Text(
+                                      "Rp ${numberFormat.format(tx["total_sebelum_pajak"])}",
+                                      style: const TextStyle(
+                                          color: Colors.white))),
+                                  DataCell(Text(
+                                      "Rp ${numberFormat.format(tx["total_pajak"])}",
+                                      style: const TextStyle(
+                                          color: Colors.white))),
+                                  DataCell(Text(
+                                      "Rp ${numberFormat.format(tx["total_termasuk_pajak"])}",
+                                      style: const TextStyle(
+                                          color: Colors.white))),
+                                  DataCell(Text(
+                                      "Rp ${numberFormat.format(tx["total_modal"])}",
+                                      style: const TextStyle(
+                                          color: Colors.white))),
+                                  DataCell(Text(
+                                      "Rp ${numberFormat.format(tx["untung_sebelum_pajak"])}",
+                                      style: const TextStyle(
+                                          color: Colors.white))),
+                                  DataCell(Text(
+                                      "Rp ${numberFormat.format(tx["untung_termasuk_pajak"])}",
+                                      style: const TextStyle(
+                                          color: Colors.white))),
+                                ],
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    const Text("Detail Transaksi:",
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    ...(_data!["detail"] as List).map((tx) {
-                      return Card(
-                        color: Colors.grey.shade900,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                  "Tanggal: ${formatter.format(DateTime.parse(tx["tanggal"]))}",
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 4),
-                              Text(
-                                  "Total Sebelum Pajak: Rp ${numberFormat.format(tx["total_sebelum_pajak"] ?? 0)}",
-                                  style: const TextStyle(color: Colors.white)),
-                              Text(
-                                  "Total Pajak: Rp ${numberFormat.format(tx["total_pajak"])}",
-                                  style: const TextStyle(color: Colors.white)),
-                              Text(
-                                  "Total Termasuk Pajak: Rp ${numberFormat.format(tx["total_termasuk_pajak"])}",
-                                  style: const TextStyle(color: Colors.white)),
-                              Text(
-                                  "Modal: Rp ${numberFormat.format(tx["total_modal"])}",
-                                  style: const TextStyle(color: Colors.white)),
-                              Text(
-                                  "Untung Sebelum Pajak: Rp ${numberFormat.format(tx["untung_sebelum_pajak"])}",
-                                  style: const TextStyle(color: Colors.white)),
-                              Text(
-                                  "Untung Termasuk Pajak: Rp ${numberFormat.format(tx["untung_termasuk_pajak"])}",
-                                  style: const TextStyle(color: Colors.white)),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
                   ],
                 ),
               ),
           ],
         ),
       ),
+    );
+  }
+
+  TableRow _buildTableRow(String label, String value) {
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            label,
+            style: const TextStyle(
+                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            value,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ),
+      ],
     );
   }
 }
